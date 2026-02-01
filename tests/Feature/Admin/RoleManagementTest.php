@@ -76,6 +76,59 @@ class RoleManagementTest extends TestCase
     }
 
     /**
+     * TC-ROLE-002b: Tenant Owner tidak bisa melihat Super Admin role
+     *
+     * Expected: Super Admin role tidak ditampilkan di list
+     */
+    public function test_tenant_owner_cannot_see_super_admin_role(): void
+    {
+        // Arrange: Create tenant owner
+        $ownerRole = Role::factory()->tenantOwner()->create();
+        $tenant = Tenant::factory()->create();
+        $owner = User::factory()->forTenant($tenant)->create();
+        $owner->roles()->attach($ownerRole->id);
+
+        // Create super admin role (already created by factory typically)
+        $superAdminRole = Role::factory()->superAdmin()->create(['name' => 'Super Admin']);
+
+        // Act: Access role list as tenant owner
+        $response = $this->actingAs($owner)
+            ->get(route('admin.roles.index'));
+
+        // Assert
+        $response->assertStatus(200);
+        $response->assertViewHas('roles');
+
+        // Verify: Super Admin role is NOT visible
+        $roles = $response->viewData('roles');
+        $this->assertFalse($roles->contains('slug', 'super-admin'));
+        $this->assertFalse($roles->contains('name', 'Super Admin'));
+    }
+
+    /**
+     * TC-ROLE-002c: Tenant Owner tidak bisa akses Super Admin role langsung
+     *
+     * Expected: 403 Forbidden saat mencoba akses Super Admin role
+     */
+    public function test_tenant_owner_cannot_access_super_admin_role_directly(): void
+    {
+        // Arrange: Create tenant owner and super admin role
+        $ownerRole = Role::factory()->tenantOwner()->create();
+        $tenant = Tenant::factory()->create();
+        $owner = User::factory()->forTenant($tenant)->create();
+        $owner->roles()->attach($ownerRole->id);
+
+        $superAdminRole = Role::factory()->superAdmin()->create();
+
+        // Act: Try to access super admin role directly
+        $response = $this->actingAs($owner)
+            ->get(route('admin.roles.show', $superAdminRole));
+
+        // Assert: 403 Forbidden
+        $response->assertStatus(403);
+    }
+
+    /**
      * TC-ROLE-003: Search role
      *
      * Preconditions: Login

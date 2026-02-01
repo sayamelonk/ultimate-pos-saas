@@ -125,7 +125,7 @@
 |------|--------|-----------------|
 | 1 | Navigasi ke `/admin/tenants` | Halaman list tenant ditampilkan |
 | 2 | - | Semua tenant ditampilkan dengan pagination (15 per page) |
-| 3 | - | Kolom: name, slug, domain, outlets count, users count, status |
+| 3 | - | Kolom: name, code, email, outlets count, users count, status |
 
 #### TC-TENANT-002: Akses halaman tenant sebagai Tenant Owner
 **Precondition:** Login sebagai Tenant Owner (bukan Super Admin)
@@ -138,7 +138,7 @@
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigasi ke `/admin/tenants` | List tenant ditampilkan |
-| 2 | Input search: "restaurant" | Tenant dengan nama/slug/domain mengandung "restaurant" ditampilkan |
+| 2 | Input search: "restaurant" | Tenant dengan nama/code/email mengandung "restaurant" ditampilkan |
 
 #### TC-TENANT-004: Filter tenant by status
 **Precondition:** Login sebagai Super Admin
@@ -158,17 +158,17 @@
 |------|--------|-----------------|
 | 1 | Navigasi ke `/admin/tenants/create` | Form create tenant ditampilkan |
 | 2 | Input name: "New Restaurant" | Field terisi |
-| 3 | Input domain: "newrestaurant.com" (opsional) | Field terisi |
+| 3 | Input email: "new@restaurant.com" (opsional) | Field terisi |
 | 4 | Centang "is_active" | Checkbox tercentang |
-| 5 | Klik "Save" | - Tenant ter-create dengan slug auto-generated<br>- Redirect ke list dengan success message |
+| 5 | Klik "Save" | - Tenant ter-create dengan code auto-generated<br>- Redirect ke list dengan success message |
 
-#### TC-TENANT-006: Buat tenant dengan domain duplikat
-**Precondition:** Tenant dengan domain "existing.com" sudah ada
+#### TC-TENANT-006: Buat tenant dengan email duplikat
+**Precondition:** Tenant dengan email "existing@test.com" sudah ada
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigasi ke `/admin/tenants/create` | Form ditampilkan |
-| 2 | Input domain: "existing.com" | Field terisi |
-| 3 | Klik "Save" | Error: domain sudah digunakan |
+| 2 | Input email: "existing@test.com" | Field terisi |
+| 3 | Klik "Save" | Error: email sudah digunakan |
 
 ---
 

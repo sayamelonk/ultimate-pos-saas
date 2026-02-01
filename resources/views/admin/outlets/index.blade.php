@@ -46,6 +46,7 @@
                     @if(auth()->user()->isSuperAdmin())
                         <x-th>Tenant</x-th>
                     @endif
+                    <x-th align="center">Users</x-th>
                     <x-th align="center">Status</x-th>
                     <x-th align="right">Actions</x-th>
                 </x-slot>
@@ -87,6 +88,12 @@
                             </x-td>
                         @endif
                         <x-td align="center">
+                            <div class="flex items-center justify-center gap-1">
+                                <x-icon name="users" class="w-4 h-4 text-muted" />
+                                <span class="text-sm">{{ $outlet->users_count ?? 0 }}</span>
+                            </div>
+                        </x-td>
+                        <x-td align="center">
                             @if($outlet->is_active)
                                 <x-badge type="success" dot>Active</x-badge>
                             @else
@@ -105,18 +112,27 @@
                                    title="Edit">
                                     <x-icon name="pencil" class="w-4 h-4" />
                                 </a>
-                                <div x-data class="inline">
-                                    <form x-ref="deleteForm" action="{{ route('admin.outlets.destroy', $outlet) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button"
-                                                class="p-2 text-danger-500 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-colors"
-                                                title="Delete"
-                                                onclick="console.log('onclick works'); window.dispatchEvent(new CustomEvent('confirm', { detail: { title: 'Delete Outlet', message: 'Are you sure you want to delete {{ $outlet->name }}?', confirmText: 'Yes, Delete', cancelText: 'Cancel', variant: 'danger', onConfirm: () => this.closest('form').submit() } }))">
-                                            <x-icon name="trash" class="w-4 h-4 pointer-events-none" />
-                                        </button>
-                                    </form>
-                                </div>
+                                @if(($outlet->users_count ?? 0) > 0)
+                                    <button type="button"
+                                            class="p-2 text-muted-400 cursor-not-allowed rounded-lg transition-colors"
+                                            title="Cannot delete: {{ $outlet->users_count }} user(s) assigned"
+                                            disabled>
+                                        <x-icon name="trash" class="w-4 h-4" />
+                                    </button>
+                                @else
+                                    <div x-data class="inline">
+                                        <form x-ref="deleteForm" action="{{ route('admin.outlets.destroy', $outlet) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                    class="p-2 text-danger-500 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-colors"
+                                                    title="Delete"
+                                                    onclick="window.dispatchEvent(new CustomEvent('confirm', { detail: { title: 'Delete Outlet', message: 'Are you sure you want to delete {{ $outlet->name }}?', confirmText: 'Yes, Delete', cancelText: 'Cancel', variant: 'danger', onConfirm: () => this.closest('form').submit() } }))">
+                                                <x-icon name="trash" class="w-4 h-4 pointer-events-none" />
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
                             </div>
                         </x-td>
                     </tr>

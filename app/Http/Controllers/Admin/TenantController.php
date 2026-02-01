@@ -47,7 +47,7 @@ class TenantController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:tenants,email'],
             'phone' => ['nullable', 'string', 'max:20'],
             'is_active' => ['boolean'],
         ]);
@@ -66,7 +66,7 @@ class TenantController extends Controller
         $this->authorizeSuperAdmin();
 
         $tenant->loadCount(['outlets', 'users']);
-        $tenant->load(['outlets', 'users' => fn ($q) => $q->limit(10)]);
+        $tenant->load(['outlets', 'users']);
 
         return view('admin.tenants.show', compact('tenant'));
     }
@@ -84,7 +84,7 @@ class TenantController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:tenants,email,'.$tenant->id],
             'phone' => ['nullable', 'string', 'max:20'],
             'is_active' => ['boolean'],
         ]);

@@ -15,6 +15,7 @@
 
 <div {{ $attributes->only('class')->merge(['class' => 'relative flex items-start']) }}>
     <div class="flex items-center h-5">
+        <input type="hidden" name="{{ $name }}" value="0">
         <input type="checkbox"
                name="{{ $name }}"
                id="{{ $name }}"

@@ -25,6 +25,17 @@
                 :value="request('search')"
                 class="w-64"
             />
+            @php
+                $availableRoles = \App\Models\Role::orderBy('name')
+                    ->when(!auth()->user()->isSuperAdmin(), fn($q) => $q->where('slug', '!=', 'super-admin'))
+                    ->get();
+            @endphp
+            <x-select name="role" class="w-48">
+                <option value="">All Roles</option>
+                @foreach($availableRoles as $role)
+                    <option value="{{ $role->slug }}" @selected(request('role') === $role->slug)>{{ $role->name }}</option>
+                @endforeach
+            </x-select>
             <x-select name="status" class="w-40">
                 <option value="">All Status</option>
                 <option value="active" @selected(request('status') === 'active')>Active</option>

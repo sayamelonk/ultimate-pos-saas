@@ -33,30 +33,34 @@ class LoginController extends Controller
 
         // 2. Attempt login
         if (Auth::attempt($credentials, $remember)) {
-            // Regenerate session ID untuk security
-            $request->session()->regenerate();
-
-            // 3. Ambil user yang sedang login
+            // 3. Ambil user yang sedang login sebelum regenerate session
             $user = Auth::user();
 
             // 4. Cek apakah user aktif
             if (! $user->is_active) {
                 // Logout user jika tidak aktif
                 Auth::logout();
+                $request->session()->flush();
 
                 return back()->withErrors([
                     'email' => 'Your account has been deactivated.',
                 ]);
             }
 
-            // 5. Update last_login_at
-            $user->update(['last_login_at' => now()]);
+            // 5. Update last_login_at tanpa mengganggu remember_token
+            // Gunakan query builder untuk update hanya field yang diperlukan
+            \DB::table('users')
+                ->where('id', $user->id)
+                ->update(['last_login_at' => now()]);
 
-            // 6. Redirect ke dashboard
+            // 6. Regenerate session ID untuk security (setelah user check)
+            $request->session()->regenerate();
+
+            // 7. Redirect ke dashboard
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        // 7. Login gagal
+        // 8. Login gagal
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');

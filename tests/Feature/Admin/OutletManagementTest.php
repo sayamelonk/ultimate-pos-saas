@@ -158,6 +158,7 @@ class OutletManagementTest extends TestCase
             ]);
 
         // Assert: Outlet created
+        $outlet = Outlet::where('code', 'BR1')->first();
         $this->assertDatabaseHas('outlets', [
             'name' => 'Branch 1',
             'code' => 'BR1',
@@ -166,6 +167,13 @@ class OutletManagementTest extends TestCase
             'phone' => '08123456789',
             'email' => 'branch1@test.com',
             'is_active' => true,
+        ]);
+
+        // Assert: User is automatically assigned to the outlet
+        $this->assertDatabaseHas('user_outlets', [
+            'user_id' => $owner->id,
+            'outlet_id' => $outlet->id,
+            'is_default' => false,
         ]);
 
         $response->assertRedirect(route('admin.outlets.index'));
@@ -202,6 +210,13 @@ class OutletManagementTest extends TestCase
             'tenant_id' => $tenant->id,
         ]);
 
+        // Assert: Super Admin is NOT automatically assigned to the outlet
+        $outlet = Outlet::where('code', 'NEW')->first();
+        $this->assertDatabaseMissing('user_outlets', [
+            'user_id' => $superAdmin->id,
+            'outlet_id' => $outlet->id,
+        ]);
+
         $response->assertRedirect(route('admin.outlets.index'));
         $response->assertSessionHas('success');
     }
@@ -235,9 +250,59 @@ class OutletManagementTest extends TestCase
      */
     public function test_outlet_code_must_be_unique_per_tenant(): void
     {
-        // Note: This test documents expected behavior
-        // Current implementation may or may not enforce unique code
-        $this->assertTrue(true, 'Code uniqueness validation noted');
+        // Arrange: Create admin and existing outlet
+        $ownerRole = Role::factory()->tenantOwner()->create();
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->forTenant($tenant)->create();
+        $admin->roles()->attach($ownerRole->id);
+
+        Outlet::factory()->forTenant($tenant)->create(['code' => 'BR1']);
+
+        // Act: Try to create outlet with same code
+        $response = $this->actingAs($admin)
+            ->post(route('admin.outlets.store'), [
+                'name' => 'Another Branch',
+                'code' => 'BR1',
+                'is_active' => true,
+            ]);
+
+        // Assert: Validation error
+        $response->assertSessionHasErrors('code');
+    }
+
+    /**
+     * TC-OUTLET-006c: Code unik cross-tenant (boleh sama)
+     *
+     * Expected: Code bisa sama antara tenant berbeda
+     */
+    public function test_outlet_code_can_be_same_across_different_tenants(): void
+    {
+        // Arrange: Create two tenants
+        $ownerRole = Role::factory()->tenantOwner()->create();
+
+        $tenant1 = Tenant::factory()->create();
+        $owner1 = User::factory()->forTenant($tenant1)->create();
+        $owner1->roles()->attach($ownerRole->id);
+
+        $tenant2 = Tenant::factory()->create();
+        Outlet::factory()->forTenant($tenant2)->create(['code' => 'MAIN']);
+
+        // Act: Create outlet with same code for different tenant
+        $response = $this->actingAs($owner1)
+            ->post(route('admin.outlets.store'), [
+                'name' => 'Main Branch',
+                'code' => 'MAIN',
+                'is_active' => true,
+            ]);
+
+        // Assert: Outlet created successfully
+        $this->assertDatabaseHas('outlets', [
+            'tenant_id' => $tenant1->id,
+            'code' => 'MAIN',
+        ]);
+
+        $response->assertRedirect(route('admin.outlets.index'));
+        $response->assertSessionHasNoErrors();
     }
 
     /**

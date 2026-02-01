@@ -221,9 +221,36 @@ class TenantManagementTest extends TestCase
                 'is_active' => true,
             ]);
 
-        // Assert: Validation error (if unique rule is added for email)
-        // Note: Current validation doesn't enforce unique email for tenant
-        $response->assertRedirect();
+        // Assert: Validation error
+        $response->assertSessionHasErrors('email');
+    }
+
+    /**
+     * TC-TENANT-006b: Update tenant dengan email duplikat
+     *
+     * Preconditions: Dua tenant dengan email berbeda sudah ada
+     * Expected: Error validation saat update
+     */
+    public function test_cannot_update_tenant_with_duplicate_email(): void
+    {
+        // Arrange: Create super admin and two tenants
+        $superAdminRole = Role::factory()->superAdmin()->create();
+        $superAdmin = User::factory()->create();
+        $superAdmin->roles()->attach($superAdminRole->id);
+
+        $tenant1 = Tenant::factory()->create(['email' => 'tenant1@test.com']);
+        Tenant::factory()->create(['email' => 'tenant2@test.com']);
+
+        // Act: Try to update tenant1 with tenant2's email
+        $response = $this->actingAs($superAdmin)
+            ->put(route('admin.tenants.update', $tenant1), [
+                'name' => $tenant1->name,
+                'email' => 'tenant2@test.com',
+                'is_active' => true,
+            ]);
+
+        // Assert: Validation error
+        $response->assertSessionHasErrors('email');
     }
 
     /**
@@ -288,6 +315,37 @@ class TenantManagementTest extends TestCase
         $this->assertDatabaseHas('tenants', [
             'id' => $tenant->id,
             'is_active' => false,
+        ]);
+
+        $response->assertSessionHas('success');
+    }
+
+    /**
+     * TC-TENANT-008b: Aktivasi tenant
+     *
+     * Preconditions: Login sebagai Super Admin, tenant nonaktif sudah ada
+     * Expected: Tenant menjadi aktif
+     */
+    public function test_super_admin_can_activate_tenant(): void
+    {
+        // Arrange: Create super admin and inactive tenant
+        $superAdminRole = Role::factory()->superAdmin()->create();
+        $superAdmin = User::factory()->create();
+        $superAdmin->roles()->attach($superAdminRole->id);
+
+        $tenant = Tenant::factory()->create(['is_active' => false]);
+
+        // Act: Activate tenant
+        $response = $this->actingAs($superAdmin)
+            ->put(route('admin.tenants.update', $tenant), [
+                'name' => $tenant->name,
+                'is_active' => true,
+            ]);
+
+        // Assert: Tenant is now active
+        $this->assertDatabaseHas('tenants', [
+            'id' => $tenant->id,
+            'is_active' => true,
         ]);
 
         $response->assertSessionHas('success');
