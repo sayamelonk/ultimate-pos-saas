@@ -12,11 +12,11 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('recipe_id');
             $table->uuid('inventory_item_id');
-            $table->uuid('unit_id');
-            $table->decimal('quantity', 12, 4);
-            $table->decimal('waste_percentage', 5, 2)->default(0); // Waste allowance
+            $table->decimal('quantity', 12, 4); // Amount needed per yield
+            $table->uuid('unit_id'); // Unit for this ingredient
+            $table->decimal('waste_percentage', 5, 2)->default(0); // Expected waste %
+            $table->text('notes')->nullable(); // Preparation notes
             $table->integer('sort_order')->default(0);
-            $table->text('notes')->nullable();
             $table->timestamps();
 
             $table->foreign('recipe_id')->references('id')->on('recipes')->onDelete('cascade');
