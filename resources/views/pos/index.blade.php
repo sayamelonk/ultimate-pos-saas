@@ -94,92 +94,115 @@
             </div>
 
             <!-- Right Panel: Cart -->
-            <div class="w-96 flex flex-col bg-surface rounded-xl border border-border overflow-hidden">
-                <!-- Customer Selection -->
-                <div class="p-4 border-b border-border">
-                    <div class="relative" x-data="{ showCustomerSearch: false }">
-                        <template x-if="!selectedCustomer">
-                            <div class="relative">
-                                <input
-                                    type="text"
-                                    x-model="customerSearch"
-                                    @input.debounce.300ms="searchCustomers()"
-                                    @focus="showCustomerSearch = true"
-                                    placeholder="Search customer..."
-                                    class="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                />
-                                <x-icon name="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                            </div>
-                        </template>
-
-                        <template x-if="selectedCustomer">
-                            <div class="flex items-center justify-between bg-secondary-50 rounded-lg p-2">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm" x-text="selectedCustomer.name.charAt(0).toUpperCase()"></div>
-                                    <div>
-                                        <p class="font-medium text-sm" x-text="selectedCustomer.name"></p>
-                                        <p class="text-xs text-muted">
-                                            <span x-text="selectedCustomer.membership_level"></span> -
-                                            <span x-text="formatNumber(selectedCustomer.total_points)"></span> points
-                                        </p>
-                                    </div>
-                                </div>
-                                <button @click="clearCustomer()" class="text-muted hover:text-danger">
-                                    <x-icon name="x" class="w-4 h-4" />
-                                </button>
-                            </div>
-                        </template>
-
-                        <!-- Customer Search Dropdown -->
-                        <div
-                            x-show="showCustomerSearch && customers.length > 0"
-                            @click.away="showCustomerSearch = false"
-                            class="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto"
+            <div class="w-[420px] flex flex-col bg-surface rounded-xl border border-border overflow-hidden">
+                <!-- Header with Actions -->
+                <div class="px-4 py-3 border-b border-border bg-white flex items-center justify-between">
+                    <h3 class="font-bold text-lg text-text">Order</h3>
+                    <div class="flex items-center gap-1.5">
+                        <button
+                            @click="holdOrder()"
+                            :disabled="!sessionActive || cart.length === 0"
+                            class="p-2 text-warning-600 hover:bg-warning-50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            title="Hold Order"
                         >
-                            <template x-for="customer in customers" :key="customer.id">
-                                <button
-                                    @click="selectCustomer(customer); showCustomerSearch = false"
-                                    class="w-full px-4 py-2 text-left hover:bg-secondary-50 flex items-center gap-3"
-                                >
-                                    <div class="w-8 h-8 bg-secondary-200 rounded-full flex items-center justify-center font-medium text-sm" x-text="customer.name.charAt(0).toUpperCase()"></div>
-                                    <div>
-                                        <p class="text-sm font-medium" x-text="customer.name"></p>
-                                        <p class="text-xs text-muted" x-text="customer.phone || customer.email"></p>
-                                    </div>
-                                </button>
-                            </template>
-                        </div>
+                            <x-icon name="pause" class="w-5 h-5" />
+                        </button>
+                        <button
+                            @click="showHeldOrdersModal = true; loadHeldOrders()"
+                            :disabled="!sessionActive"
+                            class="p-2 text-info-600 hover:bg-info-50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all relative"
+                            title="Recall Order"
+                        >
+                            <x-icon name="clock" class="w-5 h-5" />
+                            <span x-show="heldOrdersCount > 0" x-text="heldOrdersCount" class="absolute -top-1 -right-1 w-4 h-4 bg-danger text-white text-[10px] rounded-full flex items-center justify-center font-bold"></span>
+                        </button>
+                        <button
+                            @click="showCashDrawerModal = true; loadCashDrawer()"
+                            :disabled="!sessionActive"
+                            class="p-2 text-secondary-600 hover:bg-secondary-100 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            title="Cash Drawer"
+                        >
+                            <x-icon name="cash" class="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
 
-                <!-- Cart Items -->
-                <div class="flex-1 overflow-y-auto p-4">
-                    <template x-if="cart.length === 0">
-                        <div class="flex flex-col items-center justify-center h-full text-muted">
-                            <x-icon name="shopping-cart" class="w-12 h-12 mb-2" />
-                            <p>Cart is empty</p>
+                <!-- Customer Selection (Compact) -->
+                <div class="px-4 py-2 border-b border-border bg-secondary-50/50" x-data="{ showCustomerSearch: false }">
+                    <template x-if="!selectedCustomer">
+                        <div class="relative">
+                            <input
+                                type="text"
+                                x-model="customerSearch"
+                                @input.debounce.300ms="searchCustomers()"
+                                @focus="showCustomerSearch = true"
+                                placeholder="Search customer..."
+                                class="w-full pl-9 pr-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                            />
+                            <x-icon name="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                         </div>
                     </template>
 
-                    <div class="space-y-3">
-                        <template x-for="(item, index) in cart" :key="index">
-                            <div class="bg-white border border-border rounded-lg p-3">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div class="flex-1">
-                                        <p class="font-medium text-sm text-text" x-text="item.name"></p>
-                                        <p class="text-xs text-muted" x-text="formatCurrency(item.unit_price) + ' / ' + item.unit_name"></p>
-                                    </div>
-                                    <button @click="removeFromCart(index)" class="text-muted hover:text-danger">
-                                        <x-icon name="x" class="w-4 h-4" />
-                                    </button>
+                    <template x-if="selectedCustomer">
+                        <div class="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs" x-text="selectedCustomer.name.charAt(0).toUpperCase()"></div>
+                                <div>
+                                    <p class="font-medium text-sm text-text leading-tight" x-text="selectedCustomer.name"></p>
+                                    <p class="text-xs text-muted"><span x-text="formatNumber(selectedCustomer.total_points)"></span> pts</p>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <button
-                                            @click="updateQuantity(index, -1)"
-                                            class="w-7 h-7 bg-secondary-100 rounded flex items-center justify-center hover:bg-secondary-200"
-                                        >
-                                            <x-icon name="minus" class="w-4 h-4" />
+                            </div>
+                            <button @click="clearCustomer()" class="text-muted hover:text-danger p-1 hover:bg-danger/10 rounded transition-colors">
+                                <x-icon name="x" class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </template>
+
+                    <!-- Customer Search Dropdown -->
+                    <div
+                        x-show="showCustomerSearch && customers.length > 0"
+                        @click.away="showCustomerSearch = false"
+                        class="absolute left-4 right-4 mt-1 bg-white border border-border rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto"
+                    >
+                        <template x-for="customer in customers" :key="customer.id">
+                            <button
+                                @click="selectCustomer(customer); showCustomerSearch = false"
+                                class="w-full px-3 py-2 text-left hover:bg-secondary-50 flex items-center gap-2 border-b border-border last:border-0"
+                            >
+                                <div class="w-7 h-7 bg-secondary-200 rounded-full flex items-center justify-center font-bold text-xs" x-text="customer.name.charAt(0).toUpperCase()"></div>
+                                <div>
+                                    <p class="text-sm font-medium" x-text="customer.name"></p>
+                                    <p class="text-xs text-muted" x-text="customer.phone || customer.email"></p>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Cart Items - Scrollable (Maximum space) -->
+                <div class="flex-1 overflow-y-auto">
+                    <template x-if="cart.length === 0">
+                        <div class="flex flex-col items-center justify-center h-full text-muted py-12">
+                            <x-icon name="shopping-cart" class="w-12 h-12 mb-2 opacity-30" />
+                            <p class="text-sm">Cart is empty</p>
+                            <p class="text-xs mt-1">Click on items to add</p>
+                        </div>
+                    </template>
+
+                    <div class="divide-y divide-border">
+                        <template x-for="(item, index) in cart" :key="index">
+                            <div class="px-4 py-3 hover:bg-secondary-50/50 transition-colors">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-text text-sm leading-tight" x-text="item.name"></p>
+                                        <p class="text-xs text-muted mt-0.5" x-text="formatCurrency(item.unit_price) + ' × ' + item.quantity"></p>
+                                    </div>
+                                    <p class="font-semibold text-sm text-primary shrink-0" x-text="formatCurrency(item.subtotal)"></p>
+                                </div>
+                                <div class="flex items-center justify-between mt-2">
+                                    <div class="flex items-center bg-secondary-100 rounded-md">
+                                        <button @click="updateQuantity(index, -1)" class="w-7 h-7 hover:bg-secondary-200 rounded-l-md flex items-center justify-center transition-colors">
+                                            <x-icon name="minus" class="w-3.5 h-3.5" />
                                         </button>
                                         <input
                                             type="number"
@@ -187,125 +210,167 @@
                                             @change="recalculate()"
                                             min="0.01"
                                             step="0.01"
-                                            class="w-16 px-2 py-1 text-center border border-border rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                            class="w-12 h-7 px-1 text-center bg-white border-y border-secondary-200 text-sm font-semibold focus:outline-none focus:ring-0"
                                         />
-                                        <button
-                                            @click="updateQuantity(index, 1)"
-                                            class="w-7 h-7 bg-secondary-100 rounded flex items-center justify-center hover:bg-secondary-200"
-                                        >
-                                            <x-icon name="plus" class="w-4 h-4" />
+                                        <button @click="updateQuantity(index, 1)" class="w-7 h-7 hover:bg-secondary-200 rounded-r-md flex items-center justify-center transition-colors">
+                                            <x-icon name="plus" class="w-3.5 h-3.5" />
                                         </button>
                                     </div>
-                                    <p class="font-semibold text-text" x-text="formatCurrency(item.subtotal)"></p>
+                                    <button @click="removeFromCart(index)" class="text-muted hover:text-danger p-1 hover:bg-danger/10 rounded transition-colors">
+                                        <x-icon name="trash" class="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
                         </template>
                     </div>
                 </div>
 
-                <!-- Cart Summary -->
-                <div class="border-t border-border p-4 bg-secondary-50">
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-muted">Subtotal</span>
-                            <span x-text="formatCurrency(totals.subtotal)"></span>
-                        </div>
-                        <template x-if="totals.discount_amount > 0">
-                            <div class="flex justify-between text-success">
-                                <span>Discount</span>
-                                <span x-text="'-' + formatCurrency(totals.discount_amount)"></span>
+                <!-- Cart Summary (Compact) -->
+                <template x-if="cart.length > 0">
+                    <div class="border-t border-border bg-white px-4 py-3">
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted">Subtotal</span>
+                                <span class="font-medium" x-text="formatCurrency(totals.subtotal)"></span>
                             </div>
-                        </template>
-                        <template x-if="totals.tax_amount > 0">
+                            <template x-if="totals.discount_amount > 0">
+                                <div class="flex justify-between text-success">
+                                    <span>Discount</span>
+                                    <span class="font-medium" x-text="'-' + formatCurrency(totals.discount_amount)"></span>
+                                </div>
+                            </template>
                             <div class="flex justify-between">
                                 <span class="text-muted">Tax (<span x-text="totals.tax_percentage"></span>%)</span>
-                                <span x-text="formatCurrency(totals.tax_amount)"></span>
+                                <span class="font-medium" x-text="formatCurrency(totals.tax_amount)"></span>
                             </div>
-                        </template>
-                        <div class="flex justify-between text-lg font-bold pt-2 border-t border-border">
-                            <span>Total</span>
-                            <span class="text-primary" x-text="formatCurrency(totals.grand_total)"></span>
+                            <div class="flex justify-between items-center pt-2 border-t border-border">
+                                <span class="font-bold">Total</span>
+                                <span class="text-primary text-xl font-bold" x-text="formatCurrency(totals.grand_total)"></span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </template>
 
-                <!-- Payment Methods -->
-                <div class="p-4 border-t border-border">
-                    <div class="grid grid-cols-3 gap-2 mb-4">
-                        @foreach($paymentMethods as $method)
+                <!-- Payment Section - Only shows when cart has items -->
+                <template x-if="cart.length > 0">
+                    <div class="border-t-2 border-primary/20 bg-gradient-to-b from-secondary-50 to-white p-4" x-data="{ showPayment: false }">
+                        <!-- Collapsed: Just Pay Button -->
+                        <template x-if="!showPayment">
                             <button
-                                @click="selectPaymentMethod('{{ $method->id }}', '{{ $method->name }}', {{ $method->requires_reference ? 'true' : 'false' }})"
-                                :class="selectedPaymentMethod === '{{ $method->id }}' ? 'bg-primary text-white' : 'bg-secondary-100 text-secondary-700 hover:bg-secondary-200'"
-                                class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                                :disabled="!sessionActive || cart.length === 0"
+                                @click="showPayment = true"
+                                class="w-full py-4 bg-primary text-white font-bold text-lg rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-3"
                             >
-                                {{ $method->name }}
+                                <x-icon name="credit-card" class="w-5 h-5" />
+                                <span>Proceed to Payment</span>
+                                <span x-text="formatCurrency(totals.grand_total)"></span>
                             </button>
-                        @endforeach
-                    </div>
-
-                    <!-- Reference Number (for card/digital payments) -->
-                    <template x-if="requiresReference">
-                        <div class="mb-4">
-                            <input
-                                type="text"
-                                x-model="referenceNumber"
-                                placeholder="Reference/Approval Number"
-                                class="w-full px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                            />
-                        </div>
-                    </template>
-
-                    <!-- Payment Amount -->
-                    <div class="mb-4">
-                        <label class="block text-sm text-muted mb-1">Payment Amount</label>
-                        <input
-                            type="number"
-                            x-model.number="paymentAmount"
-                            :min="totals.grand_total"
-                            class="w-full px-4 py-3 text-xl font-bold text-right border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                        />
-                    </div>
-
-                    <!-- Quick Cash Buttons -->
-                    <template x-if="selectedPaymentMethodName === 'Cash'">
-                        <div class="grid grid-cols-4 gap-2 mb-4">
-                            <template x-for="amount in quickCashAmounts" :key="amount">
-                                <button
-                                    @click="paymentAmount = amount"
-                                    class="px-2 py-2 bg-secondary-100 rounded text-sm font-medium hover:bg-secondary-200"
-                                    x-text="formatCurrency(amount)"
-                                ></button>
-                            </template>
-                        </div>
-                    </template>
-
-                    <!-- Change -->
-                    <template x-if="paymentAmount > totals.grand_total">
-                        <div class="mb-4 p-3 bg-success-50 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <span class="text-success-700">Change</span>
-                                <span class="text-xl font-bold text-success-700" x-text="formatCurrency(paymentAmount - totals.grand_total)"></span>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- Pay Button -->
-                    <button
-                        @click="checkout()"
-                        :disabled="!canCheckout || processing"
-                        class="w-full py-4 bg-primary text-white font-bold text-lg rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                    >
-                        <template x-if="processing">
-                            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
                         </template>
-                        <span>Pay</span>
-                        <span x-text="formatCurrency(totals.grand_total)"></span>
-                    </button>
-                </div>
+
+                        <!-- Expanded: Full Payment Options -->
+                        <template x-if="showPayment">
+                            <div>
+                                <!-- Back Button -->
+                                <button @click="showPayment = false" class="flex items-center gap-1 text-sm text-muted hover:text-text mb-3 transition-colors">
+                                    <x-icon name="arrow-left" class="w-4 h-4" />
+                                    <span>Back to cart</span>
+                                </button>
+
+                                <!-- Payment Methods Grid -->
+                                <div class="grid grid-cols-3 gap-1.5 mb-3">
+                                    @foreach($paymentMethods as $method)
+                                        <button
+                                            @click="selectPaymentMethod('{{ $method->id }}', '{{ $method->name }}', {{ $method->requires_reference ? 'true' : 'false' }})"
+                                            :class="selectedPaymentMethod === '{{ $method->id }}' ? 'bg-primary text-white' : 'bg-white text-text border border-border hover:border-primary'"
+                                            class="px-2 py-2 rounded-lg text-xs font-medium transition-all"
+                                        >
+                                            {{ $method->name }}
+                                        </button>
+                                    @endforeach
+                                </div>
+
+                                <!-- Reference Number -->
+                                <template x-if="requiresReference">
+                                    <div class="mb-3">
+                                        <input
+                                            type="text"
+                                            x-model="referenceNumber"
+                                            placeholder="Reference/Approval Number"
+                                            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        />
+                                    </div>
+                                </template>
+
+                                <!-- Payment Amount -->
+                                <div class="mb-3">
+                                    <label class="block text-xs text-muted mb-1 font-medium">Payment Amount</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">Rp</span>
+                                        <input
+                                            type="text"
+                                            :value="formatNumber(paymentAmount)"
+                                            @input="paymentAmount = parseInt($event.target.value.replace(/\./g, '')) || 0"
+                                            class="w-full pl-10 pr-3 py-3 text-xl font-bold text-right border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- Quick Cash Buttons (Compact) -->
+                                <template x-if="selectedPaymentMethodName === 'Cash'">
+                                    <div class="grid grid-cols-4 gap-1.5 mb-3">
+                                        <template x-for="amount in quickCashAmounts" :key="amount">
+                                            <button
+                                                @click="paymentAmount = amount"
+                                                :class="paymentAmount === amount ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-border hover:border-primary/50'"
+                                                class="px-1 py-1.5 border rounded text-xs font-medium transition-all"
+                                            >
+                                                <span x-text="formatNumber(amount)"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <!-- Change Display -->
+                                <template x-if="paymentAmount > totals.grand_total">
+                                    <div class="mb-3 px-3 py-2 bg-success-50 border border-success-200 rounded-lg">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-success-700 text-sm font-medium">Change</span>
+                                            <span class="text-lg font-bold text-success-600" x-text="formatCurrency(paymentAmount - totals.grand_total)"></span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Pay Button -->
+                                <button
+                                    @click="checkout()"
+                                    :disabled="!canCheckout || processing"
+                                    class="w-full py-4 bg-primary text-white font-bold text-lg rounded-xl hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-3"
+                                >
+                                    <template x-if="processing">
+                                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </template>
+                                    <template x-if="!processing">
+                                        <x-icon name="credit-card" class="w-5 h-5" />
+                                    </template>
+                                    <span>Pay</span>
+                                    <span x-text="formatCurrency(totals.grand_total)"></span>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Empty Cart: Simple Pay Button (Disabled) -->
+                <template x-if="cart.length === 0">
+                    <div class="border-t border-border bg-white p-4">
+                        <button disabled class="w-full py-4 bg-secondary-200 text-secondary-500 font-bold text-lg rounded-xl cursor-not-allowed flex items-center justify-center gap-3">
+                            <x-icon name="credit-card" class="w-5 h-5" />
+                            <span>Add items to checkout</span>
+                        </button>
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -349,6 +414,271 @@
                 </div>
             </div>
         </div>
+
+        <!-- Hold Order Modal -->
+        <div
+            x-show="showHoldModal"
+            x-transition
+            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            @click.self="showHoldModal = false"
+        >
+            <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-text">Hold Order</h3>
+                    <button @click="showHoldModal = false" class="text-muted hover:text-text">
+                        <x-icon name="x" class="w-5 h-5" />
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-1">Reference (optional)</label>
+                        <input
+                            type="text"
+                            x-model="holdReference"
+                            placeholder="e.g., Customer name, order description..."
+                            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-1">Table Number (optional)</label>
+                        <input
+                            type="text"
+                            x-model="holdTableNumber"
+                            placeholder="e.g., Table 5"
+                            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-1">Notes (optional)</label>
+                        <textarea
+                            x-model="holdNotes"
+                            rows="2"
+                            placeholder="Additional notes..."
+                            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button
+                        @click="showHoldModal = false"
+                        class="flex-1 px-4 py-2.5 bg-secondary-100 text-secondary-700 font-medium rounded-lg hover:bg-secondary-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="confirmHoldOrder()"
+                        :disabled="holdingOrder"
+                        class="flex-1 px-4 py-2.5 bg-warning-500 text-white font-medium rounded-lg hover:bg-warning-600 disabled:opacity-50"
+                    >
+                        <span x-show="!holdingOrder">Hold Order</span>
+                        <span x-show="holdingOrder">Holding...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Held Orders Modal -->
+        <div
+            x-show="showHeldOrdersModal"
+            x-transition
+            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            @click.self="showHeldOrdersModal = false"
+        >
+            <div class="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-text">Held Orders</h3>
+                    <button @click="showHeldOrdersModal = false" class="text-muted hover:text-text">
+                        <x-icon name="x" class="w-5 h-5" />
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto">
+                    <template x-if="heldOrders.length === 0">
+                        <div class="flex flex-col items-center justify-center py-12 text-muted">
+                            <x-icon name="clock" class="w-12 h-12 mb-2 opacity-50" />
+                            <p>No held orders</p>
+                        </div>
+                    </template>
+                    <div class="space-y-3">
+                        <template x-for="order in heldOrders" :key="order.id">
+                            <div class="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div>
+                                        <p class="font-semibold text-text" x-text="order.display_name"></p>
+                                        <p class="text-xs text-muted">
+                                            <span x-text="order.hold_number"></span> &bull;
+                                            <span x-text="order.created_at"></span>
+                                        </p>
+                                    </div>
+                                    <p class="font-bold text-primary" x-text="formatCurrency(order.grand_total)"></p>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-muted mb-3">
+                                    <span x-text="order.item_count + ' item(s)'"></span>
+                                    <template x-if="order.customer">
+                                        <span>&bull; <span x-text="order.customer.name"></span></span>
+                                    </template>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button
+                                        @click="recallOrder(order)"
+                                        class="flex-1 px-3 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-600"
+                                    >
+                                        Recall
+                                    </button>
+                                    <button
+                                        @click="deleteHeldOrder(order.id)"
+                                        class="px-3 py-2 bg-danger-50 text-danger border border-danger-200 text-sm font-medium rounded-lg hover:bg-danger-100"
+                                    >
+                                        <x-icon name="trash" class="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Drawer Modal -->
+        <div
+            x-show="showCashDrawerModal"
+            x-transition
+            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            @click.self="showCashDrawerModal = false"
+        >
+            <div class="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 max-h-[80vh] flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-text">Cash Drawer</h3>
+                    <button @click="showCashDrawerModal = false" class="text-muted hover:text-text">
+                        <x-icon name="x" class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <!-- Current Balance -->
+                <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
+                    <p class="text-sm text-muted mb-1">Current Balance</p>
+                    <p class="text-2xl font-bold text-primary" x-text="formatCurrency(cashDrawerBalance)"></p>
+                </div>
+
+                <!-- Cash In/Out Tabs -->
+                <div class="flex gap-2 mb-4">
+                    <button
+                        @click="cashDrawerTab = 'in'"
+                        :class="cashDrawerTab === 'in' ? 'bg-success-500 text-white' : 'bg-secondary-100 text-secondary-700'"
+                        class="flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                    >
+                        Cash In
+                    </button>
+                    <button
+                        @click="cashDrawerTab = 'out'"
+                        :class="cashDrawerTab === 'out' ? 'bg-danger-500 text-white' : 'bg-secondary-100 text-secondary-700'"
+                        class="flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                    >
+                        Cash Out
+                    </button>
+                    <button
+                        @click="cashDrawerTab = 'log'"
+                        :class="cashDrawerTab === 'log' ? 'bg-primary text-white' : 'bg-secondary-100 text-secondary-700'"
+                        class="flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                    >
+                        Log
+                    </button>
+                </div>
+
+                <!-- Cash In Form -->
+                <div x-show="cashDrawerTab === 'in'" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-1">Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">Rp</span>
+                            <input
+                                type="text"
+                                :value="formatNumber(cashInAmount)"
+                                @input="cashInAmount = parseInt($event.target.value.replace(/\./g, '')) || 0"
+                                class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-1">Reason</label>
+                        <textarea
+                            x-model="cashInReason"
+                            rows="2"
+                            placeholder="Reason for cash in..."
+                            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                        ></textarea>
+                    </div>
+                    <button
+                        @click="submitCashIn()"
+                        :disabled="cashInAmount <= 0 || !cashInReason || processingCash"
+                        class="w-full px-4 py-2.5 bg-success-500 text-white font-medium rounded-lg hover:bg-success-600 disabled:opacity-50"
+                    >
+                        <span x-show="!processingCash">Add Cash</span>
+                        <span x-show="processingCash">Processing...</span>
+                    </button>
+                </div>
+
+                <!-- Cash Out Form -->
+                <div x-show="cashDrawerTab === 'out'" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-1">Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">Rp</span>
+                            <input
+                                type="text"
+                                :value="formatNumber(cashOutAmount)"
+                                @input="cashOutAmount = parseInt($event.target.value.replace(/\./g, '')) || 0"
+                                class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-1">Reason</label>
+                        <textarea
+                            x-model="cashOutReason"
+                            rows="2"
+                            placeholder="Reason for cash out..."
+                            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                        ></textarea>
+                    </div>
+                    <button
+                        @click="submitCashOut()"
+                        :disabled="cashOutAmount <= 0 || !cashOutReason || cashOutAmount > cashDrawerBalance || processingCash"
+                        class="w-full px-4 py-2.5 bg-danger-500 text-white font-medium rounded-lg hover:bg-danger-600 disabled:opacity-50"
+                    >
+                        <span x-show="!processingCash">Withdraw Cash</span>
+                        <span x-show="processingCash">Processing...</span>
+                    </button>
+                    <template x-if="cashOutAmount > cashDrawerBalance">
+                        <p class="text-sm text-danger">Amount exceeds current balance</p>
+                    </template>
+                </div>
+
+                <!-- Cash Log -->
+                <div x-show="cashDrawerTab === 'log'" class="flex-1 overflow-y-auto">
+                    <template x-if="cashDrawerLogs.length === 0">
+                        <div class="text-center py-8 text-muted">
+                            <p>No cash drawer logs</p>
+                        </div>
+                    </template>
+                    <div class="space-y-2">
+                        <template x-for="log in cashDrawerLogs" :key="log.id">
+                            <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-sm" x-text="log.type_label"></p>
+                                    <p class="text-xs text-muted" x-text="log.reason || log.reference || '-'"></p>
+                                    <p class="text-xs text-muted" x-text="log.created_at"></p>
+                                </div>
+                                <p
+                                    :class="log.is_inflow ? 'text-success' : 'text-danger'"
+                                    class="font-semibold"
+                                    x-text="(log.is_inflow ? '+' : '-') + formatCurrency(log.amount)"
+                                ></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
@@ -375,6 +705,27 @@
                 showSuccessModal: false,
                 lastTransaction: null,
 
+                // Held Orders State
+                showHoldModal: false,
+                showHeldOrdersModal: false,
+                heldOrders: [],
+                heldOrdersCount: 0,
+                holdReference: '',
+                holdTableNumber: '',
+                holdNotes: '',
+                holdingOrder: false,
+
+                // Cash Drawer State
+                showCashDrawerModal: false,
+                cashDrawerTab: 'in',
+                cashDrawerBalance: 0,
+                cashDrawerLogs: [],
+                cashInAmount: 0,
+                cashInReason: '',
+                cashOutAmount: 0,
+                cashOutReason: '',
+                processingCash: false,
+
                 totals: {
                     subtotal: 0,
                     discount_amount: 0,
@@ -394,6 +745,9 @@
 
                 init() {
                     this.loadItems();
+                    if (this.sessionActive) {
+                        this.loadHeldOrdersCount();
+                    }
                 },
 
                 async loadItems() {
@@ -569,6 +923,229 @@
 
                 formatNumber(num) {
                     return new Intl.NumberFormat('id-ID').format(num);
+                },
+
+                // ==================== Held Orders ====================
+                holdOrder() {
+                    if (this.cart.length === 0) return;
+                    this.holdReference = '';
+                    this.holdTableNumber = '';
+                    this.holdNotes = '';
+                    this.showHoldModal = true;
+                },
+
+                async confirmHoldOrder() {
+                    if (this.holdingOrder) return;
+                    this.holdingOrder = true;
+
+                    try {
+                        const response = await fetch('/pos/held-orders', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Outlet-Id': this.outletId
+                            },
+                            body: JSON.stringify({
+                                items: this.cart,
+                                discounts: [],
+                                customer_id: this.selectedCustomer?.id,
+                                reference: this.holdReference,
+                                table_number: this.holdTableNumber,
+                                notes: this.holdNotes,
+                                subtotal: this.totals.subtotal,
+                                discount_amount: this.totals.discount_amount,
+                                tax_amount: this.totals.tax_amount,
+                                service_charge_amount: 0,
+                                grand_total: this.totals.grand_total
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.showHoldModal = false;
+                            this.cart = [];
+                            this.selectedCustomer = null;
+                            this.recalculate();
+                            this.loadHeldOrdersCount();
+                            alert('Order held: ' + data.held_order.display_name);
+                        } else {
+                            alert(data.message || 'Failed to hold order');
+                        }
+                    } catch (error) {
+                        console.error('Hold order error:', error);
+                        alert('An error occurred while holding order');
+                    } finally {
+                        this.holdingOrder = false;
+                    }
+                },
+
+                async loadHeldOrdersCount() {
+                    try {
+                        const response = await fetch('/pos/held-orders', {
+                            headers: { 'X-Outlet-Id': this.outletId }
+                        });
+                        const data = await response.json();
+                        this.heldOrdersCount = data.count || 0;
+                    } catch (error) {
+                        console.error('Failed to load held orders count:', error);
+                    }
+                },
+
+                async loadHeldOrders() {
+                    try {
+                        const response = await fetch('/pos/held-orders', {
+                            headers: { 'X-Outlet-Id': this.outletId }
+                        });
+                        const data = await response.json();
+                        this.heldOrders = data.held_orders || [];
+                        this.heldOrdersCount = data.count || 0;
+                    } catch (error) {
+                        console.error('Failed to load held orders:', error);
+                    }
+                },
+
+                async recallOrder(order) {
+                    try {
+                        const response = await fetch(`/pos/held-orders/${order.id}/recall`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Outlet-Id': this.outletId
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.cart = data.order_data.items || [];
+                            this.selectedCustomer = data.order_data.customer;
+                            this.recalculate();
+                            this.showHeldOrdersModal = false;
+                            this.loadHeldOrdersCount();
+                        } else {
+                            alert(data.message || 'Failed to recall order');
+                        }
+                    } catch (error) {
+                        console.error('Recall order error:', error);
+                        alert('An error occurred while recalling order');
+                    }
+                },
+
+                async deleteHeldOrder(orderId) {
+                    if (!confirm('Are you sure you want to delete this held order?')) return;
+
+                    try {
+                        const response = await fetch(`/pos/held-orders/${orderId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Outlet-Id': this.outletId
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.loadHeldOrders();
+                        } else {
+                            alert(data.message || 'Failed to delete held order');
+                        }
+                    } catch (error) {
+                        console.error('Delete held order error:', error);
+                    }
+                },
+
+                // ==================== Cash Drawer ====================
+                async loadCashDrawer() {
+                    try {
+                        const response = await fetch('/pos/cash-drawer', {
+                            headers: { 'X-Outlet-Id': this.outletId }
+                        });
+                        const data = await response.json();
+                        this.cashDrawerBalance = data.balance || 0;
+                        this.cashDrawerLogs = data.logs || [];
+                    } catch (error) {
+                        console.error('Failed to load cash drawer:', error);
+                    }
+                },
+
+                async submitCashIn() {
+                    if (this.processingCash || this.cashInAmount <= 0 || !this.cashInReason) return;
+                    this.processingCash = true;
+
+                    try {
+                        const response = await fetch('/pos/cash-drawer/cash-in', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Outlet-Id': this.outletId
+                            },
+                            body: JSON.stringify({
+                                amount: this.cashInAmount,
+                                reason: this.cashInReason
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.cashInAmount = 0;
+                            this.cashInReason = '';
+                            this.loadCashDrawer();
+                            alert('Cash added successfully');
+                        } else {
+                            alert(data.message || 'Failed to add cash');
+                        }
+                    } catch (error) {
+                        console.error('Cash in error:', error);
+                        alert('An error occurred');
+                    } finally {
+                        this.processingCash = false;
+                    }
+                },
+
+                async submitCashOut() {
+                    if (this.processingCash || this.cashOutAmount <= 0 || !this.cashOutReason) return;
+                    if (this.cashOutAmount > this.cashDrawerBalance) {
+                        alert('Amount exceeds current balance');
+                        return;
+                    }
+                    this.processingCash = true;
+
+                    try {
+                        const response = await fetch('/pos/cash-drawer/cash-out', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Outlet-Id': this.outletId
+                            },
+                            body: JSON.stringify({
+                                amount: this.cashOutAmount,
+                                reason: this.cashOutReason
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.cashOutAmount = 0;
+                            this.cashOutReason = '';
+                            this.loadCashDrawer();
+                            alert('Cash withdrawn successfully');
+                        } else {
+                            alert(data.message || 'Failed to withdraw cash');
+                        }
+                    } catch (error) {
+                        console.error('Cash out error:', error);
+                        alert('An error occurred');
+                    } finally {
+                        this.processingCash = false;
+                    }
                 }
             };
         }
