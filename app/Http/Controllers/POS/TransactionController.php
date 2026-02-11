@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuthorizationLog;
+use App\Models\AuthorizationSetting;
 use App\Models\Outlet;
 use App\Models\PaymentMethod;
 use App\Models\Transaction;
@@ -22,12 +24,12 @@ class TransactionController extends Controller
             ->where('is_active', true)
             ->get();
 
-        $selectedOutletId = $request->outlet_id ?? $outlets->first()?->id;
+        $selectedOutletId = $request->outlet_id;
 
         $query = Transaction::where('tenant_id', $user->tenant_id)
             ->with(['outlet', 'customer', 'user', 'payments.paymentMethod']);
 
-        if ($selectedOutletId) {
+        if ($request->filled('outlet_id')) {
             $query->where('outlet_id', $selectedOutletId);
         }
 
@@ -84,8 +86,26 @@ class TransactionController extends Controller
             'refundTransactions',
         ]);
 
+        $user = auth()->user();
+        $settings = AuthorizationSetting::getForTenant($user->tenant_id);
+
+        // Check if void requires authorization
+        // Users who can authorize themselves don't need PIN if they have one set
+        $requiresVoidAuth = $settings->require_auth_void;
+        if ($requiresVoidAuth && $user->canAuthorize() && $user->hasPin()) {
+            $requiresVoidAuth = false;
+        }
+
+        // Check if refund requires authorization
+        $requiresRefundAuth = $settings->require_auth_refund;
+        if ($requiresRefundAuth && $user->canAuthorize() && $user->hasPin()) {
+            $requiresRefundAuth = false;
+        }
+
         return view('transactions.show', [
             'transaction' => $transaction,
+            'requiresVoidAuth' => $requiresVoidAuth,
+            'requiresRefundAuth' => $requiresRefundAuth,
         ]);
     }
 
@@ -95,10 +115,40 @@ class TransactionController extends Controller
 
         $request->validate([
             'reason' => ['required', 'string', 'max:255'],
+            'authorization_log_id' => ['nullable', 'uuid'],
         ]);
 
         if (! $transaction->canVoid()) {
             return back()->with('error', 'This transaction cannot be voided.');
+        }
+
+        $user = auth()->user();
+        $settings = AuthorizationSetting::getForTenant($user->tenant_id);
+
+        // Check if authorization is required
+        $requiresAuth = $settings->require_auth_void;
+
+        // Users who can authorize themselves don't need additional authorization
+        if ($requiresAuth && $user->canAuthorize() && $user->hasPin()) {
+            $requiresAuth = false;
+        }
+
+        // Verify authorization if required
+        if ($requiresAuth) {
+            if (! $request->authorization_log_id) {
+                return back()->with('error', 'Authorization is required to void this transaction.');
+            }
+
+            $authLog = AuthorizationLog::where('id', $request->authorization_log_id)
+                ->where('tenant_id', $user->tenant_id)
+                ->where('action_type', 'void')
+                ->where('status', 'approved')
+                ->where('reference_id', $transaction->id)
+                ->first();
+
+            if (! $authLog) {
+                return back()->with('error', 'Invalid or expired authorization.');
+            }
         }
 
         try {
@@ -125,14 +175,24 @@ class TransactionController extends Controller
 
         $transaction->load('items.inventoryItem');
 
-        $paymentMethods = PaymentMethod::where('tenant_id', auth()->user()->tenant_id)
+        $user = auth()->user();
+        $paymentMethods = PaymentMethod::where('tenant_id', $user->tenant_id)
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
+        $settings = AuthorizationSetting::getForTenant($user->tenant_id);
+
+        // Check if refund requires authorization
+        $requiresRefundAuth = $settings->require_auth_refund;
+        if ($requiresRefundAuth && $user->canAuthorize() && $user->hasPin()) {
+            $requiresRefundAuth = false;
+        }
+
         return view('transactions.refund', [
             'transaction' => $transaction,
             'paymentMethods' => $paymentMethods,
+            'requiresRefundAuth' => $requiresRefundAuth,
         ]);
     }
 
@@ -141,21 +201,77 @@ class TransactionController extends Controller
         $this->authorizeTransaction($transaction);
 
         $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.transaction_item_id' => ['required', 'uuid'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
+            'items' => ['nullable', 'array'],
+            'items.*.selected' => ['nullable'],
+            'items.*.quantity' => ['nullable', 'numeric', 'min:0.0001'],
             'payment_method_id' => ['required', 'uuid', 'exists:payment_methods,id'],
             'reason' => ['required', 'string', 'max:255'],
+            'refund_type' => ['required', 'in:full,partial'],
+            'authorization_log_id' => ['nullable', 'uuid'],
         ]);
 
         if (! $transaction->canRefund()) {
             return back()->with('error', 'This transaction cannot be refunded.');
         }
 
+        $user = auth()->user();
+        $settings = AuthorizationSetting::getForTenant($user->tenant_id);
+
+        // Check if authorization is required
+        $requiresAuth = $settings->require_auth_refund;
+
+        // Users who can authorize themselves don't need additional authorization
+        if ($requiresAuth && $user->canAuthorize() && $user->hasPin()) {
+            $requiresAuth = false;
+        }
+
+        // Verify authorization if required
+        if ($requiresAuth) {
+            if (! $request->authorization_log_id) {
+                return back()->with('error', 'Authorization is required to process this refund.');
+            }
+
+            $authLog = AuthorizationLog::where('id', $request->authorization_log_id)
+                ->where('tenant_id', $user->tenant_id)
+                ->where('action_type', 'refund')
+                ->where('status', 'approved')
+                ->where('reference_id', $transaction->id)
+                ->first();
+
+            if (! $authLog) {
+                return back()->with('error', 'Invalid or expired authorization.');
+            }
+        }
+
+        // Build items array based on refund type
+        $items = [];
+        if ($request->refund_type === 'full') {
+            foreach ($transaction->items as $item) {
+                $items[] = [
+                    'transaction_item_id' => $item->id,
+                    'quantity' => $item->quantity,
+                ];
+            }
+        } else {
+            // Partial refund - get selected items
+            foreach ($request->items ?? [] as $itemId => $itemData) {
+                if (isset($itemData['selected']) && $itemData['selected']) {
+                    $items[] = [
+                        'transaction_item_id' => $itemId,
+                        'quantity' => $itemData['quantity'] ?? 1,
+                    ];
+                }
+            }
+
+            if (empty($items)) {
+                return back()->with('error', 'Please select at least one item to refund.');
+            }
+        }
+
         try {
             $refund = $this->transactionService->refundTransaction(
                 $transaction,
-                $request->items,
+                $items,
                 auth()->id(),
                 $request->payment_method_id,
                 $request->reason

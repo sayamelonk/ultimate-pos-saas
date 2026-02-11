@@ -14,7 +14,7 @@ class OutletController extends Controller
     public function index(Request $request): View
     {
         $user = auth()->user();
-        $query = Outlet::query()->with('tenant')->withCount('users');
+        $query = Outlet::query()->with('tenant');
 
         // Non-super admin can only see their tenant's outlets
         if (! $user->isSuperAdmin()) {
@@ -55,12 +55,9 @@ class OutletController extends Controller
     {
         $user = auth()->user();
 
-        // Get tenant_id from request or user
-        $tenantId = $user->isSuperAdmin() ? $request->tenant_id : $user->tenant_id;
-
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:20', 'unique:outlets,code,NULL,id,tenant_id,'.$tenantId],
+            'code' => ['required', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:500'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -79,15 +76,9 @@ class OutletController extends Controller
             $validated['tenant_id'] = $user->tenant_id;
         }
 
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
 
-        $outlet = Outlet::create($validated);
-
-        // Auto-assign the creating user to the outlet
-        // Only for non-super admin users
-        if (! $user->isSuperAdmin()) {
-            $user->outlets()->attach($outlet->id, ['is_default' => false]);
-        }
+        Outlet::create($validated);
 
         return redirect()->route('admin.outlets.index')
             ->with('success', 'Outlet created successfully.');
@@ -114,14 +105,14 @@ class OutletController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:20', 'unique:outlets,code,'.$outlet->id.',id,tenant_id,'.$outlet->tenant_id],
+            'code' => ['required', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:500'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'is_active' => ['boolean'],
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
 
         $outlet->update($validated);
 

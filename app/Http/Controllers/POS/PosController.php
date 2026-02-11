@@ -40,7 +40,19 @@ class PosController extends Controller
             return view('pos.no-outlet');
         }
 
+        // Check for open session - first try default outlet, then any outlet
         $session = $this->sessionService->getOpenSession($user->id, $defaultOutlet->id);
+
+        // If no session at default outlet, check if user has session at another outlet
+        if (! $session) {
+            foreach ($outlets as $outlet) {
+                $session = $this->sessionService->getOpenSession($user->id, $outlet->id);
+                if ($session) {
+                    $defaultOutlet = $outlet; // Switch to the outlet with active session
+                    break;
+                }
+            }
+        }
 
         $categories = InventoryCategory::where('tenant_id', $tenantId)
             ->where('is_active', true)

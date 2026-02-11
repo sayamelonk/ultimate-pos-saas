@@ -3,25 +3,24 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
 use App\Models\InventoryStock;
+use App\Models\Outlet;
 use App\Models\StockAdjustment;
-use App\Models\StockAdjustmentItem;
-use App\Services\StockService;
+use App\Services\Inventory\StockAdjustmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StockAdjustmentController extends Controller
 {
-    public function __construct(
-        private StockService $stockService
-    ) {}
+    public function __construct(private StockAdjustmentService $adjustmentService) {}
 
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = StockAdjustment::where('tenant_id', $user->tenant_id)
+        $tenantId = $this->getTenantId();
+        $query = StockAdjustment::where('tenant_id', $tenantId)
             ->with(['outlet', 'createdBy', 'approvedBy']);
 
         if ($request->filled('search')) {
@@ -29,158 +28,274 @@ class StockAdjustmentController extends Controller
             $query->where('adjustment_number', 'like', "%{$search}%");
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
         }
 
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
 
-        if ($request->filled('outlet_id')) {
-            $query->where('outlet_id', $request->outlet_id);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('adjustment_date', '>=', $request->from_date);
-        }
+        $adjustments = $query->latest()->paginate(15)->withQueryString();
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('adjustment_date', '<=', $request->to_date);
-        }
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        $adjustments = $query->orderBy('adjustment_date', 'desc')
-            ->paginate(20)
-            ->withQueryString();
-
-        return view('inventory.stock-adjustments.index', compact('adjustments'));
+        return view('inventory.stock-adjustments.index', compact('adjustments', 'outlets'));
     }
 
     public function create(): View
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        return view('inventory.stock-adjustments.create');
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $inventoryItems = InventoryItem::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.stock-adjustments.create', compact('outlets', 'inventoryItems'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
             'outlet_id' => ['required', 'exists:outlets,id'],
+            'type' => ['required', 'in:stock_take,correction,damage,loss,found'],
             'adjustment_date' => ['required', 'date'],
-            'type' => ['required', 'in:stock_take,correction,opening_balance'],
-            'reason' => ['required', 'string'],
+            'reason' => ['nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.inventory_item_id' => ['required', 'exists:inventory_items,id'],
-            'items.*.current_qty' => ['required', 'numeric'],
-            'items.*.actual_qty' => ['required', 'numeric'],
+            'items.*.system_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.actual_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $lastAdjustment = StockAdjustment::where('tenant_id', $user->tenant_id)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $adjustmentNumber = 'ADJ-'.date('Ymd').'-'.str_pad((($lastAdjustment->id ?? 0) + 1), 4, '0', STR_PAD_LEFT);
-
-        $validated['tenant_id'] = $user->tenant_id;
-        $validated['adjustment_number'] = $adjustmentNumber;
-        $validated['status'] = StockAdjustment::STATUS_DRAFT;
-        $validated['created_by'] = $user->id;
-
-        $items = $validated['items'];
-        unset($validated['items']);
-
-        $adjustment = StockAdjustment::create($validated);
-
-        foreach ($items as $item) {
-            $inventoryItem = InventoryItem::find($item['inventory_item_id']);
-            $stock = InventoryStock::where('outlet_id', $validated['outlet_id'])
-                ->where('inventory_item_id', $item['inventory_item_id'])
-                ->first();
-
-            $currentQty = $stock->quantity ?? 0;
-            $actualQty = $item['actual_qty'];
-
-            if ($currentQty != $actualQty) {
-                $costPrice = $inventoryItem->cost_price ?? 0;
-
-                StockAdjustmentItem::create([
-                    'stock_adjustment_id' => $adjustment->id,
-                    'inventory_item_id' => $item['inventory_item_id'],
-                    'current_qty' => $currentQty,
-                    'actual_qty' => $actualQty,
-                    'difference' => $actualQty - $currentQty,
-                    'cost_price' => $costPrice,
-                    'value_difference' => ($actualQty - $currentQty) * $costPrice,
-                ]);
-            }
-        }
+        $adjustment = $this->adjustmentService->createAdjustment(
+            tenantId: $tenantId,
+            outletId: $validated['outlet_id'],
+            userId: auth()->id(),
+            type: $validated['type'],
+            items: $validated['items'],
+            adjustmentDate: $validated['adjustment_date'],
+            reason: $validated['reason'] ?? null,
+            notes: $validated['notes'] ?? null
+        );
 
         return redirect()->route('inventory.stock-adjustments.show', $adjustment)
             ->with('success', 'Stock adjustment created successfully.');
     }
 
-    public function show(StockAdjustment $adjustment): View
+    public function show(StockAdjustment $stockAdjustment): View
     {
-        $this->authorizeAdjustment($adjustment);
-        $adjustment->load(['outlet', 'createdBy', 'approvedBy', 'items.inventoryItem']);
-
-        return view('inventory.stock-adjustments.show', compact('adjustment'));
-    }
-
-    public function approve(StockAdjustment $adjustment): RedirectResponse
-    {
-        $this->authorizeAdjustment($adjustment);
-
-        if (! $adjustment->isDraft()) {
-            return back()->with('error', 'Only draft adjustments can be approved.');
-        }
-
-        $user = auth()->user();
-        $adjustment->load('items');
-
-        foreach ($adjustment->items as $item) {
-            $this->stockService->adjustStock(
-                outletId: $adjustment->outlet_id,
-                inventoryItemId: $item->inventory_item_id,
-                newQuantity: $item->actual_qty,
-                userId: $user->id,
-                referenceType: 'stock_adjustment',
-                referenceId: $adjustment->id,
-                notes: 'Adjustment: '.$adjustment->adjustment_number,
-            );
-        }
-
-        $adjustment->update([
-            'status' => StockAdjustment::STATUS_APPROVED,
-            'approved_by' => $user->id,
-            'approved_at' => now(),
+        $this->authorizeAdjustment($stockAdjustment);
+        $stockAdjustment->load([
+            'outlet',
+            'createdBy',
+            'approvedBy',
+            'items.inventoryItem.unit',
         ]);
 
-        return back()->with('success', 'Stock adjustment approved successfully. Stock updated.');
+        return view('inventory.stock-adjustments.show', compact('stockAdjustment'));
     }
 
-    public function cancel(StockAdjustment $adjustment): RedirectResponse
+    public function edit(StockAdjustment $stockAdjustment): View
     {
-        $this->authorizeAdjustment($adjustment);
+        $this->authorizeAdjustment($stockAdjustment);
 
-        if (! $adjustment->isDraft()) {
-            return back()->with('error', 'Cannot cancel approved adjustment.');
+        if ($stockAdjustment->status !== 'draft') {
+            return redirect()->route('inventory.stock-adjustments.show', $stockAdjustment)
+                ->with('error', 'Only draft adjustments can be edited.');
         }
 
-        $adjustment->update(['status' => StockAdjustment::STATUS_CANCELLED]);
+        $tenantId = $this->getTenantId();
+        $stockAdjustment->load('items.inventoryItem.unit');
 
-        return back()->with('success', 'Stock adjustment cancelled successfully.');
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $inventoryItems = InventoryItem::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.stock-adjustments.edit', compact('stockAdjustment', 'outlets', 'inventoryItems'));
     }
 
-    private function authorizeAdjustment(StockAdjustment $adjustment): void
+    public function update(Request $request, StockAdjustment $stockAdjustment): RedirectResponse
+    {
+        $this->authorizeAdjustment($stockAdjustment);
+
+        if ($stockAdjustment->status !== 'draft') {
+            return back()->with('error', 'Only draft adjustments can be updated.');
+        }
+
+        $validated = $request->validate([
+            'type' => ['required', 'in:stock_take,correction,damage,loss,found'],
+            'adjustment_date' => ['required', 'date'],
+            'reason' => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.inventory_item_id' => ['required', 'exists:inventory_items,id'],
+            'items.*.system_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.actual_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        // Delete existing items and recreate
+        $stockAdjustment->items()->delete();
+
+        $totalVariance = 0;
+        foreach ($validated['items'] as $item) {
+            $varianceQty = $item['actual_quantity'] - $item['system_quantity'];
+            $totalVariance += abs($varianceQty);
+
+            $stockAdjustment->items()->create([
+                'inventory_item_id' => $item['inventory_item_id'],
+                'system_quantity' => $item['system_quantity'],
+                'actual_quantity' => $item['actual_quantity'],
+                'variance_quantity' => $varianceQty,
+                'notes' => $item['notes'] ?? null,
+            ]);
+        }
+
+        $stockAdjustment->update([
+            'type' => $validated['type'],
+            'adjustment_date' => $validated['adjustment_date'],
+            'reason' => $validated['reason'],
+            'notes' => $validated['notes'],
+            'total_variance' => $totalVariance,
+        ]);
+
+        return redirect()->route('inventory.stock-adjustments.show', $stockAdjustment)
+            ->with('success', 'Stock adjustment updated successfully.');
+    }
+
+    public function destroy(StockAdjustment $stockAdjustment): RedirectResponse
+    {
+        $this->authorizeAdjustment($stockAdjustment);
+
+        if ($stockAdjustment->status !== 'draft') {
+            return back()->with('error', 'Only draft adjustments can be deleted.');
+        }
+
+        $stockAdjustment->items()->delete();
+        $stockAdjustment->delete();
+
+        return redirect()->route('inventory.stock-adjustments.index')
+            ->with('success', 'Stock adjustment deleted successfully.');
+    }
+
+    public function approve(StockAdjustment $stockAdjustment): RedirectResponse
+    {
+        $this->authorizeAdjustment($stockAdjustment);
+        $tenantId = $this->getTenantId();
+
+        try {
+            $this->adjustmentService->approveAdjustment($stockAdjustment, auth()->id());
+
+            return redirect()->route('inventory.stock-adjustments.show', $stockAdjustment)
+                ->with('success', 'Stock adjustment approved and stock updated.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function reject(StockAdjustment $stockAdjustment): RedirectResponse
+    {
+        $this->authorizeAdjustment($stockAdjustment);
+
+        if ($stockAdjustment->status !== 'pending') {
+            return back()->with('error', 'Only pending adjustments can be rejected.');
+        }
+
+        $stockAdjustment->update(['status' => 'rejected']);
+
+        return redirect()->route('inventory.stock-adjustments.show', $stockAdjustment)
+            ->with('success', 'Stock adjustment rejected.');
+    }
+
+    public function stockTake(): View
+    {
+        $tenantId = $this->getTenantId();
+
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $categories = InventoryCategory::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.stock-adjustments.stock-take', compact('outlets', 'categories'));
+    }
+
+    public function getStockForOutlet(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $tenantId = $this->getTenantId();
+
+        $validated = $request->validate([
+            'outlet_id' => ['required', 'exists:outlets,id'],
+            'category_id' => ['nullable', 'exists:inventory_categories,id'],
+        ]);
+
+        // Verify outlet belongs to user's tenant
+        $outlet = Outlet::where('tenant_id', $tenantId)
+            ->where('id', $validated['outlet_id'])
+            ->firstOrFail();
+
+        $query = InventoryStock::where('outlet_id', $outlet->id)
+            ->with(['inventoryItem.unit', 'inventoryItem.category']);
+
+        // Filter by category if provided
+        if (! empty($validated['category_id'])) {
+            $query->whereHas('inventoryItem', function ($q) use ($validated) {
+                $q->where('category_id', $validated['category_id']);
+            });
+        }
+
+        $stocks = $query->get()
+            ->map(function ($stock) {
+                return [
+                    'inventory_item_id' => $stock->inventory_item_id,
+                    'name' => $stock->inventoryItem->name,
+                    'sku' => $stock->inventoryItem->sku,
+                    'unit' => $stock->inventoryItem->unit->abbreviation ?? '',
+                    'system_quantity' => $stock->quantity,
+                ];
+            });
+
+        return response()->json($stocks);
+    }
+
+    private function authorizeAdjustment(StockAdjustment $stockAdjustment): void
     {
         $user = auth()->user();
 
-        if ($adjustment->tenant_id !== $user->tenant_id) {
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        if ($stockAdjustment->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');
         }
     }

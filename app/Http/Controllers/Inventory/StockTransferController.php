@@ -3,201 +3,297 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Models\InventoryItem;
+use App\Models\InventoryStock;
+use App\Models\Outlet;
 use App\Models\StockTransfer;
-use App\Models\StockTransferItem;
-use App\Services\StockService;
+use App\Services\Inventory\StockTransferService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StockTransferController extends Controller
 {
-    public function __construct(
-        private StockService $stockService
-    ) {}
+    public function __construct(private StockTransferService $transferService) {}
 
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = StockTransfer::where('tenant_id', $user->tenant_id)
-            ->with(['fromOutlet', 'toOutlet', 'createdBy', 'approvedBy', 'receivedBy']);
+        $tenantId = $this->getTenantId();
+        $query = StockTransfer::where('tenant_id', $tenantId)
+            ->with(['fromOutlet', 'toOutlet', 'createdBy']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('transfer_number', 'like', "%{$search}%");
         }
 
+        if ($request->filled('source_outlet_id')) {
+            $query->where('from_outlet_id', $request->source_outlet_id);
+        }
+
+        if ($request->filled('destination_outlet_id')) {
+            $query->where('to_outlet_id', $request->destination_outlet_id);
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('from_outlet_id')) {
-            $query->where('from_outlet_id', $request->from_outlet_id);
-        }
+        $transfers = $query->latest()->paginate(15)->withQueryString();
 
-        if ($request->filled('to_outlet_id')) {
-            $query->where('to_outlet_id', $request->to_outlet_id);
-        }
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('transfer_date', '>=', $request->from_date);
-        }
-
-        if ($request->filled('to_date')) {
-            $query->whereDate('transfer_date', '<=', $request->to_date);
-        }
-
-        $transfers = $query->orderBy('transfer_date', 'desc')
-            ->paginate(20)
-            ->withQueryString();
-
-        return view('inventory.stock-transfers.index', compact('transfers'));
+        return view('inventory.stock-transfers.index', compact('transfers', 'outlets'));
     }
 
     public function create(): View
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        return view('inventory.stock-transfers.create');
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $inventoryItems = InventoryItem::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.stock-transfers.create', compact('outlets', 'inventoryItems'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
-            'from_outlet_id' => ['required', 'exists:outlets,id', 'different:to_outlet_id'],
-            'to_outlet_id' => ['required', 'exists:outlets,id'],
+            'from_outlet_id' => ['required', 'exists:outlets,id'],
+            'to_outlet_id' => ['required', 'exists:outlets,id', 'different:from_outlet_id'],
             'transfer_date' => ['required', 'date'],
+            'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.inventory_item_id' => ['required', 'exists:inventory_items,id'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-            'items.*.cost_price' => ['required', 'numeric', 'min:0'],
-            'notes' => ['nullable', 'string'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $lastTransfer = StockTransfer::where('tenant_id', $user->tenant_id)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $transferNumber = 'TF-'.date('Ymd').'-'.str_pad((($lastTransfer->id ?? 0) + 1), 4, '0', STR_PAD_LEFT);
-
-        $validated['tenant_id'] = $user->tenant_id;
-        $validated['transfer_number'] = $transferNumber;
-        $validated['status'] = StockTransfer::STATUS_DRAFT;
-        $validated['created_by'] = $user->id;
-
-        $items = $validated['items'];
-        unset($validated['items']);
-
-        $transfer = StockTransfer::create($validated);
-
-        foreach ($items as $item) {
-            StockTransferItem::create([
-                'stock_transfer_id' => $transfer->id,
-                'inventory_item_id' => $item['inventory_item_id'],
-                'quantity' => $item['quantity'],
-                'cost_price' => $item['cost_price'],
-            ]);
-        }
+        $transfer = $this->transferService->createTransfer(
+            tenantId: $tenantId,
+            sourceOutletId: $validated['from_outlet_id'],
+            destinationOutletId: $validated['to_outlet_id'],
+            userId: auth()->id(),
+            items: $validated['items'],
+            transferDate: $validated['transfer_date'],
+            notes: $validated['notes'] ?? null
+        );
 
         return redirect()->route('inventory.stock-transfers.show', $transfer)
             ->with('success', 'Stock transfer created successfully.');
     }
 
-    public function show(StockTransfer $transfer): View
+    public function show(StockTransfer $stockTransfer): View
     {
-        $this->authorizeTransfer($transfer);
-        $transfer->load(['fromOutlet', 'toOutlet', 'createdBy', 'approvedBy', 'receivedBy', 'items.inventoryItem']);
-
-        return view('inventory.stock-transfers.show', compact('transfer'));
-    }
-
-    public function submit(StockTransfer $transfer): RedirectResponse
-    {
-        $this->authorizeTransfer($transfer);
-
-        if (! $transfer->isDraft()) {
-            return back()->with('error', 'Only draft transfers can be submitted.');
-        }
-
-        $transfer->update(['status' => StockTransfer::STATUS_PENDING]);
-
-        return back()->with('success', 'Stock transfer submitted successfully.');
-    }
-
-    public function approve(StockTransfer $transfer): RedirectResponse
-    {
-        $this->authorizeTransfer($transfer);
-
-        if (! $transfer->canBeApproved()) {
-            return back()->with('error', 'Cannot approve this transfer.');
-        }
-
-        $user = auth()->user();
-        $transfer->load('items');
-
-        foreach ($transfer->items as $item) {
-            $this->stockService->transferStock(
-                fromOutletId: $transfer->from_outlet_id,
-                toOutletId: $transfer->to_outlet_id,
-                inventoryItemId: $item->inventory_item_id,
-                quantity: $item->quantity,
-                userId: $user->id,
-                transferId: $transfer->id,
-            );
-        }
-
-        $transfer->update([
-            'status' => StockTransfer::STATUS_IN_TRANSIT,
-            'approved_by' => $user->id,
-            'approved_at' => now(),
+        $this->authorizeTransfer($stockTransfer);
+        $stockTransfer->load([
+            'fromOutlet',
+            'toOutlet',
+            'createdBy',
+            'approvedBy',
+            'receivedBy',
+            'items.inventoryItem.unit',
         ]);
 
-        return back()->with('success', 'Stock transfer approved and stock moved.');
+        return view('inventory.stock-transfers.show', compact('stockTransfer'));
     }
 
-    public function receive(StockTransfer $transfer): RedirectResponse
+    public function edit(StockTransfer $stockTransfer): View
     {
-        $this->authorizeTransfer($transfer);
+        $this->authorizeTransfer($stockTransfer);
 
-        if (! $transfer->canBeReceived()) {
-            return back()->with('error', 'Cannot receive this transfer.');
+        if ($stockTransfer->status !== 'draft') {
+            return redirect()->route('inventory.stock-transfers.show', $stockTransfer)
+                ->with('error', 'Only draft transfers can be edited.');
         }
 
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
+        $stockTransfer->load('items.inventoryItem.unit');
 
-        $transfer->update([
-            'status' => StockTransfer::STATUS_RECEIVED,
-            'received_by' => $user->id,
-            'received_at' => now(),
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $inventoryItems = InventoryItem::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.stock-transfers.edit', compact('stockTransfer', 'outlets', 'inventoryItems'));
+    }
+
+    public function update(Request $request, StockTransfer $stockTransfer): RedirectResponse
+    {
+        $this->authorizeTransfer($stockTransfer);
+
+        if ($stockTransfer->status !== 'draft') {
+            return back()->with('error', 'Only draft transfers can be updated.');
+        }
+
+        $validated = $request->validate([
+            'from_outlet_id' => ['required', 'exists:outlets,id'],
+            'to_outlet_id' => ['required', 'exists:outlets,id', 'different:from_outlet_id'],
+            'transfer_date' => ['required', 'date'],
+            'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.inventory_item_id' => ['required', 'exists:inventory_items,id'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        return back()->with('success', 'Stock transfer received successfully.');
+        // Delete existing items and recreate
+        $stockTransfer->items()->delete();
+
+        foreach ($validated['items'] as $item) {
+            $stockTransfer->items()->create([
+                'inventory_item_id' => $item['inventory_item_id'],
+                'quantity' => $item['quantity'],
+                'notes' => $item['notes'] ?? null,
+            ]);
+        }
+
+        $stockTransfer->update([
+            'from_outlet_id' => $validated['from_outlet_id'],
+            'to_outlet_id' => $validated['to_outlet_id'],
+            'transfer_date' => $validated['transfer_date'],
+            'notes' => $validated['notes'],
+        ]);
+
+        return redirect()->route('inventory.stock-transfers.show', $stockTransfer)
+            ->with('success', 'Stock transfer updated successfully.');
     }
 
-    public function cancel(StockTransfer $transfer): RedirectResponse
+    public function destroy(StockTransfer $stockTransfer): RedirectResponse
     {
-        $this->authorizeTransfer($transfer);
+        $this->authorizeTransfer($stockTransfer);
 
-        if ($transfer->isReceived()) {
-            return back()->with('error', 'Cannot cancel received transfer.');
+        if ($stockTransfer->status !== 'draft') {
+            return back()->with('error', 'Only draft transfers can be deleted.');
         }
 
-        if ($transfer->isInTransit()) {
-            return back()->with('error', 'Cannot cancel transfer that is already in transit. Please contact admin.');
-        }
+        $stockTransfer->items()->delete();
+        $stockTransfer->delete();
 
-        $transfer->update(['status' => StockTransfer::STATUS_CANCELLED]);
-
-        return back()->with('success', 'Stock transfer cancelled successfully.');
+        return redirect()->route('inventory.stock-transfers.index')
+            ->with('success', 'Stock transfer deleted successfully.');
     }
 
-    private function authorizeTransfer(StockTransfer $transfer): void
+    public function approve(StockTransfer $stockTransfer): RedirectResponse
+    {
+        $this->authorizeTransfer($stockTransfer);
+        $tenantId = $this->getTenantId();
+
+        try {
+            $this->transferService->approveTransfer($stockTransfer, auth()->id());
+
+            return redirect()->route('inventory.stock-transfers.show', $stockTransfer)
+                ->with('success', 'Stock transfer approved. Items reserved from source outlet.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function ship(StockTransfer $stockTransfer): RedirectResponse
+    {
+        $this->authorizeTransfer($stockTransfer);
+
+        if ($stockTransfer->status !== 'approved') {
+            return back()->with('error', 'Only approved transfers can be shipped.');
+        }
+
+        $stockTransfer->update([
+            'status' => 'in_transit',
+            'shipped_at' => now(),
+        ]);
+
+        return redirect()->route('inventory.stock-transfers.show', $stockTransfer)
+            ->with('success', 'Stock transfer marked as shipped.');
+    }
+
+    public function receive(StockTransfer $stockTransfer): RedirectResponse
+    {
+        $this->authorizeTransfer($stockTransfer);
+        $tenantId = $this->getTenantId();
+
+        try {
+            $this->transferService->receiveTransfer($stockTransfer, auth()->id());
+
+            return redirect()->route('inventory.stock-transfers.show', $stockTransfer)
+                ->with('success', 'Stock transfer received. Stock added to destination outlet.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function cancel(StockTransfer $stockTransfer): RedirectResponse
+    {
+        $this->authorizeTransfer($stockTransfer);
+        $tenantId = $this->getTenantId();
+
+        try {
+            $this->transferService->cancelTransfer($stockTransfer, auth()->id());
+
+            return redirect()->route('inventory.stock-transfers.show', $stockTransfer)
+                ->with('success', 'Stock transfer cancelled.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function getSourceStock(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $tenantId = $this->getTenantId();
+
+        $validated = $request->validate([
+            'outlet_id' => ['required', 'exists:outlets,id'],
+        ]);
+
+        // Verify outlet belongs to user's tenant
+        $outlet = Outlet::where('tenant_id', $tenantId)
+            ->where('id', $validated['outlet_id'])
+            ->firstOrFail();
+
+        $stocks = InventoryStock::where('outlet_id', $outlet->id)
+            ->where('quantity', '>', 0)
+            ->with(['inventoryItem.unit'])
+            ->get()
+            ->map(function ($stock) {
+                return [
+                    'inventory_item_id' => $stock->inventory_item_id,
+                    'name' => $stock->inventoryItem->name,
+                    'sku' => $stock->inventoryItem->sku,
+                    'unit' => $stock->inventoryItem->unit->abbreviation ?? '',
+                    'available_quantity' => $stock->quantity - ($stock->reserved_qty ?? 0),
+                ];
+            });
+
+        return response()->json($stocks);
+    }
+
+    private function authorizeTransfer(StockTransfer $stockTransfer): void
     {
         $user = auth()->user();
 
-        if ($transfer->tenant_id !== $user->tenant_id) {
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        if ($stockTransfer->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');
         }
     }

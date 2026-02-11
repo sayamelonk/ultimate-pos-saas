@@ -11,33 +11,29 @@ class CheckPermission
     /**
      * Handle an incoming request.
      *
-     * @param  string  $permission  Permission slug yang dicek (contoh: 'users.view', 'products.create')
+     * @param  string  $permission  The permission slug to check (e.g., 'users.view', 'products.create')
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        // 1. Ambil user yang sedang login
         $user = $request->user();
 
-        // 2. Jika tidak ada user, redirect ke login
         if (! $user) {
             return redirect()->route('login');
         }
 
-        // 3. Super Admin memiliki semua permissions
+        // Super admins have all permissions
         if ($user->isSuperAdmin()) {
             return $next($request);
         }
 
-        // 4. Cek apakah user memiliki permission yang diperlukan
+        // Check if user has the required permission
         if (! $user->hasPermission($permission)) {
-            // 5. Handle JSON request (API/AJAX)
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'You do not have permission to perform this action.',
                 ], 403);
             }
 
-            // 6. Handle web request
             abort(403, 'You do not have permission to perform this action.');
         }
 

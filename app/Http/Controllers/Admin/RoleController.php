@@ -17,11 +17,10 @@ class RoleController extends Controller
         $user = auth()->user();
         $query = Role::query()->withCount(['users', 'permissions']);
 
-        // Non-super admin can only see their tenant's custom roles and system roles (except super-admin)
+        // Non-super admin can only see their tenant's custom roles and system roles
         if (! $user->isSuperAdmin()) {
             $query->where(function ($q) use ($user) {
                 $q->whereNull('tenant_id')
-                    ->where('slug', '!=', 'super-admin')
                     ->orWhere('tenant_id', $user->tenant_id);
             });
         }
@@ -165,11 +164,6 @@ class RoleController extends Controller
 
         if ($user->isSuperAdmin()) {
             return;
-        }
-
-        // Non-super admin cannot access super-admin role at all
-        if ($role->slug === 'super-admin') {
-            abort(403, 'Access denied. Super Admin role is restricted.');
         }
 
         // Non-super admin can only manage their tenant's roles or view system roles

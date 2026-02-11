@@ -47,13 +47,13 @@ class TenantController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:tenants,email'],
+            'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'is_active' => ['boolean'],
         ]);
 
         $validated['code'] = strtoupper(Str::slug($validated['name'], '')).'-'.strtoupper(Str::random(4));
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
 
         Tenant::create($validated);
 
@@ -66,7 +66,7 @@ class TenantController extends Controller
         $this->authorizeSuperAdmin();
 
         $tenant->loadCount(['outlets', 'users']);
-        $tenant->load(['outlets', 'users']);
+        $tenant->load(['outlets', 'users' => fn ($q) => $q->limit(10)]);
 
         return view('admin.tenants.show', compact('tenant'));
     }
@@ -84,12 +84,12 @@ class TenantController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:tenants,email,'.$tenant->id],
+            'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'is_active' => ['boolean'],
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
 
         $tenant->update($validated);
 
@@ -109,6 +109,32 @@ class TenantController extends Controller
 
         return redirect()->route('admin.tenants.index')
             ->with('success', 'Tenant deleted successfully.');
+    }
+
+    /**
+     * Switch to manage a specific tenant (Super Admin only)
+     */
+    public function switchTenant(Tenant $tenant): RedirectResponse
+    {
+        $this->authorizeSuperAdmin();
+
+        session(['current_tenant_id' => $tenant->id, 'current_tenant_name' => $tenant->name]);
+
+        return redirect()->back()
+            ->with('success', "Switched to tenant: {$tenant->name}");
+    }
+
+    /**
+     * Clear the current tenant context (Super Admin only)
+     */
+    public function clearTenant(): RedirectResponse
+    {
+        $this->authorizeSuperAdmin();
+
+        session()->forget(['current_tenant_id', 'current_tenant_name']);
+
+        return redirect()->route('admin.tenants.index')
+            ->with('success', 'Tenant context cleared.');
     }
 
     private function authorizeSuperAdmin(): void

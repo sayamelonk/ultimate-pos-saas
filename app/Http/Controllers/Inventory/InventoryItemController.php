@@ -14,8 +14,8 @@ class InventoryItemController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = InventoryItem::where('tenant_id', $user->tenant_id)
+        $tenantId = $this->getTenantId();
+        $query = InventoryItem::where('tenant_id', $tenantId)
             ->with(['category', 'unit']);
 
         if ($request->filled('search')) {
@@ -41,7 +41,7 @@ class InventoryItemController extends Controller
 
         $items = $query->orderBy('name')->paginate(15)->withQueryString();
 
-        $categories = InventoryCategory::where('tenant_id', $user->tenant_id)
+        $categories = InventoryCategory::where('tenant_id', $tenantId)
             ->orderBy('name')
             ->get();
 
@@ -50,14 +50,14 @@ class InventoryItemController extends Controller
 
     public function create(): View
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        $categories = InventoryCategory::where('tenant_id', $user->tenant_id)
+        $categories = InventoryCategory::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        $units = Unit::where('tenant_id', $user->tenant_id)
+        $units = Unit::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -67,7 +67,7 @@ class InventoryItemController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
             'sku' => ['required', 'string', 'max:50'],
@@ -88,12 +88,28 @@ class InventoryItemController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['tenant_id'] = $user->tenant_id;
-        $validated['is_perishable'] = $request->boolean('is_perishable', false);
-        $validated['track_batches'] = $request->boolean('track_batches', false);
-        $validated['is_active'] = $request->boolean('is_active', true);
+        // Map form fields to database fields
+        $data = [
+            'tenant_id' => $tenantId,
+            'sku' => $validated['sku'],
+            'barcode' => $validated['barcode'] ?? null,
+            'name' => $validated['name'],
+            'type' => $validated['type'],
+            'description' => $validated['description'] ?? null,
+            'category_id' => $validated['category_id'],
+            'unit_id' => $validated['unit_id'],
+            'cost_price' => $validated['cost_price'],
+            'reorder_point' => $validated['reorder_level'] ?? 0,
+            'reorder_qty' => $validated['reorder_quantity'] ?? 0,
+            'max_stock' => $validated['max_stock_level'] ?? null,
+            'shelf_life_days' => $validated['shelf_life_days'] ?? null,
+            'storage_location' => $validated['storage_location'] ?? null,
+            'is_perishable' => $request->boolean('is_perishable', false),
+            'track_batches' => $request->boolean('track_batches', false),
+            'is_active' => $request->boolean('is_active'),
+        ];
 
-        InventoryItem::create($validated);
+        InventoryItem::create($data);
 
         return redirect()->route('inventory.items.index')
             ->with('success', 'Inventory item created successfully.');
@@ -108,7 +124,7 @@ class InventoryItemController extends Controller
             'supplierItems.supplier',
             'stocks.outlet',
             'stockBatches' => function ($q) {
-                $q->where('remaining_quantity', '>', 0)->orderBy('expiry_date');
+                $q->where('current_quantity', '>', 0)->orderBy('expiry_date');
             },
         ]);
 
@@ -118,14 +134,14 @@ class InventoryItemController extends Controller
     public function edit(InventoryItem $item): View
     {
         $this->authorizeItem($item);
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        $categories = InventoryCategory::where('tenant_id', $user->tenant_id)
+        $categories = InventoryCategory::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        $units = Unit::where('tenant_id', $user->tenant_id)
+        $units = Unit::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -156,11 +172,27 @@ class InventoryItemController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['is_perishable'] = $request->boolean('is_perishable', false);
-        $validated['track_batches'] = $request->boolean('track_batches', false);
-        $validated['is_active'] = $request->boolean('is_active', true);
+        // Map form fields to database fields
+        $data = [
+            'sku' => $validated['sku'],
+            'barcode' => $validated['barcode'] ?? null,
+            'name' => $validated['name'],
+            'type' => $validated['type'],
+            'description' => $validated['description'] ?? null,
+            'category_id' => $validated['category_id'],
+            'unit_id' => $validated['unit_id'],
+            'cost_price' => $validated['cost_price'],
+            'reorder_point' => $validated['reorder_level'] ?? 0,
+            'reorder_qty' => $validated['reorder_quantity'] ?? 0,
+            'max_stock' => $validated['max_stock_level'] ?? null,
+            'shelf_life_days' => $validated['shelf_life_days'] ?? null,
+            'storage_location' => $validated['storage_location'] ?? null,
+            'is_perishable' => $request->boolean('is_perishable', false),
+            'track_batches' => $request->boolean('track_batches', false),
+            'is_active' => $request->boolean('is_active'),
+        ];
 
-        $item->update($validated);
+        $item->update($data);
 
         return redirect()->route('inventory.items.index')
             ->with('success', 'Inventory item updated successfully.');
@@ -189,6 +221,10 @@ class InventoryItemController extends Controller
     private function authorizeItem(InventoryItem $item): void
     {
         $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return;
+        }
 
         if ($item->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');

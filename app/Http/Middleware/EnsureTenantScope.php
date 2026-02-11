@@ -11,36 +11,53 @@ class EnsureTenantScope
     /**
      * Handle an incoming request.
      *
-     * Memastikan user memiliki tenant dan set tenant scope ke seluruh request
+     * Ensures that non-super-admin users can only access data within their tenant.
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Ambil user yang sedang login
         $user = $request->user();
 
-        // 2. Jika tidak ada user, redirect ke login
         if (! $user) {
             return redirect()->route('login');
         }
 
-        // 3. Super Admin bypass tenant check
-        // Super Admin bisa akses semua tenant
+        // Super admins can access everything
         if ($user->isSuperAdmin()) {
             return $next($request);
         }
 
-        // 4. Cek apakah user memiliki tenant
-        if (! $user->tenant_id) {
+        // Ensure user has a tenant (either directly or via outlet)
+        $tenantId = $user->tenant_id;
+
+        // If no direct tenant_id, try to get from default outlet
+        if (! $tenantId) {
+            $defaultOutlet = $user->outlets()->wherePivot('is_default', true)->first();
+            if ($defaultOutlet) {
+                $tenantId = $defaultOutlet->tenant_id;
+                // Update user's tenant_id for consistency
+                $user->update(['tenant_id' => $tenantId]);
+            }
+        }
+
+        // Still no tenant? Try first assigned outlet
+        if (! $tenantId) {
+            $firstOutlet = $user->outlets()->first();
+            if ($firstOutlet) {
+                $tenantId = $firstOutlet->tenant_id;
+                // Update user's tenant_id for consistency
+                $user->update(['tenant_id' => $tenantId]);
+            }
+        }
+
+        if (! $tenantId) {
             abort(403, 'You are not associated with any tenant.');
         }
 
-        // 5. Merge current_tenant_id ke request
-        // Ini bisa digunakan di controller untuk query filtering
-        $request->merge(['current_tenant_id' => $user->tenant_id]);
+        // Store tenant ID in request for easy access
+        $request->merge(['current_tenant_id' => $tenantId]);
 
-        // 6. Share tenant ke semua views
-        // Jadi bisa diakses di Blade: {{ $currentTenant->name }}
-        view()->share('currentTenant', $user->tenant);
+        // Share tenant with views
+        view()->share('currentTenant', $user->tenant()->first());
 
         return $next($request);
     }

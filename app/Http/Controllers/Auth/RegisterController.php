@@ -19,20 +19,13 @@ use Illuminate\View\View;
 
 class RegisterController extends Controller
 {
-    /**
-     * Tampilkan halaman register
-     */
     public function showRegistrationForm(): View
     {
         return view('auth.register');
     }
 
-    /**
-     * Proses register
-     */
     public function register(Request $request): RedirectResponse
     {
-        // 1. Validasi input
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -41,42 +34,36 @@ class RegisterController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
         ]);
 
-        // 2. Gunakan Database Transaction
-        // Ini memastikan SEMUA operasi berhasil bersama-sama
-        // Jika ada yang gagal, semua akan di-rollback
         $user = DB::transaction(function () use ($validated) {
-            // 2a. Create Tenant
+            // Generate unique tenant code
+            $baseCode = strtoupper(Str::substr(Str::slug($validated['business_name'], ''), 0, 6));
+            $code = $baseCode.strtoupper(Str::random(4));
+
+            // Ensure code is unique
+            while (Tenant::where('code', $code)->exists()) {
+                $code = $baseCode.strtoupper(Str::random(4));
+            }
+
+            // Create tenant
             $tenant = Tenant::create([
+                'code' => $code,
                 'name' => $validated['business_name'],
-                'code' => strtoupper(Str::random(6)), // Generate random code
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
-                'currency' => 'IDR',
-                'timezone' => 'Asia/Jakarta',
-                'tax_percentage' => 11.00,
-                'service_charge_percentage' => 0,
-                'subscription_plan' => 'free', // Default plan
-                'max_outlets' => 1, // Free plan: 1 outlet
                 'is_active' => true,
             ]);
 
-            // 2b. Create Default Outlet
+            // Create default outlet for the tenant
             $outlet = Outlet::create([
                 'tenant_id' => $tenant->id,
-                'code' => 'MAIN',
                 'name' => 'Main Outlet',
+                'code' => 'MAIN',
                 'address' => null,
-                'city' => null,
-                'province' => null,
-                'postal_code' => null,
                 'phone' => $validated['phone'] ?? null,
-                'email' => $validated['email'],
-                'opening_time' => '08:00',
-                'closing_time' => '22:00',
                 'is_active' => true,
             ]);
 
-            // 2c. Create User
+            // Create user
             $user = User::create([
                 'tenant_id' => $tenant->id,
                 'name' => $validated['name'],
@@ -86,29 +73,25 @@ class RegisterController extends Controller
                 'is_active' => true,
             ]);
 
-            // 2d. Assign Tenant Owner Role
+            // Assign tenant-owner role
             $ownerRole = Role::where('slug', 'tenant-owner')
-                ->whereNull('tenant_id') // System role
+                ->whereNull('tenant_id')
                 ->first();
 
             if ($ownerRole) {
                 $user->roles()->attach($ownerRole->id);
             }
 
-            // 2e. Assign User ke Default Outlet
+            // Assign user to the default outlet
             $user->outlets()->attach($outlet->id, ['is_default' => true]);
 
             return $user;
         });
 
-        // 3. Fire Registered Event
-        // Untuk notifikasi, email verification, dll (optional)
         event(new Registered($user));
 
-        // 4. Login user otomatis
         Auth::login($user);
 
-        // 5. Redirect ke dashboard
         return redirect()->route('admin.dashboard')
             ->with('success', 'Welcome! Your account has been created successfully.');
     }

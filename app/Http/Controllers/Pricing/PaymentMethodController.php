@@ -61,7 +61,7 @@ class PaymentMethodController extends Controller
             'requires_reference' => $request->boolean('requires_reference'),
             'opens_cash_drawer' => $request->boolean('opens_cash_drawer'),
             'sort_order' => $request->sort_order ?? 0,
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('pricing.payment-methods.index')
@@ -93,7 +93,7 @@ class PaymentMethodController extends Controller
             'requires_reference' => $request->boolean('requires_reference'),
             'opens_cash_drawer' => $request->boolean('opens_cash_drawer'),
             'sort_order' => $request->sort_order ?? 0,
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('pricing.payment-methods.index')

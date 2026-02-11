@@ -75,7 +75,7 @@ class DiscountController extends Controller
             'valid_until' => $request->valid_until,
             'usage_limit' => $request->usage_limit,
             'is_auto_apply' => $request->boolean('is_auto_apply'),
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('pricing.discounts.index')
@@ -129,7 +129,7 @@ class DiscountController extends Controller
             'valid_until' => $request->valid_until,
             'usage_limit' => $request->usage_limit,
             'is_auto_apply' => $request->boolean('is_auto_apply'),
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('pricing.discounts.index')

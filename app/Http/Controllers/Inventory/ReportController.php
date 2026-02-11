@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
 use App\Models\InventoryStock;
+use App\Models\Outlet;
 use App\Models\Recipe;
 use App\Models\StockMovement;
 use App\Models\WasteLog;
@@ -19,13 +20,13 @@ class ReportController extends Controller
      */
     public function stockValuation(Request $request): View
     {
-        $user = auth()->user();
-        $outletId = $request->outlet_id ?? $user->outlet_id;
-        $categoryId = $request->category_id;
+        $tenantId = $this->getTenantId();
+        $outletId = $request->get('outlet_id');
+        $categoryId = $request->get('category_id');
 
         $query = InventoryStock::query()
             ->with(['inventoryItem.category', 'inventoryItem.unit', 'outlet'])
-            ->whereHas('inventoryItem', fn ($q) => $q->where('tenant_id', $user->tenant_id));
+            ->whereHas('inventoryItem', fn ($q) => $q->where('tenant_id', $tenantId));
 
         if ($outletId) {
             $query->where('outlet_id', $outletId);
@@ -39,7 +40,7 @@ class ReportController extends Controller
 
         // Calculate valuations
         $valuationData = $stocks->map(function ($stock) {
-            $avgCost = $stock->avg_cost ?? 0;
+            $avgCost = $stock->avg_cost ?? $stock->inventoryItem->cost_price ?? 0;
             $value = $stock->quantity * $avgCost;
 
             return [
@@ -70,13 +71,8 @@ class ReportController extends Controller
         $totalValue = $valuationData->sum('value');
         $totalItems = $valuationData->count();
 
-        $categories = InventoryCategory::where('tenant_id', $user->tenant_id)
-            ->orderBy('name')
-            ->get();
-
-        $outlets = \App\Models\Outlet::where('tenant_id', $user->tenant_id)
-            ->orderBy('name')
-            ->get();
+        $outlets = Outlet::where('tenant_id', $tenantId)->orderBy('name')->get();
+        $categories = InventoryCategory::where('tenant_id', $tenantId)->orderBy('name')->get();
 
         return view('inventory.reports.stock-valuation', compact(
             'valuationData',
@@ -84,9 +80,8 @@ class ReportController extends Controller
             'byOutlet',
             'totalValue',
             'totalItems',
-            'outletId',
-            'categories',
-            'outlets'
+            'outlets',
+            'categories'
         ));
     }
 
@@ -95,15 +90,16 @@ class ReportController extends Controller
      */
     public function stockMovement(Request $request): View
     {
-        $user = auth()->user();
-        $dateFrom = $request->date_from ?? now()->startOfMonth()->format('Y-m-d');
-        $dateTo = $request->date_to ?? now()->format('Y-m-d');
-        $outletId = $request->outlet_id;
-        $itemId = $request->item_id;
+        $tenantId = $this->getTenantId();
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $outletId = $request->get('outlet_id');
+        $itemId = $request->get('item_id');
+        $type = $request->get('type');
 
         $query = StockMovement::query()
-            ->with(['inventoryItem.category', 'inventoryItem.unit', 'outlet'])
-            ->whereHas('inventoryItem', fn ($q) => $q->where('tenant_id', $user->tenant_id))
+            ->with(['inventoryItem.unit', 'outlet', 'createdBy'])
+            ->whereHas('outlet', fn ($q) => $q->where('tenant_id', $tenantId))
             ->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59']);
 
         if ($outletId) {
@@ -114,15 +110,15 @@ class ReportController extends Controller
             $query->where('inventory_item_id', $itemId);
         }
 
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
+        if ($type) {
+            $query->where('type', $type);
         }
 
-        $movements = $query->latest()->paginate(50)->withQueryString();
+        $movements = $query->latest()->paginate(50);
 
         // Summary by type
         $summaryQuery = StockMovement::query()
-            ->whereHas('inventoryItem', fn ($q) => $q->where('tenant_id', $user->tenant_id))
+            ->whereHas('outlet', fn ($q) => $q->where('tenant_id', $tenantId))
             ->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59']);
 
         if ($outletId) {
@@ -130,37 +126,32 @@ class ReportController extends Controller
         }
 
         $summaryByType = $summaryQuery->clone()
-            ->selectRaw('type, SUM(ABS(quantity)) as total_qty, COUNT(*) as count')
+            ->selectRaw('type, SUM(quantity) as total_qty, COUNT(*) as count')
             ->groupBy('type')
             ->get()
             ->keyBy('type');
 
-        $items = InventoryItem::where('tenant_id', $user->tenant_id)
-            ->orderBy('name')
-            ->get();
-
-        $outlets = \App\Models\Outlet::where('tenant_id', $user->tenant_id)
-            ->orderBy('name')
-            ->get();
-
-        // Daily trend data
+        // Daily trend
         $dailyTrend = StockMovement::query()
-            ->whereHas('inventoryItem', fn ($q) => $q->where('tenant_id', $user->tenant_id))
+            ->whereHas('outlet', fn ($q) => $q->where('tenant_id', $tenantId))
             ->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59'])
             ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId))
-            ->selectRaw('DATE(created_at) as date, type, SUM(ABS(quantity) * cost_price) as total')
+            ->selectRaw('DATE(created_at) as date, type, SUM(quantity) as total')
             ->groupBy('date', 'type')
+            ->orderBy('date')
             ->get()
-            ->groupBy('date');
+            ->groupBy('date')
+            ->map(fn ($items) => $items->keyBy('type'));
+
+        $outlets = Outlet::where('tenant_id', $tenantId)->orderBy('name')->get();
+        $items = InventoryItem::where('tenant_id', $tenantId)->orderBy('name')->get();
 
         return view('inventory.reports.stock-movement', compact(
             'movements',
             'summaryByType',
-            'items',
-            'outlets',
             'dailyTrend',
-            'outletId',
-            'itemId',
+            'outlets',
+            'items',
             'dateFrom',
             'dateTo'
         ));
@@ -171,16 +162,17 @@ class ReportController extends Controller
      */
     public function cogs(Request $request): View
     {
-        $user = auth()->user();
-        $dateFrom = $request->date_from ?? now()->startOfMonth()->format('Y-m-d');
-        $dateTo = $request->date_to ?? now()->format('Y-m-d');
-        $outletId = $request->outlet_id;
+        $tenantId = $this->getTenantId();
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $outletId = $request->get('outlet_id');
 
         // Get sale movements (stock deductions for sales)
         $query = StockMovement::query()
             ->with(['inventoryItem.category', 'inventoryItem.unit', 'outlet'])
-            ->whereHas('inventoryItem', fn ($q) => $q->where('tenant_id', $user->tenant_id))
-            ->where('type', 'sale')
+            ->whereHas('outlet', fn ($q) => $q->where('tenant_id', $tenantId))
+            ->where('type', 'out')
+            ->where('reference_type', 'sale')
             ->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59']);
 
         if ($outletId) {
@@ -225,20 +217,19 @@ class ReportController extends Controller
 
         // Daily COGS trend
         $dailyCogs = StockMovement::query()
-            ->whereHas('inventoryItem', fn ($q) => $q->where('tenant_id', $user->tenant_id))
-            ->where('type', 'sale')
+            ->whereHas('outlet', fn ($q) => $q->where('tenant_id', $tenantId))
+            ->where('type', 'out')
+            ->where('reference_type', 'sale')
             ->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59'])
             ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId))
-            ->selectRaw('DATE(created_at) as date, SUM(ABS(quantity) * cost_price) as total_cost')
+            ->selectRaw('DATE(created_at) as date, SUM(ABS(quantity) * COALESCE(cost_price, 0)) as total_cost')
             ->groupBy('date')
             ->orderBy('date')
             ->get();
 
         $totalCogs = $cogsByItem->sum('total_cost');
 
-        $outlets = \App\Models\Outlet::where('tenant_id', $user->tenant_id)
-            ->orderBy('name')
-            ->get();
+        $outlets = Outlet::where('tenant_id', $tenantId)->orderBy('name')->get();
 
         return view('inventory.reports.cogs', compact(
             'cogsByItem',
@@ -247,7 +238,6 @@ class ReportController extends Controller
             'dailyCogs',
             'totalCogs',
             'outlets',
-            'outletId',
             'dateFrom',
             'dateTo'
         ));
@@ -258,21 +248,21 @@ class ReportController extends Controller
      */
     public function foodCost(Request $request): View
     {
-        $user = auth()->user();
-        $dateFrom = $request->date_from ?? now()->startOfMonth()->format('Y-m-d');
-        $dateTo = $request->date_to ?? now()->format('Y-m-d');
+        $tenantId = $this->getTenantId();
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         // Get all recipes with their costs
         $recipes = Recipe::query()
-            ->with(['items.inventoryItem', 'category', 'yieldUnit'])
-            ->where('tenant_id', $user->tenant_id)
+            ->with(['items.inventoryItem', 'product', 'yieldUnit'])
+            ->where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->get();
 
         // Calculate food cost metrics
         $recipeAnalysis = $recipes->map(function ($recipe) {
-            $unitCost = $recipe->yield_qty > 0 ? $recipe->estimated_cost / $recipe->yield_qty : 0;
-            $sellingPrice = 0; // Product will be added in Phase 3
+            $unitCost = $recipe->yield_qty > 0 ? ($recipe->estimated_cost ?? 0) / $recipe->yield_qty : 0;
+            $sellingPrice = $recipe->product?->price ?? 0;
             $grossProfit = $sellingPrice - $unitCost;
             $foodCostPercent = $sellingPrice > 0 ? ($unitCost / $sellingPrice) * 100 : 0;
             $grossMarginPercent = $sellingPrice > 0 ? ($grossProfit / $sellingPrice) * 100 : 0;
@@ -296,14 +286,23 @@ class ReportController extends Controller
 
         // Get waste data for the period
         $wasteTotal = WasteLog::query()
-            ->where('tenant_id', $user->tenant_id)
+            ->where('tenant_id', $tenantId)
             ->whereBetween('waste_date', [$dateFrom, $dateTo])
             ->sum('total_cost');
 
-        // Food cost by category
+        // Get purchase data (from GR completed)
+        $purchaseTotal = StockMovement::query()
+            ->whereHas('outlet', fn ($q) => $q->where('tenant_id', $tenantId))
+            ->where('type', 'in')
+            ->where('reference_type', 'goods_receive')
+            ->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59'])
+            ->selectRaw('SUM(quantity * COALESCE(cost_price, 0)) as total')
+            ->value('total') ?? 0;
+
+        // Food cost by category (using product category if linked)
         $costByCategory = $recipeAnalysis
             ->where('selling_price', '>', 0)
-            ->groupBy(fn ($r) => $r['recipe']->category?->name ?? 'Uncategorized')
+            ->groupBy(fn ($r) => $r['recipe']->product?->category?->name ?? 'Uncategorized')
             ->map(fn ($items) => [
                 'count' => $items->count(),
                 'avg_food_cost' => $items->avg('food_cost_percent'),
@@ -311,9 +310,7 @@ class ReportController extends Controller
                 'total_potential_profit' => $items->sum('gross_profit'),
             ]);
 
-        $categories = InventoryCategory::where('tenant_id', $user->tenant_id)
-            ->orderBy('name')
-            ->get();
+        $categories = InventoryCategory::where('tenant_id', $tenantId)->orderBy('name')->get();
 
         return view('inventory.reports.food-cost', compact(
             'recipeAnalysis',
@@ -321,6 +318,7 @@ class ReportController extends Controller
             'avgMargin',
             'highCostItems',
             'wasteTotal',
+            'purchaseTotal',
             'costByCategory',
             'categories',
             'dateFrom',
