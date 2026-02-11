@@ -8,6 +8,9 @@ use Illuminate\Database\Seeder;
 
 class RoleSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         // Super Admin (System level - no tenant)
@@ -40,15 +43,8 @@ class RoleSeeder extends Seeder
         ]);
         $outletManager->permissions()->attach(
             Permission::whereIn('module', [
-                'dashboard',
-                'pos',
-                'orders',
-                'products',
-                'categories',
-                'inventory',
-                'tables',
-                'kitchen',
-                'reports',
+                'dashboard', 'pos', 'orders', 'products', 'categories',
+                'inventory', 'tables', 'kitchen', 'reports',
             ])->pluck('id')
         );
 
@@ -63,12 +59,8 @@ class RoleSeeder extends Seeder
         $cashier->permissions()->attach(
             Permission::whereIn('slug', [
                 'dashboard.view',
-                'pos.access',
-                'pos.discount',
-                'pos.history',
-                'orders.view',
-                'orders.create',
-                'orders.update',
+                'pos.access', 'pos.discount', 'pos.history',
+                'orders.view', 'orders.create', 'orders.update',
                 'tables.view',
             ])->pluck('id')
         );
@@ -83,11 +75,8 @@ class RoleSeeder extends Seeder
         ]);
         $waiter->permissions()->attach(
             Permission::whereIn('slug', [
-                'orders.view',
-                'orders.create',
-                'orders.update',
-                'tables.view',
-                'tables.transfer',
+                'orders.view', 'orders.create', 'orders.update',
+                'tables.view', 'tables.transfer',
             ])->pluck('id')
         );
 
