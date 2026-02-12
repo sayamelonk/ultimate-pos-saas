@@ -10,11 +10,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
-        // Register middleware aliases
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
+
         $middleware->alias([
-            'tenant' => \App\Http\Middleware\EnsureTenantScope::class,
-            'permission' => \App\Http\Middleware\CheckPermission::class,
+            'tenant' => EnsureTenantScope::class,
+            'permission' => CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
