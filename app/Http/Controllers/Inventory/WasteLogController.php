@@ -4,184 +4,228 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryItem;
-use App\Models\Unit;
+use App\Models\Outlet;
 use App\Models\WasteLog;
-use App\Services\StockService;
+use App\Services\Inventory\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class WasteLogController extends Controller
 {
-    public function __construct(
-        private StockService $stockService
-    ) {}
+    public function __construct(private StockService $stockService) {}
 
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = WasteLog::where('tenant_id', $user->tenant_id)
-            ->with(['inventoryItem', 'outlet', 'unit', 'loggedBy']);
+        $tenantId = $this->getTenantId();
+        $query = WasteLog::where('tenant_id', $tenantId)
+            ->with(['inventoryItem.unit', 'outlet', 'loggedBy']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('inventoryItem', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%");
             });
         }
 
-        if ($request->filled('item_id')) {
-            $query->where('inventory_item_id', $request->item_id);
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
         }
 
         if ($request->filled('reason')) {
             $query->where('reason', $request->reason);
         }
 
-        if ($request->filled('outlet_id')) {
-            $query->where('outlet_id', $request->outlet_id);
+        if ($request->filled('date_from')) {
+            $query->whereDate('waste_date', '>=', $request->date_from);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('waste_date', '>=', $request->from_date);
+        if ($request->filled('date_to')) {
+            $query->whereDate('waste_date', '<=', $request->date_to);
         }
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('waste_date', '<=', $request->to_date);
-        }
+        $wasteLogs = $query->latest('waste_date')->paginate(20)->withQueryString();
 
-        $wasteLogs = $query->orderBy('waste_date', 'desc')
-            ->paginate(20)
-            ->withQueryString();
-
-        $items = InventoryItem::where('tenant_id', $user->tenant_id)
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        $reasons = WasteLog::getReasons();
+        // Calculate totals for selected period
+        $totalQuery = WasteLog::where('tenant_id', $tenantId);
+        if ($request->filled('outlet_id')) {
+            $totalQuery->where('outlet_id', $request->outlet_id);
+        }
+        if ($request->filled('date_from')) {
+            $totalQuery->whereDate('waste_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $totalQuery->whereDate('waste_date', '<=', $request->date_to);
+        }
+        $totalWasteValue = $totalQuery->sum('total_cost');
 
-        return view('inventory.waste-logs.index', compact('wasteLogs', 'items', 'reasons'));
+        return view('inventory.waste-logs.index', compact('wasteLogs', 'outlets', 'totalWasteValue'));
     }
 
     public function create(): View
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        $items = InventoryItem::where('tenant_id', $user->tenant_id)
+        $outlets = Outlet::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        $units = Unit::where('tenant_id', $user->tenant_id)
+        $inventoryItems = InventoryItem::where('tenant_id', $tenantId)
             ->where('is_active', true)
+            ->with('unit')
             ->orderBy('name')
             ->get();
 
-        $reasons = WasteLog::getReasons();
-
-        return view('inventory.waste-logs.create', compact('items', 'units', 'reasons'));
+        return view('inventory.waste-logs.create', compact('outlets', 'inventoryItems'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
             'outlet_id' => ['required', 'exists:outlets,id'],
             'inventory_item_id' => ['required', 'exists:inventory_items,id'],
-            'batch_id' => ['nullable', 'exists:stock_batches,id'],
+            'quantity' => ['required', 'numeric', 'min:0.001'],
+            'reason' => ['required', 'in:expired,damaged,spoiled,overproduction,quality_issue,other'],
             'waste_date' => ['required', 'date'],
-            'quantity' => ['required', 'numeric', 'min:0.0001'],
-            'unit_id' => ['required', 'exists:units,id'],
-            'cost_price' => ['required', 'numeric', 'min:0'],
-            'reason' => ['required', 'in:expired,spoiled,damaged,preparation,overproduction,other'],
             'notes' => ['nullable', 'string'],
         ]);
 
-        $validated['tenant_id'] = $user->tenant_id;
-        $validated['total_cost'] = $validated['quantity'] * $validated['cost_price'];
-        $validated['logged_by'] = $user->id;
+        $inventoryItem = InventoryItem::find($validated['inventory_item_id']);
+        $unitCost = $inventoryItem->cost_price;
+        $totalCost = $validated['quantity'] * $unitCost;
 
-        $wasteLog = WasteLog::create($validated);
+        $wasteLog = WasteLog::create([
+            'tenant_id' => $tenantId,
+            'outlet_id' => $validated['outlet_id'],
+            'inventory_item_id' => $validated['inventory_item_id'],
+            'unit_id' => $inventoryItem->unit_id,
+            'quantity' => $validated['quantity'],
+            'cost_price' => $unitCost,
+            'total_cost' => $totalCost,
+            'reason' => $validated['reason'],
+            'waste_date' => $validated['waste_date'],
+            'notes' => $validated['notes'],
+            'logged_by' => auth()->id(),
+        ]);
 
-        $this->stockService->issueStock(
-            outletId: $validated['outlet_id'],
-            inventoryItemId: $validated['inventory_item_id'],
-            quantity: $validated['quantity'],
-            type: \App\Models\StockMovement::TYPE_WASTE,
-            userId: $user->id,
-            referenceType: 'waste_log',
-            referenceId: $wasteLog->id,
-            notes: 'Waste: '.$validated['reason'],
-        );
+        // Issue stock for the waste
+        try {
+            $this->stockService->issueStock(
+                outletId: $validated['outlet_id'],
+                inventoryItemId: $validated['inventory_item_id'],
+                quantity: $validated['quantity'],
+                userId: auth()->id(),
+                reason: 'Waste: '.$validated['reason'],
+                referenceType: 'waste_log',
+                referenceId: $wasteLog->id
+            );
+        } catch (\Exception $e) {
+            // If stock deduction fails, still log the waste but note the issue
+            $wasteLog->update(['notes' => ($wasteLog->notes ?? '').' [Stock deduction failed: '.$e->getMessage().']']);
+        }
 
         return redirect()->route('inventory.waste-logs.index')
-            ->with('success', 'Waste logged successfully.');
+            ->with('success', 'Waste log recorded successfully.');
     }
 
     public function show(WasteLog $wasteLog): View
     {
         $this->authorizeWasteLog($wasteLog);
-        $wasteLog->load(['inventoryItem', 'outlet', 'batch', 'unit', 'loggedBy']);
+        $wasteLog->load(['inventoryItem.unit', 'outlet', 'loggedBy']);
 
         return view('inventory.waste-logs.show', compact('wasteLog'));
     }
 
+    public function destroy(WasteLog $wasteLog): RedirectResponse
+    {
+        $this->authorizeWasteLog($wasteLog);
+
+        // Only allow deletion of recent waste logs (within 24 hours)
+        if ($wasteLog->created_at->diffInHours(now()) > 24) {
+            return back()->with('error', 'Cannot delete waste logs older than 24 hours.');
+        }
+
+        $wasteLog->delete();
+
+        return redirect()->route('inventory.waste-logs.index')
+            ->with('success', 'Waste log deleted successfully.');
+    }
+
     public function report(Request $request): View
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        $query = WasteLog::where('tenant_id', $user->tenant_id)
-            ->with(['inventoryItem', 'outlet']);
+        $validated = $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'outlet_id' => ['nullable', 'exists:outlets,id'],
+        ]);
 
-        if ($request->filled('outlet_id')) {
-            $query->where('outlet_id', $request->outlet_id);
+        $dateFrom = $validated['date_from'] ?? now()->startOfMonth();
+        $dateTo = $validated['date_to'] ?? now()->endOfMonth();
+
+        $query = WasteLog::where('tenant_id', $tenantId)
+            ->whereBetween('waste_date', [$dateFrom, $dateTo]);
+
+        if (! empty($validated['outlet_id'])) {
+            $query->where('outlet_id', $validated['outlet_id']);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('waste_date', '>=', $request->from_date);
-        }
+        // Summary by reason
+        $wasteByReason = (clone $query)
+            ->selectRaw('reason, COUNT(*) as count, SUM(quantity) as total_quantity, SUM(total_cost) as total_cost')
+            ->groupBy('reason')
+            ->get();
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('waste_date', '<=', $request->to_date);
-        }
+        // Summary by item
+        $wasteByItem = (clone $query)
+            ->with('inventoryItem.unit')
+            ->selectRaw('inventory_item_id, SUM(quantity) as total_quantity, SUM(total_cost) as total_cost')
+            ->groupBy('inventory_item_id')
+            ->orderByDesc('total_cost')
+            ->limit(20)
+            ->get();
 
-        $wasteLogs = $query->orderBy('waste_date')->get();
+        // Daily trend
+        $dailyTrend = (clone $query)
+            ->selectRaw('DATE(waste_date) as date, SUM(total_cost) as total_cost')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
 
-        $totalCost = $wasteLogs->sum('total_cost');
-        $totalQuantity = $wasteLogs->sum('quantity');
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        $byReason = $wasteLogs->groupBy('reason')
-            ->map(fn ($group) => [
-                'quantity' => $group->sum('quantity'),
-                'cost' => $group->sum('total_cost'),
-                'count' => $group->count(),
-                'reason_label' => WasteLog::getReasons()[$group->first()->reason] ?? $group->first()->reason,
-            ])
-            ->sortByDesc('cost');
-
-        $byItem = $wasteLogs->groupBy('inventory_item_id')
-            ->map(fn ($group) => [
-                'item_name' => $group->first()->inventoryItem->name,
-                'quantity' => $group->sum('quantity'),
-                'cost' => $group->sum('total_cost'),
-                'count' => $group->count(),
-            ])
-            ->sortByDesc('cost');
+        $totalWasteValue = $query->sum('total_cost');
 
         return view('inventory.waste-logs.report', compact(
-            'wasteLogs',
-            'totalCost',
-            'totalQuantity',
-            'byReason',
-            'byItem'
+            'wasteByReason',
+            'wasteByItem',
+            'dailyTrend',
+            'outlets',
+            'totalWasteValue',
+            'dateFrom',
+            'dateTo'
         ));
     }
 
     private function authorizeWasteLog(WasteLog $wasteLog): void
     {
         $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return;
+        }
 
         if ($wasteLog->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');

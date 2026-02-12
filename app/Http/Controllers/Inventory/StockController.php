@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryItem;
 use App\Models\InventoryStock;
+use App\Models\Outlet;
+use App\Models\StockBatch;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -12,11 +15,13 @@ class StockController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $outletId = $request->outlet_id ?? $user->outlet_id;
+        $tenantId = $this->getTenantId();
 
-        $query = InventoryStock::where('outlet_id', $outletId)
-            ->with(['inventoryItem.category', 'inventoryItem.unit']);
+        // Get outlet IDs for this tenant
+        $outletIds = Outlet::where('tenant_id', $tenantId)->pluck('id');
+
+        $query = InventoryStock::whereIn('outlet_id', $outletIds)
+            ->with(['inventoryItem.unit', 'outlet']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -26,136 +31,186 @@ class StockController extends Controller
             });
         }
 
-        if ($request->filled('category_id')) {
-            $query->whereHas('inventoryItem', function ($q) use ($request) {
-                $q->where('category_id', $request->category_id);
-            });
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
         }
 
         if ($request->filled('status')) {
             if ($request->status === 'low') {
-                $query->whereColumn('quantity', '<=', 'inventory_items.reorder_point');
+                $query->whereHas('inventoryItem', function ($q) {
+                    $q->whereRaw('inventory_stocks.quantity <= inventory_items.reorder_point');
+                });
             } elseif ($request->status === 'out') {
                 $query->where('quantity', '<=', 0);
-            } elseif ($request->status === 'available') {
-                $query->whereColumn('quantity', '>', 'inventory_items.reorder_point');
             }
         }
 
-        $stocks = $query->orderBy('id')->paginate(20)->withQueryString();
+        $stocks = $query->orderBy('updated_at', 'desc')->paginate(15)->withQueryString();
 
-        return view('inventory.stocks.index', compact('stocks', 'outletId'));
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.stocks.index', compact('stocks', 'outlets'));
     }
 
     public function show(InventoryStock $stock): View
     {
-        $user = auth()->user();
-        $this->authorizeStock($stock, $user->tenant_id);
+        $this->authorizeStock($stock);
+        $stock->load(['inventoryItem.unit', 'outlet']);
 
-        $stock->load([
-            'inventoryItem.category',
-            'inventoryItem.unit',
-            'outlet',
-            'stockBatches' => function ($q) {
-                $q->where('remaining_quantity', '>', 0)
-                    ->orderBy('expiry_date');
-            },
-            'stockMovements' => function ($q) {
-                $q->latest()->limit(50);
-            },
-        ]);
+        // Get batches for this item at this outlet
+        $batches = StockBatch::where('inventory_item_id', $stock->inventory_item_id)
+            ->where('outlet_id', $stock->outlet_id)
+            ->where('current_qty', '>', 0)
+            ->orderBy('expiry_date')
+            ->get();
 
-        return view('inventory.stocks.show', compact('stock'));
+        // Get recent movements
+        $movements = StockMovement::where('inventory_item_id', $stock->inventory_item_id)
+            ->where('outlet_id', $stock->outlet_id)
+            ->with(['createdBy'])
+            ->latest()
+            ->take(20)
+            ->get();
+
+        return view('inventory.stocks.show', compact('stock', 'batches', 'movements'));
     }
 
     public function movements(Request $request): View
     {
-        $user = auth()->user();
-        $outletId = $request->outlet_id ?? $user->outlet_id;
+        $tenantId = $this->getTenantId();
 
-        $query = InventoryStock::where('outlet_id', $outletId);
+        // Get outlet IDs for this tenant
+        $outletIds = Outlet::where('tenant_id', $tenantId)->pluck('id');
 
-        $movements = \App\Models\StockMovement::whereHas('stockBatch', function ($q) use ($outletId) {
-            $q->whereHas('inventoryStock', function ($sq) use ($outletId) {
-                $sq->where('outlet_id', $outletId);
+        $query = StockMovement::whereIn('outlet_id', $outletIds)
+            ->with(['inventoryItem.unit', 'outlet', 'createdBy']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('reference_number', 'like', "%{$search}%")
+                    ->orWhereHas('inventoryItem', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
             });
-        })
-            ->with(['inventoryStock.inventoryItem', 'inventoryStock.outlet'])
-            ->when($request->filled('item_id'), function ($q) use ($request) {
-                return $q->whereHas('inventoryStock', function ($sq) use ($request) {
-                    $sq->where('inventory_item_id', $request->item_id);
-                });
-            })
-            ->when($request->filled('type'), function ($q) use ($request) {
-                return $q->where('movement_type', $request->type);
-            })
-            ->when($request->filled('from_date'), function ($q) use ($request) {
-                return $q->whereDate('created_at', '>=', $request->from_date);
-            })
-            ->when($request->filled('to_date'), function ($q) use ($request) {
-                return $q->whereDate('created_at', '<=', $request->to_date);
-            })
-            ->latest()
-            ->paginate(50)
-            ->withQueryString();
+        }
 
-        $items = InventoryItem::where('tenant_id', $user->tenant_id)
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $movements = $query->latest()->paginate(20)->withQueryString();
+
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('inventory.stocks.movements', compact('movements', 'items', 'outletId'));
+        return view('inventory.stocks.movements', compact('movements', 'outlets'));
     }
 
-    public function lowStock(Request $request): View
+    public function batches(Request $request): View
     {
-        $user = auth()->user();
-        $outletId = $request->outlet_id ?? $user->outlet_id;
+        $tenantId = $this->getTenantId();
 
-        $stocks = InventoryStock::where('outlet_id', $outletId)
-            ->with(['inventoryItem.category', 'inventoryItem.unit'])
-            ->whereHas('inventoryItem', function ($q) {
-                $q->whereColumn('inventory_stocks.quantity', '<=', 'inventory_items.reorder_point');
-            })
-            ->get()
-            ->sortBy(fn ($stock) => $stock->inventoryItem->reorder_point - $stock->quantity);
+        // Get outlet IDs for this tenant
+        $outletIds = Outlet::where('tenant_id', $tenantId)->pluck('id');
 
-        return view('inventory.stocks.low_stock', compact('stocks', 'outletId'));
-    }
+        $query = StockBatch::whereIn('outlet_id', $outletIds)
+            ->where('current_qty', '>', 0)
+            ->with(['inventoryItem.unit', 'outlet']);
 
-    public function valuation(Request $request): View
-    {
-        $user = auth()->user();
-        $outletId = $request->outlet_id ?? $user->outlet_id;
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('batch_number', 'like', "%{$search}%")
+                    ->orWhereHas('inventoryItem', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
 
-        $stocks = InventoryStock::where('outlet_id', $outletId)
-            ->with(['inventoryItem.category'])
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
+        }
+
+        if ($request->filled('expiry_status')) {
+            $today = now();
+            if ($request->expiry_status === 'expired') {
+                $query->where('expiry_date', '<', $today);
+            } elseif ($request->expiry_status === 'expiring_soon') {
+                $query->whereBetween('expiry_date', [$today, $today->copy()->addDays(30)]);
+            }
+        }
+
+        $batches = $query->orderBy('expiry_date')->paginate(20)->withQueryString();
+
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
             ->get();
 
-        $totalValue = $stocks->sum(fn ($stock) => $stock->quantity * $stock->avg_cost);
-        $totalQuantity = $stocks->sum('quantity');
-        $itemCount = $stocks->count();
-
-        $byCategory = $stocks->groupBy(fn ($stock) => $stock->inventoryItem->category?->name ?? 'Uncategorized')
-            ->map(fn ($group) => [
-                'quantity' => $group->sum('quantity'),
-                'value' => $group->sum(fn ($stock) => $stock->quantity * $stock->avg_cost),
-                'items' => $group->count(),
-            ])
-            ->sortByDesc('value');
-
-        return view('inventory.stocks.valuation', compact(
-            'stocks',
-            'outletId',
-            'totalValue',
-            'totalQuantity',
-            'itemCount',
-            'byCategory'
-        ));
+        return view('inventory.stocks.batches', compact('batches', 'outlets'));
     }
 
-    private function authorizeStock(InventoryStock $stock, string $tenantId): void
+    public function lowStock(): View
     {
-        if ($stock->inventoryItem->tenant_id !== $tenantId) {
+        $tenantId = $this->getTenantId();
+
+        $lowStockItems = InventoryItem::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->where('reorder_point', '>', 0)
+            ->with(['unit', 'stocks.outlet'])
+            ->get()
+            ->filter(function ($item) {
+                $totalStock = $item->stocks->sum('quantity');
+
+                return $totalStock <= $item->reorder_point;
+            });
+
+        return view('inventory.stocks.low-stock', compact('lowStockItems'));
+    }
+
+    public function expiringItems(): View
+    {
+        $tenantId = $this->getTenantId();
+        $warningDate = now()->addDays(30);
+
+        // Get outlet IDs for this tenant
+        $outletIds = Outlet::where('tenant_id', $tenantId)->pluck('id');
+
+        $expiringBatches = StockBatch::whereIn('outlet_id', $outletIds)
+            ->where('current_quantity', '>', 0)
+            ->whereNotNull('expiry_date')
+            ->where('expiry_date', '<=', $warningDate)
+            ->with(['inventoryItem.unit', 'outlet'])
+            ->orderBy('expiry_date')
+            ->get();
+
+        return view('inventory.stocks.expiring', compact('expiringBatches'));
+    }
+
+    private function authorizeStock(InventoryStock $stock): void
+    {
+        $tenantId = $this->getTenantId();
+        $stock->load('outlet');
+
+        if ($stock->outlet->tenant_id !== $tenantId) {
             abort(403, 'Access denied.');
         }
     }

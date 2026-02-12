@@ -11,10 +11,6 @@ class Tenant extends Model
 {
     use HasFactory, HasUuid;
 
-    /**
-     * Mass Assignment
-     * Field yang boleh diisi via create() atau fill()
-     */
     protected $fillable = [
         'code',
         'name',
@@ -31,10 +27,6 @@ class Tenant extends Model
         'is_active',
     ];
 
-    /**
-     * Type Casting
-     * Cast tipe data otomatis saat diakses
-     */
     protected function casts(): array
     {
         return [
@@ -46,54 +38,62 @@ class Tenant extends Model
         ];
     }
 
-    /**
-     * Relationship: Tenant has many Users
-     * Contoh: $tenant->users
-     */
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    /**
-     * Relationship: Tenant has many Outlets
-     * Contoh: $tenant->outlets
-     */
     public function outlets(): HasMany
     {
         return $this->hasMany(Outlet::class);
     }
 
-    /**
-     * Relationship: Tenant has many Roles
-     * Contoh: $tenant->roles
-     */
     public function roles(): HasMany
     {
         return $this->hasMany(Role::class);
     }
 
-    /**
-     * Helper: Cek apakah subscription masih aktif
-     */
+    public function units(): HasMany
+    {
+        return $this->hasMany(Unit::class);
+    }
+
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
+    public function inventoryCategories(): HasMany
+    {
+        return $this->hasMany(InventoryCategory::class);
+    }
+
+    public function inventoryItems(): HasMany
+    {
+        return $this->hasMany(InventoryItem::class);
+    }
+
+    public function recipes(): HasMany
+    {
+        return $this->hasMany(Recipe::class);
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
     public function isSubscriptionActive(): bool
     {
-        // Free plan selalu aktif
         if ($this->subscription_plan === 'free') {
             return true;
         }
 
-        // Cek apakah subscription_expires_at masih di masa depan
         return $this->subscription_expires_at && $this->subscription_expires_at->isFuture();
     }
 
-    /**
-     * Helper: Cek apakah tenant bisa menambah outlet baru
-     */
     public function canAddOutlet(): bool
     {
-        // Hitung jumlah outlet saat ini
-        // Bandingkan dengan max_outlets
         return $this->outlets()->count() < $this->max_outlets;
     }
 }

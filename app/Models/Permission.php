@@ -18,17 +18,11 @@ class Permission extends Model
         'description',
     ];
 
-    /**
-     * Relationship: Permission belongs to many Roles
-     */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_permissions');
     }
 
-    /**
-     * Static Helper: Get semua modules
-     */
     public static function getModules(): array
     {
         return [

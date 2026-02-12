@@ -12,27 +12,25 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('purchase_order_id');
             $table->uuid('inventory_item_id');
-            $table->uuid('supplier_item_id')->nullable();
-            $table->string('description')->nullable();
-            $table->uuid('unit_id');
-            $table->decimal('ordered_qty', 12, 4);
-            $table->decimal('received_qty', 12, 4)->default(0);
+            $table->uuid('unit_id'); // Purchase unit
+            $table->decimal('unit_conversion', 12, 4)->default(1); // Conversion to stock unit
+            $table->decimal('quantity', 12, 4);
             $table->decimal('unit_price', 15, 2)->default(0);
             $table->decimal('discount_percent', 5, 2)->default(0);
-            $table->decimal('tax_percent', 5, 2)->default(0);
-            $table->decimal('subtotal', 15, 2)->default(0);
             $table->decimal('discount_amount', 15, 2)->default(0);
+            $table->decimal('tax_percent', 5, 2)->default(0);
             $table->decimal('tax_amount', 15, 2)->default(0);
             $table->decimal('total', 15, 2)->default(0);
+            $table->decimal('received_qty', 12, 4)->default(0); // For partial receiving
             $table->text('notes')->nullable();
             $table->timestamps();
 
             $table->foreign('purchase_order_id')->references('id')->on('purchase_orders')->onDelete('cascade');
             $table->foreign('inventory_item_id')->references('id')->on('inventory_items')->onDelete('restrict');
-            $table->foreign('supplier_item_id')->references('id')->on('supplier_items')->onDelete('set null');
             $table->foreign('unit_id')->references('id')->on('units')->onDelete('restrict');
 
-            $table->index(['purchase_order_id', 'inventory_item_id']);
+            $table->index(['purchase_order_id']);
+            $table->index(['inventory_item_id']);
         });
     }
 

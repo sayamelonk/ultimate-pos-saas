@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Hash;
 
 class TenantSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         // Create Super Admin (no tenant)
@@ -126,14 +129,5 @@ class TenantSeeder extends Seeder
         ]);
         $kitchen->roles()->attach($kitchenRole->id);
         $kitchen->outlets()->attach($outlet->id, ['is_default' => true]);
-
-        $this->command->info('✅ Demo data created successfully!');
-        $this->command->info('📧 Login Credentials:');
-        $this->command->info('   Super Admin: superadmin@ultimatepos.com / password');
-        $this->command->info('   Tenant Owner: owner@demo.com / password');
-        $this->command->info('   Manager: manager@demo.com / password');
-        $this->command->info('   Cashier: cashier@demo.com / password');
-        $this->command->info('   Waiter: waiter@demo.com / password');
-        $this->command->info('   Kitchen: kitchen@demo.com / password');
     }
 }

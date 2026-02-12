@@ -13,8 +13,8 @@ class InventoryCategoryController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = InventoryCategory::where('tenant_id', $user->tenant_id)
+        $tenantId = $this->getTenantId();
+        $query = InventoryCategory::where('tenant_id', $tenantId)
             ->with('parent');
 
         if ($request->filled('search')) {
@@ -40,8 +40,8 @@ class InventoryCategoryController extends Controller
 
     public function create(): View
     {
-        $user = auth()->user();
-        $parentCategories = InventoryCategory::where('tenant_id', $user->tenant_id)
+        $tenantId = $this->getTenantId();
+        $parentCategories = InventoryCategory::where('tenant_id', $tenantId)
             ->whereNull('parent_id')
             ->orderBy('name')
             ->get();
@@ -51,7 +51,7 @@ class InventoryCategoryController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20'],
@@ -61,9 +61,9 @@ class InventoryCategoryController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['tenant_id'] = $user->tenant_id;
+        $validated['tenant_id'] = $tenantId;
         $validated['slug'] = Str::slug($validated['name']);
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
 
         InventoryCategory::create($validated);
 
@@ -84,9 +84,9 @@ class InventoryCategoryController extends Controller
     public function edit(InventoryCategory $category): View
     {
         $this->authorizeCategory($category);
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        $parentCategories = InventoryCategory::where('tenant_id', $user->tenant_id)
+        $parentCategories = InventoryCategory::where('tenant_id', $tenantId)
             ->whereNull('parent_id')
             ->where('id', '!=', $category->id)
             ->orderBy('name')
@@ -108,7 +108,7 @@ class InventoryCategoryController extends Controller
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
 
         // Prevent category from being its own parent
         if ($validated['parent_id'] === $category->id) {
@@ -145,6 +145,9 @@ class InventoryCategoryController extends Controller
     {
         $user = auth()->user();
 
+        if ($user->isSuperAdmin()) {
+            return;
+        }
         if ($category->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');
         }

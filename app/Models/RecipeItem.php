@@ -54,8 +54,22 @@ class RecipeItem extends Model
 
     public function calculateCost(): float
     {
-        $costPrice = $this->inventoryItem->cost_price ?? 0;
+        $costPrice = (float) ($this->inventoryItem->cost_price ?? 0);
+        $grossQuantity = $this->getGrossQuantity();
 
-        return $this->getGrossQuantity() * $costPrice;
+        // Convert quantity to inventory item's base unit if different
+        $recipeUnit = $this->unit;
+        $itemUnit = $this->inventoryItem->unit;
+
+        if ($recipeUnit && $itemUnit && $recipeUnit->id !== $itemUnit->id) {
+            // Convert recipe quantity to base unit first
+            $quantityInBase = $grossQuantity * ($recipeUnit->conversion_factor ?? 1);
+            // Then convert from base to item's unit
+            $quantityInItemUnit = $quantityInBase / ($itemUnit->conversion_factor ?? 1);
+
+            return $quantityInItemUnit * $costPrice;
+        }
+
+        return $grossQuantity * $costPrice;
     }
 }

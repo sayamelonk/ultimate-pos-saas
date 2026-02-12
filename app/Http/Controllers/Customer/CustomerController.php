@@ -70,7 +70,7 @@ class CustomerController extends Controller
             'membership_expires_at' => $request->membership_expires_at,
             'notes' => $request->notes,
             'joined_at' => now(),
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('customers.index')
@@ -116,7 +116,7 @@ class CustomerController extends Controller
             'membership_level' => $request->membership_level ?? $customer->membership_level,
             'membership_expires_at' => $request->membership_expires_at,
             'notes' => $request->notes,
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('customers.index')

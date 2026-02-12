@@ -21,6 +21,7 @@ class InventoryItem extends Model
         'sku',
         'barcode',
         'name',
+        'type',
         'description',
         'image',
         'purchase_unit_conversion',
@@ -30,6 +31,8 @@ class InventoryItem extends Model
         'reorder_point',
         'reorder_qty',
         'shelf_life_days',
+        'storage_location',
+        'is_perishable',
         'track_batches',
         'is_active',
     ];
@@ -44,6 +47,7 @@ class InventoryItem extends Model
             'reorder_point' => 'decimal:4',
             'reorder_qty' => 'decimal:4',
             'shelf_life_days' => 'integer',
+            'is_perishable' => 'boolean',
             'track_batches' => 'boolean',
             'is_active' => 'boolean',
         ];
@@ -85,6 +89,11 @@ class InventoryItem extends Model
     }
 
     public function batches(): HasMany
+    {
+        return $this->hasMany(StockBatch::class);
+    }
+
+    public function stockBatches(): HasMany
     {
         return $this->hasMany(StockBatch::class);
     }

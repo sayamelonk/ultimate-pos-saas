@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Permission>
@@ -16,25 +17,21 @@ class PermissionFactory extends Factory
      */
     public function definition(): array
     {
-        $module = fake()->randomElement([
-            'dashboard', 'pos', 'orders', 'products', 'categories',
-            'inventory', 'tables', 'kitchen', 'reports', 'outlets',
-            'users', 'roles', 'settings',
-        ]);
+        $modules = ['dashboard', 'pos', 'orders', 'products', 'inventory', 'reports', 'settings'];
+        $actions = ['view', 'create', 'update', 'delete', 'manage'];
 
-        $action = fake()->randomElement(['View', 'Create', 'Update', 'Delete', 'Manage']);
+        $module = fake()->randomElement($modules);
+        $action = fake()->randomElement($actions);
+        $name = ucfirst($action).' '.ucfirst($module);
 
         return [
-            'name' => "{$action} {$module}",
-            'slug' => strtolower(str_replace(' ', '-', "{$action}-{$module}")) . '-' . fake()->unique()->randomNumber(4),
+            'name' => $name,
+            'slug' => Str::slug($name),
             'module' => $module,
-            'description' => fake()->sentence(),
+            'description' => "Permission to {$action} {$module}",
         ];
     }
 
-    /**
-     * Create a permission for specific module.
-     */
     public function forModule(string $module): static
     {
         return $this->state(fn (array $attributes) => [

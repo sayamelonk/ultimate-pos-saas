@@ -4,231 +4,230 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use App\Models\GoodsReceive;
-use App\Models\GoodsReceiveItem;
+use App\Models\Outlet;
 use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
-use App\Services\StockService;
+use App\Services\Inventory\PurchaseOrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class GoodsReceiveController extends Controller
 {
-    public function __construct(
-        private StockService $stockService
-    ) {}
+    public function __construct(private PurchaseOrderService $purchaseOrderService) {}
 
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = GoodsReceive::where('tenant_id', $user->tenant_id)
-            ->with(['supplier', 'outlet', 'receivedBy']);
+        $tenantId = $this->getTenantId();
+        $query = GoodsReceive::where('tenant_id', $tenantId)
+            ->with(['purchaseOrder.supplier', 'outlet', 'receivedBy']);
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('gr_number', 'like', "%{$search}%");
-        }
-
-        if ($request->filled('supplier_id')) {
-            $query->where('supplier_id', $request->supplier_id);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where(function ($q) use ($search) {
+                $q->where('gr_number', 'like', "%{$search}%")
+                    ->orWhereHas('purchaseOrder', function ($sq) use ($search) {
+                        $sq->where('po_number', 'like', "%{$search}%");
+                    });
+            });
         }
 
         if ($request->filled('outlet_id')) {
             $query->where('outlet_id', $request->outlet_id);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('receive_date', '>=', $request->from_date);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('receive_date', '<=', $request->to_date);
-        }
+        $goodsReceives = $query->latest()->paginate(15)->withQueryString();
 
-        $goodsReceives = $query->orderBy('receive_date', 'desc')
-            ->paginate(20)
-            ->withQueryString();
+        $outlets = Outlet::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        return view('inventory.goods-receives.index', compact('goodsReceives'));
+        return view('inventory.goods-receives.index', compact('goodsReceives', 'outlets'));
     }
 
-    public function create(?PurchaseOrder $purchaseOrder): View
+    public function create(Request $request): View
     {
-        if ($purchaseOrder) {
-            $this->authorizePurchaseOrder($purchaseOrder);
+        $tenantId = $this->getTenantId();
 
-            if (! $purchaseOrder->canBeReceived()) {
-                return back()->with('error', 'Purchase order cannot be received.');
-            }
+        $purchaseOrders = PurchaseOrder::where('tenant_id', $tenantId)
+            ->whereIn('status', ['approved', 'sent', 'partial'])
+            ->with(['supplier', 'outlet', 'items.inventoryItem.unit'])
+            ->latest()
+            ->get();
 
-            $purchaseOrder->load(['items.inventoryItem', 'supplier', 'outlet']);
+        $selectedPO = null;
+        if ($request->filled('purchase_order_id')) {
+            $selectedPO = $purchaseOrders->firstWhere('id', $request->purchase_order_id);
         }
 
-        return view('inventory.goods-receives.create', compact('purchaseOrder'));
+        return view('inventory.goods-receives.create', compact('purchaseOrders', 'selectedPO'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
-            'purchase_order_id' => ['nullable', 'exists:purchase_orders,id'],
-            'supplier_id' => ['required', 'exists:suppliers,id'],
-            'outlet_id' => ['required', 'exists:outlets,id'],
+            'purchase_order_id' => ['required', 'exists:purchase_orders,id'],
             'receive_date' => ['required', 'date'],
-            'invoice_number' => ['nullable', 'string', 'max:100'],
-            'invoice_date' => ['nullable', 'date'],
+            'invoice_number' => ['nullable', 'string', 'max:50'],
+            'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.purchase_order_item_id' => ['nullable', 'exists:purchase_order_items,id'],
-            'items.*.inventory_item_id' => ['required', 'exists:inventory_items,id'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-            'items.*.unit_id' => ['required', 'exists:units,id'],
-            'items.*.cost_price' => ['required', 'numeric', 'min:0'],
+            'items.*.purchase_order_item_id' => ['required', 'exists:purchase_order_items,id'],
+            'items.*.quantity_received' => ['required', 'numeric', 'min:0'],
             'items.*.batch_number' => ['nullable', 'string', 'max:50'],
             'items.*.expiry_date' => ['nullable', 'date'],
-            'items.*.tax_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'notes' => ['nullable', 'string'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $lastGr = GoodsReceive::where('tenant_id', $user->tenant_id)
-            ->orderBy('id', 'desc')
-            ->first();
+        $purchaseOrder = PurchaseOrder::where('tenant_id', $tenantId)
+            ->findOrFail($validated['purchase_order_id']);
 
-        $grNumber = 'GR-'.date('Ymd').'-'.str_pad((($lastGr->id ?? 0) + 1), 4, '0', STR_PAD_LEFT);
-
-        $validated['tenant_id'] = $user->tenant_id;
-        $validated['gr_number'] = $grNumber;
-        $validated['status'] = GoodsReceive::STATUS_DRAFT;
-        $validated['received_by'] = $user->id;
-        $validated['subtotal'] = 0;
-        $validated['tax_amount'] = 0;
-        $validated['discount_amount'] = 0;
-        $validated['total'] = 0;
-
-        $items = $validated['items'];
-        unset($validated['items']);
-
-        $goodsReceive = GoodsReceive::create($validated);
-
-        foreach ($items as $item) {
-            $lineTotal = $item['quantity'] * $item['cost_price'];
-            $taxAmount = $lineTotal * (($item['tax_percent'] ?? 0) / 100);
-            $discountAmount = $lineTotal * (($item['discount_percent'] ?? 0) / 100);
-
-            GoodsReceiveItem::create([
-                'goods_receive_id' => $goodsReceive->id,
-                'purchase_order_item_id' => $item['purchase_order_item_id'] ?? null,
-                'inventory_item_id' => $item['inventory_item_id'],
-                'quantity' => $item['quantity'],
-                'unit_id' => $item['unit_id'],
-                'cost_price' => $item['cost_price'],
-                'batch_number' => $item['batch_number'] ?? null,
-                'expiry_date' => $item['expiry_date'] ?? null,
-                'tax_percent' => $item['tax_percent'] ?? 0,
-                'tax_amount' => $taxAmount,
-                'discount_percent' => $item['discount_percent'] ?? 0,
-                'discount_amount' => $discountAmount,
-                'total' => $lineTotal + $taxAmount - $discountAmount,
-            ]);
-        }
-
-        $goodsReceive->load('items');
-        $goodsReceive->calculateTotals();
-        $goodsReceive->save();
+        $goodsReceive = $this->purchaseOrderService->createGoodsReceive(
+            purchaseOrder: $purchaseOrder,
+            userId: auth()->id(),
+            items: $validated['items'],
+            invoiceNumber: $validated['invoice_number'] ?? null,
+            receiveDate: $validated['receive_date'],
+            notes: $validated['notes'] ?? null
+        );
 
         return redirect()->route('inventory.goods-receives.show', $goodsReceive)
             ->with('success', 'Goods receive created successfully.');
     }
 
-    public function show(GoodsReceive $goodsReceive): View
+    public function show(string $goodsReceive): View
     {
-        $this->authorizeGoodsReceive($goodsReceive);
-        $goodsReceive->load(['supplier', 'outlet', 'receivedBy', 'items.inventoryItem', 'items.unit']);
+        $user = auth()->user();
+
+        $query = GoodsReceive::query();
+        if (! $user->isSuperAdmin()) {
+            $query->where('tenant_id', $user->tenant_id);
+        }
+
+        $goodsReceive = $query->with([
+            'purchaseOrder.supplier',
+            'outlet',
+            'receivedBy',
+            'items.purchaseOrderItem.inventoryItem.unit',
+        ])->findOrFail($goodsReceive);
 
         return view('inventory.goods-receives.show', compact('goodsReceive'));
+    }
+
+    public function edit(GoodsReceive $goodsReceive): View
+    {
+        $this->authorizeGoodsReceive($goodsReceive);
+
+        if ($goodsReceive->status !== 'draft') {
+            return redirect()->route('inventory.goods-receives.show', $goodsReceive)
+                ->with('error', 'Only draft goods receives can be edited.');
+        }
+
+        $goodsReceive->load([
+            'purchaseOrder.items.inventoryItem.unit',
+            'items.purchaseOrderItem.inventoryItem.unit',
+        ]);
+
+        return view('inventory.goods-receives.edit', compact('goodsReceive'));
+    }
+
+    public function update(Request $request, GoodsReceive $goodsReceive): RedirectResponse
+    {
+        $this->authorizeGoodsReceive($goodsReceive);
+
+        if ($goodsReceive->status !== 'draft') {
+            return back()->with('error', 'Only draft goods receives can be updated.');
+        }
+
+        $validated = $request->validate([
+            'receive_date' => ['required', 'date'],
+            'invoice_number' => ['nullable', 'string', 'max:50'],
+            'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'exists:goods_receive_items,id'],
+            'items.*.quantity_received' => ['required', 'numeric', 'min:0'],
+            'items.*.batch_number' => ['nullable', 'string', 'max:50'],
+            'items.*.expiry_date' => ['nullable', 'date'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $goodsReceive->update([
+            'receive_date' => $validated['receive_date'],
+            'invoice_number' => $validated['invoice_number'],
+            'notes' => $validated['notes'],
+        ]);
+
+        foreach ($validated['items'] as $itemData) {
+            $goodsReceive->items()->where('id', $itemData['id'])->update([
+                'quantity_received' => $itemData['quantity_received'],
+                'batch_number' => $itemData['batch_number'] ?? null,
+                'expiry_date' => $itemData['expiry_date'] ?? null,
+                'notes' => $itemData['notes'] ?? null,
+            ]);
+        }
+
+        return redirect()->route('inventory.goods-receives.show', $goodsReceive)
+            ->with('success', 'Goods receive updated successfully.');
+    }
+
+    public function destroy(GoodsReceive $goodsReceive): RedirectResponse
+    {
+        $this->authorizeGoodsReceive($goodsReceive);
+
+        if ($goodsReceive->status !== 'draft') {
+            return back()->with('error', 'Only draft goods receives can be deleted.');
+        }
+
+        $goodsReceive->items()->delete();
+        $goodsReceive->delete();
+
+        return redirect()->route('inventory.goods-receives.index')
+            ->with('success', 'Goods receive deleted successfully.');
     }
 
     public function complete(GoodsReceive $goodsReceive): RedirectResponse
     {
         $this->authorizeGoodsReceive($goodsReceive);
+        $tenantId = $this->getTenantId();
 
-        if (! $goodsReceive->isDraft()) {
-            return back()->with('error', 'Only draft goods receives can be completed.');
+        try {
+            $this->purchaseOrderService->completeGoodsReceive($goodsReceive, auth()->id());
+
+            return redirect()->route('inventory.goods-receives.show', $goodsReceive)
+                ->with('success', 'Goods receive completed and stock updated.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $goodsReceive->load('items');
-
-        foreach ($goodsReceive->items as $item) {
-            $this->stockService->receiveStock(
-                outletId: $goodsReceive->outlet_id,
-                inventoryItemId: $item->inventory_item_id,
-                quantity: $item->quantity,
-                costPrice: $item->cost_price,
-                userId: auth()->id(),
-                grItem: $item,
-                batchNumber: $item->batch_number,
-                expiryDate: $item->expiry_date ? \Carbon\Carbon::parse($item->expiry_date) : null,
-            );
-
-            if ($item->purchase_order_item_id) {
-                $poItem = PurchaseOrderItem::find($item->purchase_order_item_id);
-                if ($poItem) {
-                    $poItem->received_qty += $item->quantity;
-                    $poItem->save();
-                }
-            }
-        }
-
-        if ($goodsReceive->purchase_order_id) {
-            $purchaseOrder = PurchaseOrder::find($goodsReceive->purchase_order_id);
-            if ($purchaseOrder) {
-                $purchaseOrder->load('items');
-
-                if ($purchaseOrder->isFullyReceived()) {
-                    $purchaseOrder->update(['status' => PurchaseOrder::STATUS_RECEIVED]);
-                } else {
-                    $purchaseOrder->update(['status' => PurchaseOrder::STATUS_PARTIAL]);
-                }
-            }
-        }
-
-        $goodsReceive->update(['status' => GoodsReceive::STATUS_COMPLETED]);
-
-        return back()->with('success', 'Goods received completed successfully. Stock updated.');
     }
 
     public function cancel(GoodsReceive $goodsReceive): RedirectResponse
     {
         $this->authorizeGoodsReceive($goodsReceive);
 
-        if ($goodsReceive->isCompleted()) {
-            return back()->with('error', 'Cannot cancel completed goods receive.');
+        if ($goodsReceive->status !== 'draft') {
+            return back()->with('error', 'Only draft goods receives can be cancelled.');
         }
 
-        $goodsReceive->update(['status' => GoodsReceive::STATUS_CANCELLED]);
+        $goodsReceive->update(['status' => 'cancelled']);
 
-        return back()->with('success', 'Goods receive cancelled successfully.');
+        return redirect()->route('inventory.goods-receives.show', $goodsReceive)
+            ->with('success', 'Goods receive cancelled successfully.');
     }
 
     private function authorizeGoodsReceive(GoodsReceive $goodsReceive): void
     {
         $user = auth()->user();
 
-        if ($goodsReceive->tenant_id !== $user->tenant_id) {
-            abort(403, 'Access denied.');
+        if ($user->isSuperAdmin()) {
+            return;
         }
-    }
 
-    private function authorizePurchaseOrder(PurchaseOrder $purchaseOrder): void
-    {
-        $user = auth()->user();
-
-        if ($purchaseOrder->tenant_id !== $user->tenant_id) {
+        if ($goodsReceive->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');
         }
     }

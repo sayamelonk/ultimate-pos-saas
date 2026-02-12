@@ -10,20 +10,13 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
-    /**
-     * Tampilkan halaman login
-     */
     public function showLoginForm(): View
     {
         return view('auth.login');
     }
 
-    /**
-     * Proses login
-     */
     public function login(Request $request): RedirectResponse
     {
-        // 1. Validasi input
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
@@ -31,56 +24,36 @@ class LoginController extends Controller
 
         $remember = $request->boolean('remember');
 
-        // 2. Attempt login
         if (Auth::attempt($credentials, $remember)) {
-            // 3. Ambil user yang sedang login sebelum regenerate session
             $user = Auth::user();
 
-            // 4. Cek apakah user aktif
             if (! $user->is_active) {
-                // Logout user jika tidak aktif
                 Auth::logout();
-                $request->session()->flush();
 
                 return back()->withErrors([
                     'email' => 'Your account has been deactivated.',
                 ]);
             }
 
-            // 5. Update last_login_at tanpa mengganggu remember_token
-            // Gunakan query builder untuk update hanya field yang diperlukan
-            \DB::table('users')
-                ->where('id', $user->id)
-                ->update(['last_login_at' => now()]);
+            $user->update(['last_login_at' => now()]);
 
-            // 6. Regenerate session ID untuk security (setelah user check)
             $request->session()->regenerate();
 
-            // 7. Redirect ke dashboard
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        // 8. Login gagal
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
     }
 
-    /**
-     * Proses logout
-     */
     public function logout(Request $request): RedirectResponse
     {
-        // 1. Logout user
         Auth::logout();
 
-        // 2. Invalidate session
         $request->session()->invalidate();
-
-        // 3. Regenerate CSRF token
         $request->session()->regenerateToken();
 
-        // 4. Redirect ke halaman login
         return redirect()->route('login');
     }
 }

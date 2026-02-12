@@ -15,6 +15,7 @@ class InventoryCategory extends Model
     protected $fillable = [
         'tenant_id',
         'parent_id',
+        'code',
         'name',
         'slug',
         'description',

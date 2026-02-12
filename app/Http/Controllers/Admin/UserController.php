@@ -53,12 +53,22 @@ class UserController extends Controller
             ->when(! $user->isSuperAdmin(), fn ($q) => $q->where('slug', '!=', 'super-admin'))
             ->get();
 
-        $outlets = Outlet::query()
-            ->when(! $user->isSuperAdmin(), fn ($q) => $q->where('tenant_id', $user->tenant_id))
-            ->where('is_active', true)
-            ->get();
+        // For non-super admin, get outlets from their tenant
+        // For super admin, outlets will be loaded dynamically via AJAX
+        $outlets = collect();
+        $tenants = collect();
 
-        return view('admin.users.create', compact('roles', 'outlets'));
+        if ($user->isSuperAdmin()) {
+            $tenants = \App\Models\Tenant::where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        } else {
+            $outlets = Outlet::where('tenant_id', $user->tenant_id)
+                ->where('is_active', true)
+                ->get();
+        }
+
+        return view('admin.users.create', compact('roles', 'outlets', 'tenants'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -77,32 +87,45 @@ class UserController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        // Set tenant_id based on user
+        // Determine tenant_id
+        $tenantId = null;
         if ($authUser->isSuperAdmin()) {
-            $validated['tenant_id'] = $request->input('tenant_id');
+            // For super admin, get tenant from first selected outlet
+            if (! empty($validated['outlets'])) {
+                $firstOutlet = Outlet::find($validated['outlets'][0]);
+                $tenantId = $firstOutlet?->tenant_id;
+            }
         } else {
-            $validated['tenant_id'] = $authUser->tenant_id;
+            $tenantId = $authUser->tenant_id;
         }
 
         $user = User::create([
-            'tenant_id' => $validated['tenant_id'],
+            'tenant_id' => $tenantId,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'] ?? null,
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         // Attach roles
         $user->roles()->attach($validated['roles']);
 
-        // Attach outlets
+        // Attach outlets and update tenant_id if needed
         if (! empty($validated['outlets'])) {
             $outletsData = [];
             foreach ($validated['outlets'] as $index => $outletId) {
                 $outletsData[$outletId] = ['is_default' => $index === 0];
             }
             $user->outlets()->attach($outletsData);
+
+            // Ensure tenant_id is set from first outlet if still null
+            if (! $user->tenant_id) {
+                $firstOutlet = Outlet::find($validated['outlets'][0]);
+                if ($firstOutlet) {
+                    $user->update(['tenant_id' => $firstOutlet->tenant_id]);
+                }
+            }
         }
 
         return redirect()->route('admin.users.index')
@@ -127,9 +150,13 @@ class UserController extends Controller
             ->when(! $authUser->isSuperAdmin(), fn ($q) => $q->where('slug', '!=', 'super-admin'))
             ->get();
 
-        $outlets = Outlet::query()
-            ->when(! $authUser->isSuperAdmin(), fn ($q) => $q->where('tenant_id', $authUser->tenant_id))
+        // For edit, show outlets from the user's tenant (not from logged-in user's tenant)
+        // This allows super admin to edit users from any tenant
+        $targetTenantId = $user->tenant_id ?? $authUser->tenant_id;
+
+        $outlets = Outlet::where('tenant_id', $targetTenantId)
             ->where('is_active', true)
+            ->orderBy('name')
             ->get();
 
         $userRoles = $user->roles->pluck('id')->toArray();
@@ -158,7 +185,7 @@ class UserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active'),
         ];
 
         if (! empty($validated['password'])) {
@@ -170,13 +197,19 @@ class UserController extends Controller
         // Sync roles
         $user->roles()->sync($validated['roles']);
 
-        // Sync outlets
+        // Sync outlets and update tenant_id
         if (! empty($validated['outlets'])) {
             $outletsData = [];
             foreach ($validated['outlets'] as $index => $outletId) {
                 $outletsData[$outletId] = ['is_default' => $index === 0];
             }
             $user->outlets()->sync($outletsData);
+
+            // Update tenant_id from first outlet
+            $firstOutlet = Outlet::find($validated['outlets'][0]);
+            if ($firstOutlet && $user->tenant_id !== $firstOutlet->tenant_id) {
+                $user->update(['tenant_id' => $firstOutlet->tenant_id]);
+            }
         } else {
             $user->outlets()->detach();
         }
@@ -205,6 +238,24 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Get outlets for a specific tenant (AJAX endpoint for Super Admin)
+     */
+    public function getOutletsByTenant(\App\Models\Tenant $tenant): \Illuminate\Http\JsonResponse
+    {
+        // Only super admin can access this
+        if (! auth()->user()->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $outlets = Outlet::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
+        return response()->json($outlets);
     }
 
     private function authorizeUser(User $user): void

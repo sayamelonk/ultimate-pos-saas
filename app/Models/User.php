@@ -6,6 +6,7 @@ use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -24,12 +25,9 @@ class User extends Authenticatable
         'is_active',
         'email_verified_at',
         'last_login_at',
+        'locale',
     ];
 
-    /**
-     * Hidden fields
-     * Field ini tidak akan muncul saat di-serialize (misal: JSON response)
-     */
     protected $hidden = [
         'password',
         'pin',
@@ -46,37 +44,22 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Relationship: User belongs to Tenant
-     * Contoh: $user->tenant
-     */
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    /**
-     * Relationship: User belongs to many Roles (Many-to-Many)
-     * Contoh: $user->roles
-     */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles');
     }
 
-    /**
-     * Relationship: User belongs to many Outlets (Many-to-Many)
-     * Contoh: $user->outlets
-     */
     public function outlets(): BelongsToMany
     {
         return $this->belongsToMany(Outlet::class, 'user_outlets')
             ->withPivot('is_default');
     }
 
-    /**
-     * Helper: Get default outlet
-     */
     public function defaultOutlet(): ?Outlet
     {
         return $this->outlets()
@@ -84,17 +67,16 @@ class User extends Authenticatable
             ->first();
     }
 
-    /**
-     * Helper: Cek apakah user punya role tertentu
-     */
     public function hasRole(string $slug): bool
     {
         return $this->roles()->where('slug', $slug)->exists();
     }
 
-    /**
-     * Helper: Cek apakah user punya permission tertentu
-     */
+    public function hasAnyRole(array $slugs): bool
+    {
+        return $this->roles()->whereIn('slug', $slugs)->exists();
+    }
+
     public function hasPermission(string $permissionSlug): bool
     {
         return $this->roles()
@@ -104,32 +86,25 @@ class User extends Authenticatable
             ->exists();
     }
 
-    /**
-     * Helper: Cek apakah user Super Admin
-     */
     public function isSuperAdmin(): bool
     {
         return $this->hasRole('super-admin');
     }
 
-    /**
-     * Helper: Cek apakah user bisa akses outlet tertentu
-     */
+    public function isTenantOwner(): bool
+    {
+        return $this->hasRole('tenant-owner');
+    }
+
     public function canAccessOutlet(string $outletId): bool
     {
-        // Super admin bisa akses semua outlet
-        if ($this->isSuperAdmin()) {
+        if ($this->isSuperAdmin() || $this->isTenantOwner()) {
             return true;
         }
 
-        // Cek apakah outlet ada di list outlet user
         return $this->outlets()->where('outlets.id', $outletId)->exists();
     }
 
-    /**
-     * Accessor: Get initials dari nama
-     * Contoh: "John Doe" -> "JD"
-     */
     public function getInitialsAttribute(): string
     {
         $words = explode(' ', $this->name);
@@ -140,5 +115,44 @@ class User extends Authenticatable
         }
 
         return $initials;
+    }
+
+    // ==================== PIN & Authorization ====================
+
+    public function userPin(): HasOne
+    {
+        return $this->hasOne(UserPin::class);
+    }
+
+    public function hasPin(): bool
+    {
+        return $this->userPin()->where('is_active', true)->exists();
+    }
+
+    public function verifyPin(string $pin): bool
+    {
+        $userPin = $this->userPin;
+
+        if (! $userPin || ! $userPin->is_active) {
+            return false;
+        }
+
+        return $userPin->verifyPin($pin);
+    }
+
+    public function canAuthorize(): bool
+    {
+        // SPV, Manager, Admin, Tenant Owner can authorize
+        return $this->hasAnyRole(['supervisor', 'spv', 'manager', 'outlet-manager', 'admin', 'administrator', 'tenant-owner', 'super-admin']);
+    }
+
+    public function isManager(): bool
+    {
+        return $this->hasAnyRole(['manager', 'outlet-manager', 'admin', 'administrator', 'tenant-owner', 'super-admin']);
+    }
+
+    public function isSupervisor(): bool
+    {
+        return $this->hasAnyRole(['supervisor', 'spv', 'manager', 'outlet-manager', 'admin', 'administrator', 'tenant-owner', 'super-admin']);
     }
 }

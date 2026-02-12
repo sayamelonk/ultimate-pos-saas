@@ -12,8 +12,8 @@ class SupplierController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = Supplier::where('tenant_id', $user->tenant_id);
+        $tenantId = $this->getTenantId();
+        $query = Supplier::where('tenant_id', $tenantId);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -41,7 +41,7 @@ class SupplierController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20'],
@@ -57,8 +57,8 @@ class SupplierController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['tenant_id'] = $user->tenant_id;
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['tenant_id'] = $tenantId;
+        $validated['is_active'] = $request->boolean('is_active');
 
         Supplier::create($validated);
 
@@ -101,7 +101,7 @@ class SupplierController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
 
         $supplier->update($validated);
 
@@ -128,6 +128,9 @@ class SupplierController extends Controller
     {
         $user = auth()->user();
 
+        if ($user->isSuperAdmin()) {
+            return;
+        }
         if ($supplier->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');
         }

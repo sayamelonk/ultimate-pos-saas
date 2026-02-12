@@ -43,14 +43,9 @@ class Recipe extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    public function product(): ?BelongsTo
+    public function product(): BelongsTo
     {
-        // Product model will be added in Phase 3
-        if (! class_exists(Product::class)) {
-            return null;
-        }
-
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(InventoryItem::class, 'product_id');
     }
 
     public function yieldUnit(): BelongsTo
@@ -82,21 +77,5 @@ class Recipe extends Model
         }
 
         return $this->estimated_cost / $this->yield_qty;
-    }
-
-    // Accessors for backward compatibility with views
-    public function getTotalCostAttribute(): float
-    {
-        return $this->estimated_cost;
-    }
-
-    public function getYieldQuantityAttribute(): float
-    {
-        return $this->yield_qty;
-    }
-
-    public function getIngredientsAttribute(): HasMany
-    {
-        return $this->items();
     }
 }

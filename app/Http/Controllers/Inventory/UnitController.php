@@ -12,8 +12,8 @@ class UnitController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $query = Unit::where('tenant_id', $user->tenant_id)
+        $tenantId = $this->getTenantId();
+        $query = Unit::where('tenant_id', $tenantId)
             ->with('baseUnit');
 
         if ($request->filled('search')) {
@@ -39,8 +39,8 @@ class UnitController extends Controller
 
     public function create(): View
     {
-        $user = auth()->user();
-        $baseUnits = Unit::where('tenant_id', $user->tenant_id)
+        $tenantId = $this->getTenantId();
+        $baseUnits = Unit::where('tenant_id', $tenantId)
             ->whereNull('base_unit_id')
             ->orderBy('name')
             ->get();
@@ -50,7 +50,7 @@ class UnitController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50'],
@@ -60,8 +60,8 @@ class UnitController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['tenant_id'] = $user->tenant_id;
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['tenant_id'] = $tenantId;
+        $validated['is_active'] = $request->boolean('is_active');
         $validated['conversion_factor'] = $validated['conversion_factor'] ?? 1;
 
         Unit::create($validated);
@@ -81,9 +81,9 @@ class UnitController extends Controller
     public function edit(Unit $unit): View
     {
         $this->authorizeUnit($unit);
-        $user = auth()->user();
+        $tenantId = $this->getTenantId();
 
-        $baseUnits = Unit::where('tenant_id', $user->tenant_id)
+        $baseUnits = Unit::where('tenant_id', $tenantId)
             ->whereNull('base_unit_id')
             ->where('id', '!=', $unit->id)
             ->orderBy('name')
@@ -104,7 +104,7 @@ class UnitController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active');
         $validated['conversion_factor'] = $validated['conversion_factor'] ?? 1;
 
         $unit->update($validated);
@@ -136,6 +136,10 @@ class UnitController extends Controller
     private function authorizeUnit(Unit $unit): void
     {
         $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return;
+        }
 
         if ($unit->tenant_id !== $user->tenant_id) {
             abort(403, 'Access denied.');

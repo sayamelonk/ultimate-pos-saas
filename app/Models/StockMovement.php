@@ -88,20 +88,4 @@ class StockMovement extends Model
     {
         return abs($this->quantity) * $this->cost_price;
     }
-
-    // Accessor for backward compatibility with views
-    public function getMovementTypeAttribute(): string
-    {
-        return $this->type;
-    }
-
-    public function getUnitCostAttribute(): ?float
-    {
-        return $this->cost_price;
-    }
-
-    public function getUserAttribute(): ?User
-    {
-        return $this->createdBy;
-    }
 }
