@@ -16,8 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'tenant' => EnsureTenantScope::class,
-            'permission' => CheckPermission::class,
+            'tenant' => \App\Http\Middleware\EnsureTenantScope::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
