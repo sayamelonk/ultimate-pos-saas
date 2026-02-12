@@ -1,5 +1,5 @@
-import "./bootstrap";
-import Alpine from "alpinejs";
+import './bootstrap';
+import Alpine from 'alpinejs';
 
 // Make Alpine available globally
 window.Alpine = Alpine;
