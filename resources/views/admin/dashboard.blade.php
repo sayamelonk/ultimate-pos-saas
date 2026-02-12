@@ -150,31 +150,130 @@
         @endif
     </div>
 
+    @if(!auth()->user()->isSuperAdmin())
+        <!-- Alerts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Expiring Items Alert -->
+            <div class="bg-surface rounded-xl border border-border shadow-sm">
+                <div class="flex items-center justify-between p-4 border-b border-border">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                            <x-icon name="exclamation-triangle" class="w-5 h-5 text-warning" />
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-text">Expiring Soon</h3>
+                            <p class="text-xs text-muted">Items nearing expiry date</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('inventory.batches.expiry-report') }}" class="text-sm text-primary hover:underline">View All</a>
+                </div>
+                <div class="p-4">
+                    @if($expiringBatches->count() > 0)
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            @foreach($expiringBatches as $batch)
+                                @php
+                                    $daysLeft = $batch->daysUntilExpiry();
+                                    $isExpired = $daysLeft !== null && $daysLeft < 0;
+                                    $isCritical = $daysLeft !== null && $daysLeft >= 0 && $daysLeft <= 7;
+                                @endphp
+                                <a href="{{ route('inventory.batches.show', $batch) }}" class="flex items-center justify-between p-3 rounded-lg {{ $isExpired ? 'bg-danger/10' : ($isCritical ? 'bg-danger/5' : 'bg-warning/5') }} hover:bg-opacity-75 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full {{ $isExpired ? 'bg-danger/20' : ($isCritical ? 'bg-danger/10' : 'bg-warning/10') }} flex items-center justify-center">
+                                            <x-icon name="cube" class="w-4 h-4 {{ $isExpired ? 'text-danger' : ($isCritical ? 'text-danger' : 'text-warning') }}" />
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-text">{{ $batch->inventoryItem->name }}</p>
+                                            <p class="text-xs text-muted">{{ $batch->batch_number }} &middot; {{ $batch->outlet->name }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $isExpired ? 'bg-danger text-white' : ($isCritical ? 'bg-danger/20 text-danger' : 'bg-warning/20 text-warning-700') }}">
+                                            @if($isExpired)
+                                                Expired
+                                            @else
+                                                {{ $daysLeft }} days
+                                            @endif
+                                        </span>
+                                        <p class="text-xs text-muted mt-1">{{ number_format($batch->current_quantity, 2) }} {{ $batch->inventoryItem->unit->abbreviation ?? '' }}</p>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="flex flex-col items-center justify-center py-8 text-center">
+                            <div class="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mb-3">
+                                <x-icon name="check-circle" class="w-6 h-6 text-success" />
+                            </div>
+                            <p class="text-sm text-muted">No items expiring soon</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Low Stock Alert -->
+            <div class="bg-surface rounded-xl border border-border shadow-sm">
+                <div class="flex items-center justify-between p-4 border-b border-border">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-danger/10 rounded-lg flex items-center justify-center">
+                            <x-icon name="arrow-trending-down" class="w-5 h-5 text-danger" />
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-text">Low Stock</h3>
+                            <p class="text-xs text-muted">Items below reorder point</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('inventory.stocks.low') }}" class="text-sm text-primary hover:underline">View All</a>
+                </div>
+                <div class="p-4">
+                    @if($lowStockItems->count() > 0)
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            @foreach($lowStockItems as $stock)
+                                <a href="{{ route('inventory.stocks.show', $stock) }}" class="flex items-center justify-between p-3 rounded-lg bg-danger/5 hover:bg-danger/10 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-danger/10 flex items-center justify-center">
+                                            <x-icon name="cube" class="w-4 h-4 text-danger" />
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-text">{{ $stock->inventoryItem->name }}</p>
+                                            <p class="text-xs text-muted">{{ $stock->outlet->name }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-danger">{{ number_format($stock->quantity, 2) }}</p>
+                                        <p class="text-xs text-muted">of {{ number_format($stock->inventoryItem->reorder_point, 2) }} {{ $stock->inventoryItem->unit->abbreviation ?? '' }}</p>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="flex flex-col items-center justify-center py-8 text-center">
+                            <div class="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mb-3">
+                                <x-icon name="check-circle" class="w-6 h-6 text-success" />
+                            </div>
+                            <p class="text-sm text-muted">All items are well stocked</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Quick Actions -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Quick Actions Card -->
         <div class="bg-surface rounded-xl border border-border p-6 shadow-sm">
             <h3 class="text-lg font-semibold text-text mb-4">Quick Actions</h3>
             <div class="space-y-3">
-                <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary-600 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                    </svg>
+                <a href="{{ route('pos.index') }}" class="flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary-600 transition-colors">
+                    <x-icon name="calculator" class="w-5 h-5" />
                     Open POS
                 </a>
-                <a href="#" class="flex items-center gap-3 p-3 rounded-lg border border-border text-text hover:bg-secondary-50 transition-colors">
-                    <svg class="w-5 h-5 text-secondary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                    </svg>
+                <a href="{{ route('menu.products.create') }}" class="flex items-center gap-3 p-3 rounded-lg border border-border text-text hover:bg-secondary-50 transition-colors">
+                    <x-icon name="plus" class="w-5 h-5 text-secondary-500" />
                     Add Product
                 </a>
-                <a href="#" class="flex items-center gap-3 p-3 rounded-lg border border-border text-text hover:bg-secondary-50 transition-colors">
-                    <svg class="w-5 h-5 text-secondary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
+                <a href="{{ route('inventory.reports.stock-valuation') }}" class="flex items-center gap-3 p-3 rounded-lg border border-border text-text hover:bg-secondary-50 transition-colors">
+                    <x-icon name="chart-bar" class="w-5 h-5 text-secondary-500" />
                     View Reports
                 </a>
             </div>
@@ -186,9 +285,7 @@
             <div class="space-y-4">
                 <div class="flex items-center gap-4 p-3 rounded-lg bg-secondary-50">
                     <div class="w-10 h-10 bg-success-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
+                        <x-icon name="check" class="w-5 h-5 text-success" />
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-text">System initialized successfully</p>
@@ -197,10 +294,7 @@
                 </div>
                 <div class="flex items-center gap-4 p-3 rounded-lg bg-secondary-50">
                     <div class="w-10 h-10 bg-info-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                        <x-icon name="information-circle" class="w-5 h-5 text-info" />
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-text">Welcome to Ultimate POS!</p>
