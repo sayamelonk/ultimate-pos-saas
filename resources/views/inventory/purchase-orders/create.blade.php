@@ -76,7 +76,14 @@
                             </div>
                             <div class="w-40">
                                 <label class="text-sm font-medium text-text">Unit Price (Rp)</label>
-                                <input type="number" step="0.01" x-model="item.unit_price" :name="'items[' + index + '][unit_price]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" placeholder="0" required>
+                                <input type="hidden" :name="'items[' + index + '][unit_price]'" :value="item.unit_price">
+                                <input type="text"
+                                       :value="formatNumber(item.unit_price)"
+                                       @input="item.unit_price = parseFormattedNumber($event.target.value); $event.target.value = formatNumber(item.unit_price)"
+                                       @blur="$event.target.value = formatNumber(item.unit_price)"
+                                       class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-right"
+                                       placeholder="0"
+                                       required>
                             </div>
                             <div class="w-40">
                                 <label class="text-sm font-medium text-text">Total</label>
@@ -138,6 +145,11 @@
                 },
                 formatNumber(num) {
                     return new Intl.NumberFormat('id-ID').format(num || 0);
+                },
+                parseFormattedNumber(str) {
+                    // Remove thousand separators (dots for id-ID locale)
+                    const cleaned = str.replace(/\./g, '').replace(/,/g, '.');
+                    return parseFloat(cleaned) || 0;
                 }
             }
         }

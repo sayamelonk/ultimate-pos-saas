@@ -69,21 +69,46 @@
                     <div class="grid grid-cols-2 gap-4">
                         <x-select name="type" label="Type" required>
                             <option value="">Select Type</option>
-                            <option value="raw_material" @selected(old('type', $item->type) === 'raw_material')>Raw Material</option>
-                            <option value="finished_good" @selected(old('type', $item->type) === 'finished_good')>Finished Good</option>
-                            <option value="consumable" @selected(old('type', $item->type) === 'consumable')>Consumable</option>
-                            <option value="packaging" @selected(old('type', $item->type) === 'packaging')>Packaging</option>
+                            <option value="raw_material" @selected(old('type', $item->type) == 'raw_material')>Raw Material</option>
+                            <option value="finished_good" @selected(old('type', $item->type) == 'finished_good')>Finished Good</option>
+                            <option value="consumable" @selected(old('type', $item->type) == 'consumable')>Consumable</option>
+                            <option value="packaging" @selected(old('type', $item->type) == 'packaging')>Packaging</option>
                         </x-select>
 
-                        <x-input
-                            type="number"
-                            step="0.01"
-                            name="cost_price"
-                            label="Cost Price (Rp)"
-                            placeholder="e.g., 150000"
-                            :value="$item->cost_price"
-                            required
-                        />
+                        <div x-data="{
+                            rawValue: '{{ old('cost_price', (int) $item->cost_price) }}',
+                            displayValue: '',
+                            init() {
+                                if (this.rawValue) {
+                                    this.displayValue = this.formatDisplay(this.rawValue);
+                                }
+                            },
+                            formatDisplay(val) {
+                                const num = String(val).replace(/\D/g, '');
+                                return num ? new Intl.NumberFormat('id-ID').format(num) : '';
+                            },
+                            updateValue(e) {
+                                const num = e.target.value.replace(/\D/g, '');
+                                this.rawValue = num;
+                                this.displayValue = this.formatDisplay(num);
+                            }
+                        }">
+                            <label class="block text-sm font-medium text-text mb-1">
+                                Cost Price (Rp) <span class="text-danger-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                x-model="displayValue"
+                                @input="updateValue($event)"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent @error('cost_price') border-danger-500 @enderror"
+                                placeholder="e.g., 150.000"
+                                required
+                            >
+                            <input type="hidden" name="cost_price" x-model="rawValue">
+                            @error('cost_price')
+                                <p class="mt-1 text-sm text-danger-500">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <x-textarea
@@ -101,29 +126,29 @@
                     <div class="grid grid-cols-3 gap-4">
                         <x-input
                             type="number"
-                            step="0.01"
+                            step="1"
                             name="reorder_level"
                             label="Reorder Level"
                             placeholder="e.g., 10"
-                            :value="$item->reorder_level"
+                            :value="old('reorder_level', $item->reorder_point ? (int) $item->reorder_point : '')"
                             hint="Alert when stock falls below"
                         />
                         <x-input
                             type="number"
-                            step="0.01"
+                            step="1"
                             name="reorder_quantity"
                             label="Reorder Quantity"
                             placeholder="e.g., 50"
-                            :value="$item->reorder_quantity"
+                            :value="old('reorder_quantity', $item->reorder_qty ? (int) $item->reorder_qty : '')"
                             hint="Suggested order quantity"
                         />
                         <x-input
                             type="number"
-                            step="0.01"
+                            step="1"
                             name="max_stock_level"
                             label="Max Stock Level"
                             placeholder="e.g., 200"
-                            :value="$item->max_stock_level"
+                            :value="old('max_stock_level', $item->max_stock ? (int) $item->max_stock : '')"
                             hint="Maximum stock to keep"
                         />
                     </div>
@@ -134,13 +159,13 @@
                             name="shelf_life_days"
                             label="Shelf Life (Days)"
                             placeholder="e.g., 7"
-                            :value="$item->shelf_life_days"
+                            :value="old('shelf_life_days', $item->shelf_life_days)"
                         />
                         <x-input
                             name="storage_location"
                             label="Storage Location"
                             placeholder="e.g., Cold Storage A"
-                            :value="$item->storage_location"
+                            :value="old('storage_location', $item->storage_location)"
                         />
                     </div>
 
@@ -149,13 +174,13 @@
                             name="is_perishable"
                             label="Perishable"
                             hint="This item can expire"
-                            :checked="$item->is_perishable"
+                            :checked="old('is_perishable', $item->is_perishable)"
                         />
                         <x-checkbox
                             name="track_batches"
                             label="Track Batches"
                             hint="Enable batch/lot tracking"
-                            :checked="$item->track_batches"
+                            :checked="old('track_batches', $item->track_batches)"
                         />
                     </div>
                 </div>
@@ -166,7 +191,7 @@
                     name="is_active"
                     label="Active"
                     hint="Inactive items won't appear in selections"
-                    :checked="$item->is_active"
+                    :checked="old('is_active', $item->is_active)"
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-border">

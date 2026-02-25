@@ -4,8 +4,8 @@
     'compact' => false,
 ])
 
-<div {{ $attributes->merge(['class' => 'rounded-lg border border-border']) }}>
-    <table class="min-w-full divide-y divide-border">
+<div {{ $attributes->merge(['class' => 'rounded-lg border border-border overflow-x-auto']) }}>
+    <table class="min-w-full divide-y divide-border whitespace-nowrap">
         @if(isset($head))
             <thead class="bg-secondary-50">
                 <tr>

@@ -15,6 +15,25 @@
         </div>
     </x-slot>
 
+    <!-- Current Tenant Context Banner -->
+    @if(session('current_tenant_name'))
+        <div class="mb-4 p-4 bg-primary-50 border border-primary-200 rounded-lg flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <x-icon name="building" class="w-5 h-5 text-primary" />
+                <div>
+                    <p class="text-sm text-primary-700">Currently managing:</p>
+                    <p class="font-semibold text-primary-900">{{ session('current_tenant_name') }}</p>
+                </div>
+            </div>
+            <form action="{{ route('admin.tenants.clear') }}" method="POST">
+                @csrf
+                <x-button type="submit" variant="outline-secondary" size="sm">
+                    Clear Selection
+                </x-button>
+            </form>
+        </div>
+    @endif
+
     <x-card>
         <!-- Filters -->
         <form method="GET" action="{{ route('admin.tenants.index') }}" class="flex items-center gap-3 mb-6">
@@ -95,6 +114,14 @@
                         </x-td>
                         <x-td align="right">
                             <div class="flex items-center justify-end gap-1">
+                                <form action="{{ route('admin.tenants.switch', $tenant) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                            class="p-2 text-primary hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors {{ session('current_tenant_id') === $tenant->id ? 'bg-primary-100' : '' }}"
+                                            title="Manage this Tenant">
+                                        <x-icon name="cog" class="w-4 h-4" />
+                                    </button>
+                                </form>
                                 <a href="{{ route('admin.tenants.show', $tenant) }}"
                                    class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
                                    title="View Details">

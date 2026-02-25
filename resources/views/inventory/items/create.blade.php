@@ -71,14 +71,40 @@
                             <option value="packaging" @selected(old('type') === 'packaging')>Packaging</option>
                         </x-select>
 
-                        <x-input
-                            type="number"
-                            step="0.01"
-                            name="cost_price"
-                            label="Cost Price (Rp)"
-                            placeholder="e.g., 150000"
-                            required
-                        />
+                        <div x-data="{
+                            rawValue: '{{ old('cost_price', '') }}',
+                            displayValue: '',
+                            init() {
+                                if (this.rawValue) {
+                                    this.displayValue = this.formatDisplay(this.rawValue);
+                                }
+                            },
+                            formatDisplay(val) {
+                                const num = String(val).replace(/\D/g, '');
+                                return num ? new Intl.NumberFormat('id-ID').format(num) : '';
+                            },
+                            updateValue(e) {
+                                const num = e.target.value.replace(/\D/g, '');
+                                this.rawValue = num;
+                                this.displayValue = this.formatDisplay(num);
+                            }
+                        }">
+                            <label class="block text-sm font-medium text-text mb-1">
+                                Cost Price (Rp) <span class="text-danger-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                x-model="displayValue"
+                                @input="updateValue($event)"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent @error('cost_price') border-danger-500 @enderror"
+                                placeholder="e.g., 150.000"
+                                required
+                            >
+                            <input type="hidden" name="cost_price" x-model="rawValue">
+                            @error('cost_price')
+                                <p class="mt-1 text-sm text-danger-500">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <x-textarea
@@ -95,7 +121,7 @@
                     <div class="grid grid-cols-3 gap-4">
                         <x-input
                             type="number"
-                            step="0.01"
+                            step="1"
                             name="reorder_level"
                             label="Reorder Level"
                             placeholder="e.g., 10"
@@ -103,7 +129,7 @@
                         />
                         <x-input
                             type="number"
-                            step="0.01"
+                            step="1"
                             name="reorder_quantity"
                             label="Reorder Quantity"
                             placeholder="e.g., 50"
@@ -111,7 +137,7 @@
                         />
                         <x-input
                             type="number"
-                            step="0.01"
+                            step="1"
                             name="max_stock_level"
                             label="Max Stock Level"
                             placeholder="e.g., 200"

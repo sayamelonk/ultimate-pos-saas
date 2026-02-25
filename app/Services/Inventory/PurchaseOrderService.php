@@ -2,10 +2,13 @@
 
 namespace App\Services\Inventory;
 
+use App\Models\BatchSetting;
 use App\Models\GoodsReceive;
+use App\Models\InventoryItem;
 use App\Models\InventoryStock;
 use App\Models\PurchaseOrder;
 use App\Models\StockBatch;
+use App\Models\StockBatchMovement;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
@@ -27,15 +30,16 @@ class PurchaseOrderService
             $itemsData = [];
 
             foreach ($items as $item) {
+                $inventoryItem = InventoryItem::find($item['inventory_item_id']);
                 $lineTotal = $item['quantity'] * $item['unit_price'];
                 $subtotal += $lineTotal;
 
                 $itemsData[] = [
                     'inventory_item_id' => $item['inventory_item_id'],
+                    'unit_id' => $inventoryItem->purchase_unit_id ?? $inventoryItem->unit_id,
                     'quantity' => $item['quantity'],
-                    'received_quantity' => 0,
                     'unit_price' => $item['unit_price'],
-                    'total_price' => $lineTotal,
+                    'total' => $lineTotal,
                     'notes' => $item['notes'] ?? null,
                 ];
             }
@@ -46,10 +50,11 @@ class PurchaseOrderService
                 'supplier_id' => $supplierId,
                 'outlet_id' => $outletId,
                 'status' => 'draft',
+                'order_date' => now()->toDateString(),
                 'expected_date' => $expectedDate,
                 'subtotal' => $subtotal,
                 'tax_amount' => 0,
-                'total_amount' => $subtotal,
+                'total' => $subtotal,
                 'notes' => $notes,
                 'created_by' => $userId,
             ]);
@@ -186,6 +191,7 @@ class PurchaseOrderService
                 $goodsReceive->items()->create([
                     'purchase_order_item_id' => $poItem->id,
                     'inventory_item_id' => $poItem->inventory_item_id,
+                    'unit_id' => $poItem->unit_id,
                     'quantity' => $quantity,
                     'stock_qty' => $quantity,
                     'unit_price' => $unitPrice,
@@ -249,18 +255,47 @@ class PurchaseOrderService
                     'last_received_at' => now(),
                 ]);
 
-                // Create stock batch if batch number provided
+                // Create stock batch if batch number or expiry date provided
                 if ($grItem->batch_number || $grItem->expiry_date) {
-                    StockBatch::create([
+                    $settings = BatchSetting::getForTenant($goodsReceive->tenant_id);
+
+                    // Generate batch number if not provided
+                    $batchNumber = $grItem->batch_number;
+                    if (! $batchNumber && $settings->auto_generate_batch) {
+                        $batchNumber = StockBatch::generateBatchNumber(
+                            $goodsReceive->outlet_id,
+                            $settings->batch_prefix
+                        );
+                    }
+
+                    $stockBatch = StockBatch::create([
+                        'tenant_id' => $goodsReceive->tenant_id,
                         'outlet_id' => $goodsReceive->outlet_id,
                         'inventory_item_id' => $grItem->inventory_item_id,
-                        'batch_number' => $grItem->batch_number,
-                        'expiry_date' => $grItem->expiry_date,
-                        'initial_qty' => $grItem->stock_qty,
-                        'current_qty' => $grItem->stock_qty,
-                        'cost_price' => $grItem->unit_price,
                         'goods_receive_item_id' => $grItem->id,
-                        'status' => 'active',
+                        'batch_number' => $batchNumber,
+                        'expiry_date' => $grItem->expiry_date,
+                        'initial_quantity' => $grItem->stock_qty,
+                        'current_quantity' => $grItem->stock_qty,
+                        'reserved_quantity' => 0,
+                        'unit_cost' => $grItem->unit_price,
+                        'status' => StockBatch::STATUS_ACTIVE,
+                    ]);
+
+                    // Create batch movement record
+                    StockBatchMovement::create([
+                        'tenant_id' => $goodsReceive->tenant_id,
+                        'outlet_id' => $goodsReceive->outlet_id,
+                        'stock_batch_id' => $stockBatch->id,
+                        'inventory_item_id' => $grItem->inventory_item_id,
+                        'type' => StockBatchMovement::TYPE_RECEIVE,
+                        'quantity' => $grItem->stock_qty,
+                        'balance_before' => 0,
+                        'balance_after' => $grItem->stock_qty,
+                        'reference_type' => GoodsReceive::class,
+                        'reference_number' => $goodsReceive->gr_number,
+                        'notes' => 'Goods receive: '.$goodsReceive->gr_number,
+                        'user_id' => $userId,
                     ]);
                 }
 

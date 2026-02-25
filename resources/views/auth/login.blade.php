@@ -14,13 +14,18 @@
             <label for="email" class="block text-sm font-medium text-text mb-2">
                 Email Address
             </label>
-            <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus
-                autocomplete="email"
-                class="w-full px-4 py-3 border border-border rounded-lg bg-surface text-text
+            <input type="email"
+                   id="email"
+                   name="email"
+                   value="{{ old('email') }}"
+                   required
+                   autofocus
+                   autocomplete="email"
+                   class="w-full px-4 py-3 border border-border rounded-lg bg-surface text-text
                           focus:ring-2 focus:ring-accent focus:border-accent
                           placeholder:text-muted transition-colors
                           @error('email') border-danger @enderror"
-                placeholder="Enter your email">
+                   placeholder="Enter your email">
             @error('email')
                 <p class="mt-2 text-sm text-danger">{{ $message }}</p>
             @enderror
@@ -32,26 +37,28 @@
                 Password
             </label>
             <div x-data="{ showPassword: false }" class="relative">
-                <input :type="showPassword ? 'text' : 'password'" id="password" name="password" required
-                    autocomplete="current-password"
-                    class="w-full px-4 py-3 border border-border rounded-lg bg-surface text-text
+                <input :type="showPassword ? 'text' : 'password'"
+                       id="password"
+                       name="password"
+                       required
+                       autocomplete="current-password"
+                       class="w-full px-4 py-3 border border-border rounded-lg bg-surface text-text
                               focus:ring-2 focus:ring-accent focus:border-accent
                               placeholder:text-muted transition-colors pr-12
                               @error('password') border-danger @enderror"
-                    placeholder="Enter your password">
-                <button type="button" @click="showPassword = !showPassword"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors">
-                    <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
+                       placeholder="Enter your password">
+                <button type="button"
+                        @click="showPassword = !showPassword"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors">
+                    <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                     </svg>
-                    <svg x-show="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        style="display: none;">
+                    <svg x-show="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
                     </svg>
                 </button>
             </div>
@@ -63,9 +70,10 @@
         <!-- Remember Me -->
         <div class="flex items-center justify-between">
             <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="remember"
-                    class="w-4 h-4 rounded border-border text-accent focus:ring-accent">
-                <span class="text-sm text-text">Remember me</span>
+                <input type="checkbox"
+                       name="remember"
+                       class="w-4 h-4 rounded border-border text-accent focus:ring-accent">
+                <span class="text-sm text-text-light">Remember me</span>
             </label>
             <a href="#" class="text-sm text-accent hover:text-accent-600 transition-colors">
                 Forgot password?
@@ -74,7 +82,7 @@
 
         <!-- Submit Button -->
         <button type="submit"
-            class="w-full py-3 px-4 bg-primary text-white font-medium rounded-lg
+                class="w-full py-3 px-4 bg-primary text-white font-medium rounded-lg
                        hover:bg-primary-600 focus:ring-4 focus:ring-primary-200
                        transition-all duration-200 shadow-sm hover:shadow">
             Sign In

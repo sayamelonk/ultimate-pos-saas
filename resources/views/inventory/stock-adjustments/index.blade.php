@@ -1,20 +1,20 @@
 <x-app-layout>
-    <x-slot name="title">Stock Adjustments - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.stock_adjustments') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Stock Adjustments')
+    @section('page-title', __('inventory.stock_adjustments'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Stock Adjustments</h2>
-                <p class="text-muted mt-1">Manage stock adjustments and corrections</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.stock_adjustments') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.manage_stock_adjustments') }}</p>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('inventory.stock-adjustments.stock-take') }}" variant="outline-secondary" icon="clipboard-list">
-                    Stock Take
+                    {{ __('inventory.stock_take') }}
                 </x-button>
                 <x-button href="{{ route('inventory.stock-adjustments.create') }}" icon="plus">
-                    New Adjustment
+                    {{ __('inventory.create_adjustment') }}
                 </x-button>
             </div>
         </div>
@@ -28,35 +28,39 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search adjustment number or reference..."
+                        :placeholder="__('inventory.search_adjustment')"
                         :value="request('search')"
                     />
                 </div>
                 <x-select name="outlet_id" class="w-48">
-                    <option value="">All Outlets</option>
+                    <option value="">{{ __('admin.all_outlets') }}</option>
                     @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                             {{ $outlet->name }}
                         </option>
                     @endforeach
                 </x-select>
-                <x-select name="type" class="w-36">
-                    <option value="">All Types</option>
-                    <option value="addition" @selected(request('type') === 'addition')>Addition</option>
-                    <option value="subtraction" @selected(request('type') === 'subtraction')>Subtraction</option>
+                <x-select name="type" class="w-40">
+                    <option value="">{{ __('inventory.all_types') }}</option>
+                    <option value="stock_take" @selected(request('type') === 'stock_take')>{{ __('inventory.type_stock_take') }}</option>
+                    <option value="correction" @selected(request('type') === 'correction')>{{ __('inventory.type_correction') }}</option>
+                    <option value="damage" @selected(request('type') === 'damage')>{{ __('inventory.type_damage') }}</option>
+                    <option value="loss" @selected(request('type') === 'loss')>{{ __('inventory.type_loss') }}</option>
+                    <option value="found" @selected(request('type') === 'found')>{{ __('inventory.type_found') }}</option>
                 </x-select>
                 <x-select name="status" class="w-36">
-                    <option value="">All Status</option>
-                    <option value="pending" @selected(request('status') === 'pending')>Pending</option>
-                    <option value="approved" @selected(request('status') === 'approved')>Approved</option>
-                    <option value="rejected" @selected(request('status') === 'rejected')>Rejected</option>
+                    <option value="">{{ __('inventory.all_status') }}</option>
+                    <option value="draft" @selected(request('status') === 'draft')>{{ __('app.status_draft') }}</option>
+                    <option value="approved" @selected(request('status') === 'approved')>{{ __('app.status_approved') }}</option>
+                    <option value="rejected" @selected(request('status') === 'rejected')>{{ __('app.status_rejected') }}</option>
+                    <option value="cancelled" @selected(request('status') === 'cancelled')>{{ __('app.status_cancelled') }}</option>
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Filter
+                    {{ __('app.filter') }}
                 </x-button>
                 @if(request()->hasAny(['search', 'outlet_id', 'type', 'status']))
                     <x-button href="{{ route('inventory.stock-adjustments.index') }}" variant="ghost">
-                        Clear
+                        {{ __('app.clear') }}
                     </x-button>
                 @endif
             </form>
@@ -66,14 +70,14 @@
         @if($adjustments->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Adjustment #</x-th>
-                    <x-th>Date</x-th>
-                    <x-th>Outlet</x-th>
-                    <x-th>Type</x-th>
-                    <x-th>Reason</x-th>
-                    <x-th align="right">Items</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('inventory.adjustment_number') }}</x-th>
+                    <x-th>{{ __('app.date') }}</x-th>
+                    <x-th>{{ __('admin.outlet') }}</x-th>
+                    <x-th>{{ __('app.type') }}</x-th>
+                    <x-th>{{ __('inventory.reason') }}</x-th>
+                    <x-th align="right">{{ __('inventory.items') }}</x-th>
+                    <x-th align="center">{{ __('app.status') }}</x-th>
+                    <x-th align="right">{{ __('app.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($adjustments as $adjustment)
@@ -83,75 +87,83 @@
                                 {{ $adjustment->adjustment_number }}
                             </a>
                         </x-td>
-                        <x-td>{{ $adjustment->adjustment_date->format('M d, Y') }}</x-td>
+                        <x-td>{{ $adjustment->adjustment_date->translatedFormat('d M Y') }}</x-td>
                         <x-td>{{ $adjustment->outlet->name }}</x-td>
                         <x-td>
-                            @if($adjustment->type === 'addition')
-                                <x-badge type="success">Addition</x-badge>
-                            @else
-                                <x-badge type="danger">Subtraction</x-badge>
-                            @endif
+                            @switch($adjustment->type)
+                                @case('stock_take')
+                                    <x-badge type="info">{{ __('inventory.type_stock_take') }}</x-badge>
+                                    @break
+                                @case('correction')
+                                    <x-badge type="warning">{{ __('inventory.type_correction') }}</x-badge>
+                                    @break
+                                @case('damage')
+                                    <x-badge type="danger">{{ __('inventory.type_damage') }}</x-badge>
+                                    @break
+                                @case('loss')
+                                    <x-badge type="danger">{{ __('inventory.type_loss') }}</x-badge>
+                                    @break
+                                @case('found')
+                                    <x-badge type="success">{{ __('inventory.type_found') }}</x-badge>
+                                    @break
+                                @default
+                                    <x-badge type="secondary">{{ $adjustment->type }}</x-badge>
+                            @endswitch
                         </x-td>
                         <x-td>{{ Str::limit($adjustment->reason, 30) }}</x-td>
                         <x-td align="right">{{ $adjustment->items->count() }}</x-td>
                         <x-td align="center">
                             @switch($adjustment->status)
-                                @case('pending')
-                                    <x-badge type="warning">Pending</x-badge>
+                                @case('draft')
+                                    <x-badge type="secondary">{{ __('app.status_draft') }}</x-badge>
                                     @break
                                 @case('approved')
-                                    <x-badge type="success">Approved</x-badge>
+                                    <x-badge type="success">{{ __('app.status_approved') }}</x-badge>
                                     @break
                                 @case('rejected')
-                                    <x-badge type="danger">Rejected</x-badge>
+                                    <x-badge type="danger">{{ __('app.status_rejected') }}</x-badge>
+                                    @break
+                                @case('cancelled')
+                                    <x-badge type="warning">{{ __('app.status_cancelled') }}</x-badge>
                                     @break
                             @endswitch
                         </x-td>
                         <x-td align="right">
-                            <x-dropdown align="right">
-                                <x-slot name="trigger">
-                                    <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
-                                        <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
-                                    </button>
-                                </x-slot>
+                            <div x-data>
+                                <x-dropdown align="right">
+                                    <x-slot name="trigger">
+                                        <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
+                                            <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
+                                        </button>
+                                    </x-slot>
 
-                                <x-dropdown-item href="{{ route('inventory.stock-adjustments.show', $adjustment) }}">
-                                    <x-icon name="eye" class="w-4 h-4" />
-                                    View Details
-                                </x-dropdown-item>
-                                @if($adjustment->status === 'pending')
-                                    <x-dropdown-item href="{{ route('inventory.stock-adjustments.edit', $adjustment) }}">
-                                        <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                    <x-dropdown-item href="{{ route('inventory.stock-adjustments.show', $adjustment) }}">
+                                        <x-icon name="eye" class="w-4 h-4" />
+                                        {{ __('app.details') }}
                                     </x-dropdown-item>
-                                    <form action="{{ route('inventory.stock-adjustments.approve', $adjustment) }}" method="POST" class="w-full">
-                                        @csrf
-                                        <x-dropdown-item type="button">
+                                    @if($adjustment->status === 'draft')
+                                        <x-dropdown-item href="{{ route('inventory.stock-adjustments.edit', $adjustment) }}">
+                                            <x-icon name="pencil" class="w-4 h-4" />
+                                            {{ __('app.edit') }}
+                                        </x-dropdown-item>
+                                        <x-dropdown-item
+                                            type="button"
+                                            @click="$dispatch('open-modal', 'approve-adjustment-{{ $loop->index }}')"
+                                        >
                                             <x-icon name="check" class="w-4 h-4" />
-                                            Approve
+                                            {{ __('app.approve') }}
                                         </x-dropdown-item>
-                                    </form>
-                                    <form action="{{ route('inventory.stock-adjustments.reject', $adjustment) }}" method="POST" class="w-full">
-                                        @csrf
-                                        <x-dropdown-item type="button" danger>
-                                            <x-icon name="x" class="w-4 h-4" />
-                                            Reject
+                                        <x-dropdown-item
+                                            type="button"
+                                            danger
+                                            @click="$dispatch('open-modal', 'delete-adjustment-{{ $loop->index }}')"
+                                        >
+                                            <x-icon name="trash" class="w-4 h-4" />
+                                            {{ __('app.delete') }}
                                         </x-dropdown-item>
-                                    </form>
-                                    <x-dropdown-item
-                                        type="button"
-                                        danger
-                                        @click="$dispatch('open-delete-modal', {
-                                            title: 'Delete Stock Adjustment',
-                                            message: 'Are you sure you want to delete adjustment {{ $adjustment->adjustment_number }}? This action cannot be undone.',
-                                            action: '{{ route('inventory.stock-adjustments.destroy', $adjustment) }}'
-                                        })"
-                                    >
-                                        <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
-                                    </x-dropdown-item>
-                                @endif
-                            </x-dropdown>
+                                    @endif
+                                </x-dropdown>
+                            </div>
                         </x-td>
                     </tr>
                 @endforeach
@@ -162,14 +174,44 @@
             </div>
         @else
             <x-empty-state
-                title="No stock adjustments found"
-                description="Stock adjustments will appear here when you create them."
+                :title="__('inventory.no_adjustments_found')"
+                :description="__('inventory.no_adjustments_description')"
                 icon="clipboard-list"
             >
                 <x-button href="{{ route('inventory.stock-adjustments.create') }}" icon="plus">
-                    New Adjustment
+                    {{ __('inventory.create_adjustment') }}
                 </x-button>
             </x-empty-state>
         @endif
     </x-card>
+
+    {{-- Approve/Delete Modals --}}
+    @foreach($adjustments as $adjustment)
+        @if($adjustment->status === 'draft')
+            <x-confirm-modal
+                name="approve-adjustment-{{ $loop->index }}"
+                :title="__('inventory.approve_adjustment')"
+                :message="__('inventory.confirm_approve_adjustment')"
+                :confirmText="__('app.approve')"
+                type="success"
+                @click="document.getElementById('approve-form-{{ $loop->index }}').submit()"
+            />
+            <form id="approve-form-{{ $loop->index }}" action="{{ route('inventory.stock-adjustments.approve', $adjustment) }}" method="POST" class="hidden">
+                @csrf
+            </form>
+
+            <x-confirm-modal
+                name="delete-adjustment-{{ $loop->index }}"
+                :title="__('inventory.delete_adjustment')"
+                :message="__('inventory.confirm_delete_adjustment', ['number' => $adjustment->adjustment_number])"
+                :confirmText="__('app.delete')"
+                type="danger"
+                @click="document.getElementById('delete-form-{{ $loop->index }}').submit()"
+            />
+            <form id="delete-form-{{ $loop->index }}" action="{{ route('inventory.stock-adjustments.destroy', $adjustment) }}" method="POST" class="hidden">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endif
+    @endforeach
 </x-app-layout>

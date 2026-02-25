@@ -30,17 +30,25 @@
                 <x-button href="{{ route('admin.tenants.edit', $tenant) }}" variant="secondary" icon="pencil">
                     Edit
                 </x-button>
-                <x-button
-                    variant="danger"
-                    icon="trash"
-                    @click="$dispatch('open-delete-modal', {
-                        title: 'Delete Tenant',
-                        message: 'Are you sure you want to delete {{ $tenant->name }}? All associated outlets, users, and data will be permanently deleted.',
-                        action: '{{ route('admin.tenants.destroy', $tenant) }}'
-                    })"
-                >
-                    Delete
-                </x-button>
+                <div x-data>
+                    <x-button
+                        variant="danger"
+                        icon="trash"
+                        @click="$dispatch('confirm', {
+                            title: 'Delete Tenant',
+                            message: 'Are you sure you want to delete {{ $tenant->name }}? All associated outlets, users, and data will be permanently deleted.',
+                            confirmText: 'Delete',
+                            variant: 'danger',
+                            onConfirm: () => $refs.deleteForm.submit()
+                        })"
+                    >
+                        Delete
+                    </x-button>
+                    <form x-ref="deleteForm" action="{{ route('admin.tenants.destroy', $tenant) }}" method="POST" class="hidden">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                </div>
             </div>
         </div>
     </x-slot>

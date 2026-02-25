@@ -14,17 +14,25 @@
                     <p class="text-muted mt-1">{{ $wasteLog->waste_date->format('M d, Y') }}</p>
                 </div>
             </div>
-            <x-button
-                variant="outline-danger"
-                icon="trash"
-                @click="$dispatch('open-delete-modal', {
-                    title: 'Delete Waste Log',
-                    message: 'Are you sure you want to delete this waste log? This action cannot be undone.',
-                    action: '{{ route('inventory.waste-logs.destroy', $wasteLog) }}'
-                })"
-            >
-                Delete
-            </x-button>
+            <div x-data>
+                <x-button
+                    variant="outline-danger"
+                    icon="trash"
+                    @click="$dispatch('confirm', {
+                        title: 'Delete Waste Log',
+                        message: 'Are you sure you want to delete this waste log? This action cannot be undone.',
+                        confirmText: 'Delete',
+                        variant: 'danger',
+                        onConfirm: () => $refs.deleteForm.submit()
+                    })"
+                >
+                    Delete
+                </x-button>
+                <form x-ref="deleteForm" action="{{ route('inventory.waste-logs.destroy', $wasteLog) }}" method="POST" class="hidden">
+                    @csrf
+                    @method('DELETE')
+                </form>
+            </div>
         </div>
     </x-slot>
 

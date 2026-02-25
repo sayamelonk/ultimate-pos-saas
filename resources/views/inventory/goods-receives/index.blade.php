@@ -94,43 +94,51 @@
                             @endswitch
                         </x-td>
                         <x-td align="right">
-                            <x-dropdown align="right">
-                                <x-slot name="trigger">
-                                    <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
-                                        <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
-                                    </button>
-                                </x-slot>
+                            <div x-data>
+                                <x-dropdown align="right">
+                                    <x-slot name="trigger">
+                                        <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
+                                            <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
+                                        </button>
+                                    </x-slot>
 
-                                <x-dropdown-item href="{{ route('inventory.goods-receives.show', $gr) }}">
-                                    <x-icon name="eye" class="w-4 h-4" />
-                                    View Details
-                                </x-dropdown-item>
-                                @if($gr->status === 'draft')
-                                    <x-dropdown-item href="{{ route('inventory.goods-receives.edit', $gr) }}">
-                                        <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                    <x-dropdown-item href="{{ route('inventory.goods-receives.show', $gr) }}">
+                                        <x-icon name="eye" class="w-4 h-4" />
+                                        View Details
                                     </x-dropdown-item>
-                                    <form action="{{ route('inventory.goods-receives.complete', $gr) }}" method="POST" class="w-full">
-                                        @csrf
-                                        <x-dropdown-item type="button">
-                                            <x-icon name="check" class="w-4 h-4" />
-                                            Complete
+                                    @if($gr->status === 'draft')
+                                        <x-dropdown-item href="{{ route('inventory.goods-receives.edit', $gr) }}">
+                                            <x-icon name="pencil" class="w-4 h-4" />
+                                            Edit
                                         </x-dropdown-item>
-                                    </form>
-                                    <x-dropdown-item
-                                        type="button"
-                                        danger
-                                        @click="$dispatch('open-delete-modal', {
-                                            title: 'Delete Goods Receive',
-                                            message: 'Are you sure you want to delete GR {{ $gr->gr_number }}? This action cannot be undone.',
-                                            action: '{{ route('inventory.goods-receives.destroy', $gr) }}'
-                                        })"
-                                    >
-                                        <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
-                                    </x-dropdown-item>
-                                @endif
-                            </x-dropdown>
+                                        <form action="{{ route('inventory.goods-receives.complete', $gr) }}" method="POST" class="w-full">
+                                            @csrf
+                                            <x-dropdown-item type="button">
+                                                <x-icon name="check" class="w-4 h-4" />
+                                                Complete
+                                            </x-dropdown-item>
+                                        </form>
+                                        <x-dropdown-item
+                                            type="button"
+                                            danger
+                                            @click="$dispatch('confirm', {
+                                                title: 'Delete Goods Receive',
+                                                message: 'Are you sure you want to delete GR {{ $gr->gr_number }}? This action cannot be undone.',
+                                                confirmText: 'Delete',
+                                                variant: 'danger',
+                                                onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
+                                            })"
+                                        >
+                                            <x-icon name="trash" class="w-4 h-4" />
+                                            Delete
+                                        </x-dropdown-item>
+                                    @endif
+                                </x-dropdown>
+                                <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('inventory.goods-receives.destroy', $gr) }}" method="POST" class="hidden">
+                                    @csrf
+                                    @method('DELETE')
+                                </form>
+                            </div>
                         </x-td>
                     </tr>
                 @endforeach

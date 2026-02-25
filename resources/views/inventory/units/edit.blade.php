@@ -55,12 +55,12 @@
 
                 <x-input
                     type="number"
-                    step="0.000001"
+                    step="any"
                     name="conversion_factor"
                     label="Conversion Factor"
                     placeholder="e.g., 1000"
-                    :value="old('conversion_factor', $unit->conversion_factor)"
-                    hint="How many base units equal 1 of this unit"
+                    :value="old('conversion_factor', rtrim(rtrim(number_format($unit->conversion_factor, 6, '.', ''), '0'), '.'))"
+                    hint="How many base units equal 1 of this unit (e.g., 1 kg = 1000 g, so conversion for g is 0.001)"
                 />
 
                 <x-checkbox

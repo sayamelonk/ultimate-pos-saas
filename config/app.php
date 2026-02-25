@@ -89,7 +89,7 @@ return [
     | Available Locales
     |--------------------------------------------------------------------------
     |
-    | List of available locales for application.
+    | List of available locales for the application.
     |
     */
 

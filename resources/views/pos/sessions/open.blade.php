@@ -30,14 +30,34 @@
                         @endforeach
                     </x-select>
 
-                    <x-input
-                        label="Opening Cash (Rp)"
-                        name="opening_cash"
-                        type="number"
-                        :value="old('opening_cash', 0)"
-                        required
-                        prefix="Rp"
-                    />
+                    <div x-data="{
+                        rawValue: {{ old('opening_cash', 0) }},
+                        get formatted() {
+                            return this.rawValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                        },
+                        updateValue(e) {
+                            const val = e.target.value.replace(/\./g, '');
+                            this.rawValue = parseInt(val) || 0;
+                        }
+                    }">
+                        <label class="block text-sm font-medium text-text mb-1.5">
+                            Opening Cash (Rp) <span class="text-danger">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">Rp</span>
+                            <input
+                                type="text"
+                                :value="formatted"
+                                @input="updateValue($event)"
+                                class="block w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-border text-text placeholder-muted focus:border-accent focus:ring-2 focus:ring-accent/20 bg-surface"
+                                required
+                            >
+                            <input type="hidden" name="opening_cash" :value="rawValue">
+                        </div>
+                        @error('opening_cash')
+                            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                        @enderror
+                    </div>
 
                     <x-textarea
                         label="Notes"

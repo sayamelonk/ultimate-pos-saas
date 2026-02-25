@@ -60,36 +60,86 @@
                 />
             </x-card>
 
-            <x-card title="Items">
+            <x-card>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-lg">Items</h3>
+                    <div class="flex items-center gap-2 text-sm text-muted">
+                        <span class="inline-flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-primary"></span>
+                            Batch Tracked
+                        </span>
+                    </div>
+                </div>
+
                 <x-table>
                     <x-slot name="head">
                         <x-th>Item</x-th>
                         <x-th align="right">Ordered</x-th>
                         <x-th align="right">Qty to Receive</x-th>
-                        <x-th>Batch Number</x-th>
-                        <x-th>Expiry Date</x-th>
+                        <x-th>Batch Info</x-th>
                     </x-slot>
 
                     @foreach($goodsReceive->items as $index => $item)
-                        <tr>
+                        @php
+                            $trackBatches = $item->purchaseOrderItem->inventoryItem->track_batches ?? false;
+                        @endphp
+                        <tr class="{{ $trackBatches ? 'bg-primary/5' : '' }}">
                             <x-td>
                                 <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
-                                <p class="font-medium">{{ $item->purchaseOrderItem->inventoryItem->name }}</p>
-                                <p class="text-xs text-muted">{{ $item->purchaseOrderItem->inventoryItem->sku }}</p>
+                                <div class="flex items-center gap-2">
+                                    @if($trackBatches)
+                                        <span class="w-2 h-2 rounded-full bg-primary shrink-0" title="Batch Tracked"></span>
+                                    @endif
+                                    <div>
+                                        <p class="font-medium">{{ $item->purchaseOrderItem->inventoryItem->name }}</p>
+                                        <p class="text-xs text-muted">{{ $item->purchaseOrderItem->inventoryItem->sku }}</p>
+                                    </div>
+                                </div>
                             </x-td>
-                            <x-td align="right">{{ number_format($item->purchaseOrderItem->quantity, 2) }} {{ $item->purchaseOrderItem->inventoryItem->unit->abbreviation ?? '' }}</x-td>
                             <x-td align="right">
-                                <input type="number" step="0.001" name="items[{{ $index }}][quantity_received]" value="{{ old("items.{$index}.quantity_received", $item->quantity_received) }}" min="0" class="w-24 px-2 py-1 border border-border rounded text-right" required>
+                                {{ number_format($item->purchaseOrderItem->quantity, 2) }}
+                                <span class="text-muted text-sm">{{ $item->purchaseOrderItem->inventoryItem->unit->abbreviation ?? '' }}</span>
+                            </x-td>
+                            <x-td align="right">
+                                <input
+                                    type="number"
+                                    step="0.001"
+                                    name="items[{{ $index }}][quantity_received]"
+                                    value="{{ old("items.{$index}.quantity_received", $item->quantity_received) }}"
+                                    min="0"
+                                    class="w-24 px-2 py-1 border border-border rounded text-right focus:ring-1 focus:ring-primary focus:border-primary"
+                                    required
+                                >
                             </x-td>
                             <x-td>
-                                <input type="text" name="items[{{ $index }}][batch_number]" value="{{ old("items.{$index}.batch_number", $item->batch_number) }}" placeholder="Optional" class="w-28 px-2 py-1 border border-border rounded text-sm">
-                            </x-td>
-                            <x-td>
-                                <input type="date" name="items[{{ $index }}][expiry_date]" value="{{ old("items.{$index}.expiry_date", $item->expiry_date?->format('Y-m-d')) }}" class="w-36 px-2 py-1 border border-border rounded text-sm">
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        name="items[{{ $index }}][batch_number]"
+                                        value="{{ old("items.{$index}.batch_number", $item->batch_number) }}"
+                                        placeholder="{{ $trackBatches ? 'Batch No.' : 'Optional' }}"
+                                        class="w-28 px-2 py-1 border border-border rounded text-sm focus:ring-1 focus:ring-primary focus:border-primary {{ $trackBatches ? 'border-primary/50' : '' }}"
+                                        {{ $trackBatches ? 'required' : '' }}
+                                    >
+                                    <input
+                                        type="date"
+                                        name="items[{{ $index }}][expiry_date]"
+                                        value="{{ old("items.{$index}.expiry_date", $item->expiry_date?->format('Y-m-d')) }}"
+                                        class="w-36 px-2 py-1 border border-border rounded text-sm focus:ring-1 focus:ring-primary focus:border-primary {{ $trackBatches ? 'border-primary/50' : '' }}"
+                                        title="Expiry Date"
+                                    >
+                                </div>
                             </x-td>
                         </tr>
                     @endforeach
                 </x-table>
+
+                <div class="mt-4 p-3 bg-info/10 border border-info/20 rounded-lg">
+                    <p class="text-sm text-info-700">
+                        <x-icon name="information-circle" class="w-4 h-4 inline mr-1" />
+                        Items with <span class="w-2 h-2 rounded-full bg-primary inline-block"></span> indicator require batch tracking. Batch number will be auto-generated if left empty.
+                    </p>
+                </div>
             </x-card>
 
             <div class="flex items-center justify-end gap-3">

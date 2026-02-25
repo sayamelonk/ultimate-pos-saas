@@ -37,14 +37,18 @@ class StockAdjustmentService
             $totalVariance = 0;
 
             foreach ($items as $item) {
-                $varianceQty = ($item['actual_quantity'] ?? 0) - ($item['system_quantity'] ?? 0);
-                $totalVariance += abs($varianceQty);
+                $systemQty = $item['system_quantity'] ?? 0;
+                $actualQty = $item['actual_quantity'] ?? 0;
+                $difference = $actualQty - $systemQty;
+                $totalVariance += abs($difference);
 
                 $adjustment->items()->create([
                     'inventory_item_id' => $item['inventory_item_id'],
-                    'system_quantity' => $item['system_quantity'] ?? 0,
-                    'actual_quantity' => $item['actual_quantity'] ?? 0,
-                    'variance_quantity' => $varianceQty,
+                    'system_qty' => $systemQty,
+                    'actual_qty' => $actualQty,
+                    'difference' => $difference,
+                    'cost_price' => 0,
+                    'value_difference' => 0,
                     'notes' => $item['notes'] ?? null,
                 ]);
             }
@@ -80,7 +84,7 @@ class StockAdjustmentService
                 );
 
                 $stockBefore = $stock->quantity;
-                $variance = $item->variance_quantity;
+                $variance = $item->difference;
 
                 if ($variance != 0) {
                     // Update stock quantity

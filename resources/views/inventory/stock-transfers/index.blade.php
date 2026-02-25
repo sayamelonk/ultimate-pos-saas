@@ -122,14 +122,16 @@
                                         <x-icon name="pencil" class="w-4 h-4" />
                                         Edit
                                     </x-dropdown-item>
-                                    <form action="{{ route('inventory.stock-transfers.approve', $transfer) }}" method="POST" class="w-full">
+                                    <form action="{{ route('inventory.stock-transfers.approve', $transfer) }}" method="POST" class="w-full"
+                                          onsubmit="return confirm('Approve this transfer?')">
                                         @csrf
                                         <x-dropdown-item type="button">
                                             <x-icon name="check" class="w-4 h-4" />
                                             Approve
                                         </x-dropdown-item>
                                     </form>
-                                    <form action="{{ route('inventory.stock-transfers.cancel', $transfer) }}" method="POST" class="w-full">
+                                    <form action="{{ route('inventory.stock-transfers.cancel', $transfer) }}" method="POST" class="w-full"
+                                          onsubmit="return confirm('Cancel this transfer?')">
                                         @csrf
                                         <x-dropdown-item type="button" danger>
                                             <x-icon name="x" class="w-4 h-4" />

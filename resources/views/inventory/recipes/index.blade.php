@@ -79,17 +79,17 @@
                                 <p class="text-xs text-muted">Linked to: {{ $recipe->product->name }}</p>
                             @endif
                         </x-td>
-                        <x-td>{{ $recipe->category->name ?? '-' }}</x-td>
-                        <x-td align="right">{{ $recipe->ingredients->count() }}</x-td>
+                        <x-td>{{ $recipe->product->category->name ?? '-' }}</x-td>
+                        <x-td align="right">{{ $recipe->items->count() }}</x-td>
                         <x-td align="right">
-                            {{ number_format($recipe->yield_quantity, 2) }}
+                            {{ number_format($recipe->yield_qty, 2) }}
                             {{ $recipe->yieldUnit->abbreviation ?? '' }}
                         </x-td>
                         <x-td align="right">
-                            <span class="font-medium">Rp {{ number_format($recipe->total_cost, 0, ',', '.') }}</span>
-                            @if($recipe->yield_quantity > 0)
+                            <span class="font-medium">Rp {{ number_format($recipe->estimated_cost, 0, ',', '.') }}</span>
+                            @if($recipe->yield_qty > 0)
                                 <p class="text-xs text-muted">
-                                    Rp {{ number_format($recipe->total_cost / $recipe->yield_quantity, 0, ',', '.') }}/unit
+                                    Rp {{ number_format($recipe->estimated_cost / $recipe->yield_qty, 0, ',', '.') }}/unit
                                 </p>
                             @endif
                         </x-td>
@@ -101,48 +101,56 @@
                             @endif
                         </x-td>
                         <x-td align="right">
-                            <x-dropdown align="right">
-                                <x-slot name="trigger">
-                                    <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
-                                        <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
-                                    </button>
-                                </x-slot>
+                            <div x-data>
+                                <x-dropdown align="right">
+                                    <x-slot name="trigger">
+                                        <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
+                                            <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
+                                        </button>
+                                    </x-slot>
 
-                                <x-dropdown-item href="{{ route('inventory.recipes.show', $recipe) }}">
-                                    <x-icon name="eye" class="w-4 h-4" />
-                                    View Details
-                                </x-dropdown-item>
-                                <x-dropdown-item href="{{ route('inventory.recipes.edit', $recipe) }}">
-                                    <x-icon name="pencil" class="w-4 h-4" />
-                                    Edit
-                                </x-dropdown-item>
-                                <form action="{{ route('inventory.recipes.duplicate', $recipe) }}" method="POST" class="w-full">
-                                    @csrf
-                                    <x-dropdown-item type="button">
-                                        <x-icon name="document-duplicate" class="w-4 h-4" />
-                                        Duplicate
+                                    <x-dropdown-item href="{{ route('inventory.recipes.show', $recipe) }}">
+                                        <x-icon name="eye" class="w-4 h-4" />
+                                        View Details
                                     </x-dropdown-item>
-                                </form>
-                                <form action="{{ route('inventory.recipes.recalculate-cost', $recipe) }}" method="POST" class="w-full">
-                                    @csrf
-                                    <x-dropdown-item type="button">
-                                        <x-icon name="calculator" class="w-4 h-4" />
-                                        Recalculate Cost
+                                    <x-dropdown-item href="{{ route('inventory.recipes.edit', $recipe) }}">
+                                        <x-icon name="pencil" class="w-4 h-4" />
+                                        Edit
                                     </x-dropdown-item>
+                                    <form action="{{ route('inventory.recipes.duplicate', $recipe) }}" method="POST" class="w-full">
+                                        @csrf
+                                        <x-dropdown-item type="button">
+                                            <x-icon name="document-duplicate" class="w-4 h-4" />
+                                            Duplicate
+                                        </x-dropdown-item>
+                                    </form>
+                                    <form action="{{ route('inventory.recipes.recalculate', $recipe) }}" method="POST" class="w-full">
+                                        @csrf
+                                        <x-dropdown-item type="button">
+                                            <x-icon name="calculator" class="w-4 h-4" />
+                                            Recalculate Cost
+                                        </x-dropdown-item>
+                                    </form>
+                                    <x-dropdown-item
+                                        type="button"
+                                        danger
+                                        @click="$dispatch('confirm', {
+                                            title: 'Delete Recipe',
+                                            message: 'Are you sure you want to delete {{ $recipe->name }}? This action cannot be undone.',
+                                            confirmText: 'Delete',
+                                            variant: 'danger',
+                                            onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
+                                        })"
+                                    >
+                                        <x-icon name="trash" class="w-4 h-4" />
+                                        Delete
+                                    </x-dropdown-item>
+                                </x-dropdown>
+                                <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('inventory.recipes.destroy', $recipe) }}" method="POST" class="hidden">
+                                    @csrf
+                                    @method('DELETE')
                                 </form>
-                                <x-dropdown-item
-                                    type="button"
-                                    danger
-                                    @click="$dispatch('open-delete-modal', {
-                                        title: 'Delete Recipe',
-                                        message: 'Are you sure you want to delete {{ $recipe->name }}? This action cannot be undone.',
-                                        action: '{{ route('inventory.recipes.destroy', $recipe) }}'
-                                    })"
-                                >
-                                    <x-icon name="trash" class="w-4 h-4" />
-                                    Delete
-                                </x-dropdown-item>
-                            </x-dropdown>
+                            </div>
                         </x-td>
                     </tr>
                 @endforeach

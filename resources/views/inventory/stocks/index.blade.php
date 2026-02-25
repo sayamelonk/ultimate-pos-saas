@@ -91,9 +91,9 @@
                         <x-td align="right">
                             @php
                                 $available = $stock->quantity - $stock->reserved_quantity;
-                                $reorderLevel = $stock->inventoryItem->reorder_level;
+                                $reorderPoint = $stock->inventoryItem->reorder_point;
                             @endphp
-                            <span class="{{ $reorderLevel && $available <= $reorderLevel ? 'text-danger-600 font-medium' : '' }}">
+                            <span class="{{ $reorderPoint && $available <= $reorderPoint ? 'text-danger-600 font-medium' : '' }}">
                                 {{ number_format($available, 2) }}
                             </span>
                         </x-td>

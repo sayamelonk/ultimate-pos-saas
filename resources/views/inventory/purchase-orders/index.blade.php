@@ -110,44 +110,52 @@
                             @endswitch
                         </x-td>
                         <x-td align="right">
-                            <x-dropdown align="right">
-                                <x-slot name="trigger">
-                                    <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
-                                        <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
-                                    </button>
-                                </x-slot>
+                            <div x-data>
+                                <x-dropdown align="right">
+                                    <x-slot name="trigger">
+                                        <button class="p-2 hover:bg-secondary-100 rounded-lg transition-colors">
+                                            <x-icon name="dots-vertical" class="w-5 h-5 text-muted" />
+                                        </button>
+                                    </x-slot>
 
-                                <x-dropdown-item href="{{ route('inventory.purchase-orders.show', $po) }}">
-                                    <x-icon name="eye" class="w-4 h-4" />
-                                    View Details
-                                </x-dropdown-item>
-                                @if($po->status === 'draft')
-                                    <x-dropdown-item href="{{ route('inventory.purchase-orders.edit', $po) }}">
-                                        <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                    <x-dropdown-item href="{{ route('inventory.purchase-orders.show', $po) }}">
+                                        <x-icon name="eye" class="w-4 h-4" />
+                                        View Details
                                     </x-dropdown-item>
-                                @endif
-                                @if(in_array($po->status, ['approved', 'sent', 'partial']))
-                                    <x-dropdown-item href="{{ route('inventory.goods-receives.create', ['purchase_order_id' => $po->id]) }}">
-                                        <x-icon name="truck" class="w-4 h-4" />
-                                        Receive Goods
-                                    </x-dropdown-item>
-                                @endif
-                                @if($po->status === 'draft')
-                                    <x-dropdown-item
-                                        type="button"
-                                        danger
-                                        @click="$dispatch('open-delete-modal', {
-                                            title: 'Delete Purchase Order',
-                                            message: 'Are you sure you want to delete PO {{ $po->po_number }}? This action cannot be undone.',
-                                            action: '{{ route('inventory.purchase-orders.destroy', $po) }}'
-                                        })"
-                                    >
-                                        <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
-                                    </x-dropdown-item>
-                                @endif
-                            </x-dropdown>
+                                    @if($po->status === 'draft')
+                                        <x-dropdown-item href="{{ route('inventory.purchase-orders.edit', $po) }}">
+                                            <x-icon name="pencil" class="w-4 h-4" />
+                                            Edit
+                                        </x-dropdown-item>
+                                    @endif
+                                    @if(in_array($po->status, ['approved', 'sent', 'partial']))
+                                        <x-dropdown-item href="{{ route('inventory.goods-receives.create', ['purchase_order_id' => $po->id]) }}">
+                                            <x-icon name="truck" class="w-4 h-4" />
+                                            Receive Goods
+                                        </x-dropdown-item>
+                                    @endif
+                                    @if($po->status === 'draft')
+                                        <x-dropdown-item
+                                            type="button"
+                                            danger
+                                            @click="$dispatch('confirm', {
+                                                title: 'Delete Purchase Order',
+                                                message: 'Are you sure you want to delete PO {{ $po->po_number }}? This action cannot be undone.',
+                                                confirmText: 'Delete',
+                                                variant: 'danger',
+                                                onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
+                                            })"
+                                        >
+                                            <x-icon name="trash" class="w-4 h-4" />
+                                            Delete
+                                        </x-dropdown-item>
+                                    @endif
+                                </x-dropdown>
+                                <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('inventory.purchase-orders.destroy', $po) }}" method="POST" class="hidden">
+                                    @csrf
+                                    @method('DELETE')
+                                </form>
+                            </div>
                         </x-td>
                     </tr>
                 @endforeach

@@ -2,6 +2,7 @@
 
 namespace App\Services\Inventory;
 
+use App\Models\InventoryItem;
 use App\Models\InventoryStock;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
@@ -33,8 +34,10 @@ class StockTransferService
             ]);
 
             foreach ($items as $item) {
+                $inventoryItem = InventoryItem::find($item['inventory_item_id']);
                 $transfer->items()->create([
                     'inventory_item_id' => $item['inventory_item_id'],
+                    'unit_id' => $inventoryItem?->unit_id,
                     'quantity' => $item['quantity'],
                     'notes' => $item['notes'] ?? null,
                 ]);

@@ -1,38 +1,30 @@
 <x-app-layout>
     <x-slot name="title">{{ $goodsReceive->gr_number }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Goods Receive Details')
+    @section('page-title', __('inventory.gr_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <x-button href="{{ route('inventory.goods-receives.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                    Back
+                    {{ __('app.back') }}
                 </x-button>
                 <div>
                     <h2 class="text-2xl font-bold text-text">{{ $goodsReceive->gr_number }}</h2>
-                    <p class="text-muted mt-1">{{ $goodsReceive->purchaseOrder->po_number }}</p>
+                    <p class="text-muted mt-1">{{ $goodsReceive->purchaseOrder?->po_number ?? '-' }}</p>
                 </div>
             </div>
             <div class="flex gap-2">
                 @if($goodsReceive->status === 'draft')
-                    <form action="{{ route('inventory.goods-receives.complete', $goodsReceive) }}" method="POST" class="inline"
-                          onsubmit="return confirm('Complete this GR? This will add items to stock.')">
-                        @csrf
-                        <x-button type="submit" variant="success" icon="check">
-                            Complete GR
-                        </x-button>
-                    </form>
-                    <x-button href="{{ route('inventory.goods-receives.edit', $goodsReceive) }}" variant="outline-secondary" icon="pencil">
-                        Edit
+                    <x-button variant="success" icon="check" @click="$dispatch('open-modal', 'complete-gr')">
+                        {{ __('inventory.complete_gr') }}
                     </x-button>
-                    <form action="{{ route('inventory.goods-receives.cancel', $goodsReceive) }}" method="POST" class="inline"
-                          onsubmit="return confirm('Cancel this GR?')">
-                        @csrf
-                        <x-button type="submit" variant="outline-danger" icon="x">
-                            Cancel
-                        </x-button>
-                    </form>
+                    <x-button href="{{ route('inventory.goods-receives.edit', $goodsReceive) }}" variant="outline-secondary" icon="pencil">
+                        {{ __('app.edit') }}
+                    </x-button>
+                    <x-button variant="outline-danger" icon="x" @click="$dispatch('open-modal', 'cancel-gr')">
+                        {{ __('app.cancel') }}
+                    </x-button>
                 @endif
             </div>
         </div>
@@ -46,85 +38,84 @@
                     @switch($goodsReceive->status)
                         @case('draft')
                             <x-icon name="document" class="w-6 h-6 text-secondary-600" />
-                            <span class="font-medium text-secondary-700">Draft - Pending completion</span>
+                            <span class="font-medium text-secondary-700">{{ __('inventory.status_gr_draft') }}</span>
                             @break
                         @case('completed')
                             <x-icon name="check-circle" class="w-6 h-6 text-success-600" />
-                            <span class="font-medium text-success-700">Completed - Stock updated</span>
+                            <span class="font-medium text-success-700">{{ __('inventory.status_gr_completed') }}</span>
                             @break
                         @case('cancelled')
                             <x-icon name="x-circle" class="w-6 h-6 text-danger-600" />
-                            <span class="font-medium text-danger-700">Cancelled</span>
+                            <span class="font-medium text-danger-700">{{ __('app.status_cancelled') }}</span>
                             @break
                     @endswitch
                 </div>
-                @if($goodsReceive->completedBy)
-                    <span class="text-sm text-muted">Completed by {{ $goodsReceive->completedBy->name }} on {{ $goodsReceive->completed_at?->format('M d, Y H:i') }}</span>
-                @endif
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-6">
-            <x-card title="Receive Information">
+            <x-card :title="__('inventory.receive_information')">
                 <dl class="space-y-4">
                     <div class="flex justify-between">
-                        <dt class="text-muted">GR Number</dt>
+                        <dt class="text-muted">{{ __('inventory.gr_number') }}</dt>
                         <dd class="font-medium">{{ $goodsReceive->gr_number }}</dd>
                     </div>
+                    @if($goodsReceive->purchaseOrder)
                     <div class="flex justify-between">
-                        <dt class="text-muted">PO Number</dt>
+                        <dt class="text-muted">{{ __('inventory.po_number') }}</dt>
                         <dd>
                             <a href="{{ route('inventory.purchase-orders.show', $goodsReceive->purchaseOrder) }}" class="text-accent hover:underline">
                                 {{ $goodsReceive->purchaseOrder->po_number }}
                             </a>
                         </dd>
                     </div>
+                    @endif
                     <div class="flex justify-between">
-                        <dt class="text-muted">Receive Date</dt>
-                        <dd>{{ $goodsReceive->receive_date->format('M d, Y') }}</dd>
+                        <dt class="text-muted">{{ __('inventory.receive_date') }}</dt>
+                        <dd>{{ $goodsReceive->receive_date->translatedFormat('d M Y') }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Invoice Number</dt>
+                        <dt class="text-muted">{{ __('inventory.invoice_number') }}</dt>
                         <dd>{{ $goodsReceive->invoice_number ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Outlet</dt>
+                        <dt class="text-muted">{{ __('admin.outlet') }}</dt>
                         <dd>{{ $goodsReceive->outlet->name }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Received By</dt>
+                        <dt class="text-muted">{{ __('inventory.received_by') }}</dt>
                         <dd>{{ $goodsReceive->receivedBy->name ?? '-' }}</dd>
                     </div>
                 </dl>
             </x-card>
 
-            <x-card title="Supplier Information">
+            <x-card :title="__('inventory.supplier_information')">
                 <dl class="space-y-4">
                     <div class="flex justify-between">
-                        <dt class="text-muted">Supplier</dt>
-                        <dd class="font-medium">{{ $goodsReceive->purchaseOrder->supplier->name }}</dd>
+                        <dt class="text-muted">{{ __('inventory.supplier') }}</dt>
+                        <dd class="font-medium">{{ $goodsReceive->purchaseOrder?->supplier?->name ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Contact</dt>
-                        <dd>{{ $goodsReceive->purchaseOrder->supplier->contact_person ?? '-' }}</dd>
+                        <dt class="text-muted">{{ __('inventory.contact_person') }}</dt>
+                        <dd>{{ $goodsReceive->purchaseOrder?->supplier?->contact_person ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Phone</dt>
-                        <dd>{{ $goodsReceive->purchaseOrder->supplier->phone ?? '-' }}</dd>
+                        <dt class="text-muted">{{ __('app.phone') }}</dt>
+                        <dd>{{ $goodsReceive->purchaseOrder?->supplier?->phone ?? '-' }}</dd>
                     </div>
                 </dl>
             </x-card>
         </div>
 
-        <x-card title="Received Items">
+        <x-card :title="__('inventory.received_items')">
             <x-table>
                 <x-slot name="head">
-                    <x-th>Item</x-th>
-                    <x-th>SKU</x-th>
-                    <x-th align="right">Ordered</x-th>
-                    <x-th align="right">Received</x-th>
-                    <x-th>Batch</x-th>
-                    <x-th>Expiry</x-th>
+                    <x-th>{{ __('inventory.item') }}</x-th>
+                    <x-th>{{ __('inventory.sku') }}</x-th>
+                    <x-th align="right">{{ __('inventory.ordered_quantity') }}</x-th>
+                    <x-th align="right">{{ __('inventory.received') }}</x-th>
+                    <x-th>{{ __('inventory.batch') }}</x-th>
+                    <x-th>{{ __('inventory.expiry_date') }}</x-th>
                 </x-slot>
 
                 @foreach($goodsReceive->items as $item)
@@ -140,8 +131,8 @@
                         </x-td>
                         <x-td align="right">{{ number_format($item->purchaseOrderItem->quantity, 2) }} {{ $item->purchaseOrderItem->inventoryItem->unit->abbreviation ?? '' }}</x-td>
                         <x-td align="right">
-                            <span class="{{ $item->quantity_received < $item->purchaseOrderItem->quantity ? 'text-warning-600' : 'text-success-600' }} font-medium">
-                                {{ number_format($item->quantity_received, 2) }}
+                            <span class="{{ $item->quantity < $item->purchaseOrderItem->quantity ? 'text-warning-600' : 'text-success-600' }} font-medium">
+                                {{ number_format($item->quantity, 2) }}
                             </span>
                         </x-td>
                         <x-td>
@@ -153,7 +144,7 @@
                         </x-td>
                         <x-td>
                             @if($item->expiry_date)
-                                {{ $item->expiry_date->format('M d, Y') }}
+                                {{ $item->expiry_date->translatedFormat('d M Y') }}
                             @else
                                 -
                             @endif
@@ -164,9 +155,37 @@
         </x-card>
 
         @if($goodsReceive->notes)
-            <x-card title="Notes">
+            <x-card :title="__('app.notes')">
                 <p class="text-text">{{ $goodsReceive->notes }}</p>
             </x-card>
         @endif
     </div>
+
+    {{-- Complete GR Modal --}}
+    @if($goodsReceive->status === 'draft')
+    <x-confirm-modal
+        name="complete-gr"
+        :title="__('inventory.complete_gr')"
+        :message="__('inventory.confirm_complete_gr')"
+        :confirmText="__('inventory.complete_gr')"
+        type="success"
+        @click="document.getElementById('complete-gr-form').submit()"
+    />
+    <form id="complete-gr-form" action="{{ route('inventory.goods-receives.complete', $goodsReceive) }}" method="POST" class="hidden">
+        @csrf
+    </form>
+
+    {{-- Cancel GR Modal --}}
+    <x-confirm-modal
+        name="cancel-gr"
+        :title="__('inventory.cancel_gr')"
+        :message="__('inventory.confirm_cancel_gr')"
+        :confirmText="__('inventory.cancel_gr')"
+        type="danger"
+        @click="document.getElementById('cancel-gr-form').submit()"
+    />
+    <form id="cancel-gr-form" action="{{ route('inventory.goods-receives.cancel', $goodsReceive) }}" method="POST" class="hidden">
+        @csrf
+    </form>
+    @endif
 </x-app-layout>

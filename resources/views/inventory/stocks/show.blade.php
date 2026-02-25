@@ -62,7 +62,7 @@
                 </div>
                 <div>
                     <dt class="text-sm text-muted">Reorder Level</dt>
-                    <dd class="mt-1 text-text">{{ $stock->inventoryItem->reorder_level ?? '-' }}</dd>
+                    <dd class="mt-1 text-text">{{ $stock->inventoryItem->reorder_point ?? '-' }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm text-muted">Last Updated</dt>

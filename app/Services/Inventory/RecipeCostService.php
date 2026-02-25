@@ -8,7 +8,7 @@ class RecipeCostService
 {
     public function updateRecipeCost(Recipe $recipe): Recipe
     {
-        $recipe->load('items.inventoryItem');
+        $recipe->load('items.inventoryItem.unit', 'items.unit');
 
         $totalCost = $recipe->calculateCost();
 
@@ -21,7 +21,7 @@ class RecipeCostService
 
     public function getCostBreakdown(Recipe $recipe): array
     {
-        $recipe->load('items.inventoryItem.unit');
+        $recipe->load('items.inventoryItem.unit', 'items.unit');
 
         $ingredients = [];
         $totalCost = 0;

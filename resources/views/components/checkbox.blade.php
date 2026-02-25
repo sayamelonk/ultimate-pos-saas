@@ -10,12 +10,15 @@
 
 @php
     $hasError = $error || ($errors->has($name) ?? false);
-    $isChecked = old($name, $checked);
+    // Check if there was a form submission (has _token in old input)
+    $wasSubmitted = old('_token') !== null;
+    // If form was submitted, check if this checkbox was in the request
+    // If not submitted, use the default $checked value
+    $isChecked = $wasSubmitted ? (old($name) !== null) : $checked;
 @endphp
 
 <div {{ $attributes->only('class')->merge(['class' => 'relative flex items-start']) }}>
     <div class="flex items-center h-5">
-        <input type="hidden" name="{{ $name }}" value="0">
         <input type="checkbox"
                name="{{ $name }}"
                id="{{ $name }}"

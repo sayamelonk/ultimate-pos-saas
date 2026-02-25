@@ -19,39 +19,42 @@
         @if($sessions->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Session</x-th>
-                    <x-th>Outlet</x-th>
+                    <x-th>Session / Outlet</x-th>
                     <x-th>Cashier</x-th>
-                    <x-th>Opened At</x-th>
-                    <x-th>Closed At</x-th>
-                    <x-th align="right">Opening Cash</x-th>
-                    <x-th align="right">Closing Cash</x-th>
+                    <x-th>Period</x-th>
+                    <x-th align="right">Cash</x-th>
                     <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th align="center">Actions</x-th>
                 </x-slot>
 
                 @foreach($sessions as $session)
                     <tr>
                         <x-td>
-                            <code class="px-2 py-1 bg-secondary-100 rounded text-xs">{{ $session->session_number }}</code>
+                            <div>
+                                <code class="px-2 py-1 bg-secondary-100 rounded text-xs">{{ $session->session_number }}</code>
+                                <p class="text-sm text-muted mt-1">{{ $session->outlet->name }}</p>
+                            </div>
                         </x-td>
-                        <x-td>{{ $session->outlet->name }}</x-td>
                         <x-td>{{ $session->user->name }}</x-td>
-                        <x-td>{{ $session->opened_at->format('d M Y H:i') }}</x-td>
                         <x-td>
-                            @if($session->closed_at)
-                                {{ $session->closed_at->format('d M Y H:i') }}
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
+                            <div class="text-sm">
+                                <p>{{ $session->opened_at->format('d M Y H:i') }}</p>
+                                @if($session->closed_at)
+                                    <p class="text-muted">{{ $session->closed_at->format('d M Y H:i') }}</p>
+                                @else
+                                    <p class="text-muted">-</p>
+                                @endif
+                            </div>
                         </x-td>
-                        <x-td align="right">Rp {{ number_format($session->opening_cash, 0, ',', '.') }}</x-td>
                         <x-td align="right">
-                            @if($session->closing_cash !== null)
-                                Rp {{ number_format($session->closing_cash, 0, ',', '.') }}
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
+                            <div class="text-sm">
+                                <p>Rp {{ number_format($session->opening_cash, 0, ',', '.') }}</p>
+                                @if($session->closing_cash !== null)
+                                    <p class="text-muted">Rp {{ number_format($session->closing_cash, 0, ',', '.') }}</p>
+                                @else
+                                    <p class="text-muted">-</p>
+                                @endif
+                            </div>
                         </x-td>
                         <x-td align="center">
                             @if($session->isOpen())
@@ -60,14 +63,14 @@
                                 <x-badge type="secondary" dot>Closed</x-badge>
                             @endif
                         </x-td>
-                        <x-td align="right">
-                            <div class="flex items-center justify-end gap-2">
+                        <x-td align="center">
+                            <div class="flex items-center justify-center gap-1">
                                 @if($session->isOpen())
                                     <x-button href="{{ route('pos.sessions.close', $session) }}" size="sm" variant="warning">
                                         Close
                                     </x-button>
                                 @endif
-                                <x-button href="{{ route('pos.sessions.report', $session) }}" size="sm" variant="secondary">
+                                <x-button href="{{ route('pos.sessions.report', $session) }}" size="sm" variant="ghost">
                                     Report
                                 </x-button>
                             </div>

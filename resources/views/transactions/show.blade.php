@@ -18,10 +18,20 @@
                 <x-button href="{{ route('pos.receipt', $transaction) }}" target="_blank" variant="secondary" icon="printer">
                     Print Receipt
                 </x-button>
-                @if($transaction->status === 'completed' && $transaction->type === 'sale')
+                @if($transaction->canRefund())
                     <x-button href="{{ route('transactions.refund', $transaction) }}" variant="warning">
                         Refund
                     </x-button>
+                @endif
+                @if($transaction->canVoid())
+                    <button
+                        type="button"
+                        onclick="document.getElementById('voidModal').showModal()"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-danger rounded-lg hover:bg-danger-600 transition-colors"
+                    >
+                        <x-icon name="x-circle" class="w-4 h-4" />
+                        Void
+                    </button>
                 @endif
             </div>
         </div>
@@ -304,6 +314,147 @@
                     </a>
                 </x-card>
             @endif
+
+            <!-- Refund Transactions -->
+            @if($transaction->refundTransactions->count() > 0)
+                <x-card title="Refund History">
+                    <div class="space-y-2">
+                        @foreach($transaction->refundTransactions as $refund)
+                            <a href="{{ route('transactions.show', $refund) }}" class="block p-3 border border-border rounded-lg hover:border-primary/50 transition-colors">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-medium text-text">{{ $refund->transaction_number }}</p>
+                                        <p class="text-xs text-muted">{{ $refund->created_at->format('d M Y H:i') }}</p>
+                                    </div>
+                                    <span class="text-danger font-medium">-Rp {{ number_format($refund->grand_total, 0, ',', '.') }}</span>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                </x-card>
+            @endif
         </div>
     </div>
+
+    <!-- Void Modal with PIN Authorization -->
+    @if($transaction->canVoid())
+    <div x-data="voidTransaction()" x-cloak>
+        <!-- Step 1: Reason Modal -->
+        <dialog id="voidModal" class="rounded-xl p-0 backdrop:bg-black/50 max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-text">Void Transaction</h3>
+                    <button type="button" onclick="document.getElementById('voidModal').close()" class="text-muted hover:text-text">
+                        <x-icon name="x" class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div class="p-4 bg-danger-50 border border-danger-200 rounded-lg mb-4">
+                    <div class="flex items-center gap-2 text-danger-700">
+                        <x-icon name="exclamation-triangle" class="w-5 h-5" />
+                        <span class="font-medium">This action cannot be undone</span>
+                    </div>
+                    <p class="text-sm text-danger-600 mt-1">
+                        Voiding this transaction will mark it as void and return stock to inventory.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-text mb-2">Reason for Void</label>
+                    <textarea
+                        x-model="reason"
+                        rows="3"
+                        required
+                        placeholder="Please provide a reason for voiding this transaction..."
+                        class="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                    ></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button
+                        type="button"
+                        onclick="document.getElementById('voidModal').close()"
+                        class="flex-1 px-4 py-2.5 bg-secondary-100 text-secondary-700 font-medium rounded-lg hover:bg-secondary-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        @click="proceedToAuthorization()"
+                        :disabled="!reason.trim()"
+                        class="flex-1 px-4 py-2.5 bg-danger text-white font-medium rounded-lg hover:bg-danger-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- Hidden form for final submission -->
+        <form id="voidForm" method="POST" action="{{ route('transactions.void', $transaction) }}" class="hidden">
+            @csrf
+            <input type="hidden" name="reason" id="voidReasonInput">
+            <input type="hidden" name="authorization_log_id" id="voidAuthLogInput">
+        </form>
+    </div>
+
+    <!-- PIN Authorization Modal -->
+    <x-pin-modal id="void-pin-modal" title="Authorization Required" />
+
+    <script>
+    function voidTransaction() {
+        return {
+            reason: '',
+            authorizationLogId: null,
+            requiresAuth: @json($requiresVoidAuth ?? true),
+
+            submitVoidForm() {
+                // Set values to hidden form before submit
+                document.getElementById('voidReasonInput').value = this.reason;
+                document.getElementById('voidAuthLogInput').value = this.authorizationLogId || '';
+                document.getElementById('voidForm').submit();
+            },
+
+            async proceedToAuthorization() {
+                if (!this.reason.trim()) return;
+
+                document.getElementById('voidModal').close();
+
+                if (!this.requiresAuth) {
+                    // No authorization required, submit directly
+                    this.submitVoidForm();
+                    return;
+                }
+
+                // Open PIN modal for authorization
+                const self = this;
+                window.dispatchEvent(new CustomEvent('open-pin-modal', {
+                    detail: {
+                        id: 'void-pin-modal',
+                        title: 'Void Authorization',
+                        subtitle: 'Enter supervisor PIN to void this transaction',
+                        action: 'void',
+                        outletId: '{{ $transaction->outlet_id }}',
+                        referenceType: 'transaction',
+                        referenceId: '{{ $transaction->id }}',
+                        referenceNumber: '{{ $transaction->transaction_number }}',
+                        amount: {{ $transaction->grand_total }},
+                        reason: this.reason,
+                        onSuccess: (data) => {
+                            self.authorizationLogId = data.authorization_log_id;
+                            setTimeout(() => {
+                                self.submitVoidForm();
+                            }, 100);
+                        },
+                        onCancel: () => {
+                            // Reopen reason modal if cancelled
+                            document.getElementById('voidModal').showModal();
+                        }
+                    }
+                }));
+            }
+        }
+    }
+    </script>
+    @endif
 </x-app-layout>

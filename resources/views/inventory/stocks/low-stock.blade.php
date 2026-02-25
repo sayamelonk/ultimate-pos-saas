@@ -51,8 +51,8 @@
                                 {{ number_format($totalStock, 2) }}
                             </span>
                         </x-td>
-                        <x-td align="right">{{ number_format($item->reorder_level, 2) }}</x-td>
-                        <x-td align="right">{{ number_format($item->reorder_quantity ?? 0, 2) }}</x-td>
+                        <x-td align="right">{{ number_format($item->reorder_point, 2) }}</x-td>
+                        <x-td align="right">{{ number_format($item->reorder_qty ?? 0, 2) }}</x-td>
                         <x-td align="right">
                             <x-button href="{{ route('inventory.purchase-orders.create') }}" variant="outline-secondary" size="sm">
                                 Create PO

@@ -69,8 +69,9 @@
 
         <!-- Refund Form -->
         <x-card title="Refund Details">
-            <form method="POST" action="{{ route('transactions.refund.store', $transaction) }}" x-data="refundForm()">
+            <form method="POST" action="{{ route('transactions.refund.store', $transaction) }}" x-data="refundForm()" id="refundForm" @submit.prevent="submitForm()">
                 @csrf
+                <input type="hidden" name="authorization_log_id" x-model="authorizationLogId">
 
                 <div class="space-y-4">
                     <div class="p-4 bg-warning-50 border border-warning-200 rounded-lg">
@@ -130,33 +131,122 @@
                         </div>
                     </template>
 
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-2">Refund Payment Method</label>
+                        <select name="payment_method_id" x-model="paymentMethodId" required class="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            <option value="">Select payment method...</option>
+                            @foreach($paymentMethods as $method)
+                                <option value="{{ $method->id }}">{{ $method->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <x-textarea
                         label="Reason for Refund"
                         name="reason"
+                        x-model="reason"
                         rows="3"
                         placeholder="Please provide a reason for this refund..."
                         required
                     >{{ old('reason') }}</x-textarea>
 
+                    <!-- Refund Summary -->
+                    <div class="p-4 bg-secondary-50 rounded-lg space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-muted">Refund Amount</span>
+                            <span class="font-bold text-lg text-danger" x-text="'Rp ' + formatNumber(refundAmount)"></span>
+                        </div>
+                    </div>
+
                     <div class="pt-4 flex gap-3">
                         <x-button href="{{ route('transactions.show', $transaction) }}" variant="secondary" class="flex-1">
                             Cancel
                         </x-button>
-                        <x-button type="submit" variant="danger" class="flex-1">
+                        <button type="submit" class="flex-1 px-4 py-2.5 bg-danger text-white font-medium rounded-lg hover:bg-danger-600">
                             Process Refund
-                        </x-button>
+                        </button>
                     </div>
                 </div>
             </form>
         </x-card>
     </div>
 
+    <!-- PIN Authorization Modal -->
+    <x-pin-modal id="refund-pin-modal" title="Authorization Required" />
+
     @push('scripts')
     <script>
         function refundForm() {
             return {
                 refundType: 'full',
-                selectedItems: {}
+                selectedItems: {},
+                itemPrices: @json($transaction->items->pluck('subtotal', 'id')),
+                totalAmount: {{ $transaction->grand_total }},
+                authorizationLogId: null,
+                paymentMethodId: '',
+                reason: '',
+                requiresAuth: @json($requiresRefundAuth ?? true),
+
+                get refundAmount() {
+                    if (this.refundType === 'full') {
+                        return this.totalAmount;
+                    }
+
+                    let total = 0;
+                    for (const [id, selected] of Object.entries(this.selectedItems)) {
+                        if (selected && this.itemPrices[id]) {
+                            total += this.itemPrices[id];
+                        }
+                    }
+                    return total;
+                },
+
+                formatNumber(num) {
+                    return new Intl.NumberFormat('id-ID').format(num);
+                },
+
+                submitForm() {
+                    // Validate form
+                    if (!this.paymentMethodId) {
+                        alert('Please select a payment method');
+                        return;
+                    }
+                    if (!this.reason.trim()) {
+                        alert('Please provide a reason for the refund');
+                        return;
+                    }
+
+                    if (!this.requiresAuth) {
+                        // No authorization required, submit directly
+                        document.getElementById('refundForm').submit();
+                        return;
+                    }
+
+                    // Open PIN modal for authorization
+                    window.dispatchEvent(new CustomEvent('open-pin-modal', {
+                        detail: {
+                            id: 'refund-pin-modal',
+                            title: 'Refund Authorization',
+                            subtitle: 'Enter supervisor PIN to process refund',
+                            action: 'refund',
+                            outletId: '{{ $transaction->outlet_id }}',
+                            referenceType: 'transaction',
+                            referenceId: '{{ $transaction->id }}',
+                            referenceNumber: '{{ $transaction->transaction_number }}',
+                            amount: this.refundAmount,
+                            reason: this.reason,
+                            onSuccess: (data) => {
+                                this.authorizationLogId = data.authorization_log_id;
+                                this.$nextTick(() => {
+                                    document.getElementById('refundForm').submit();
+                                });
+                            },
+                            onCancel: () => {
+                                // Do nothing, user can retry
+                            }
+                        }
+                    }));
+                }
             };
         }
     </script>

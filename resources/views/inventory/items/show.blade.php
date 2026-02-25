@@ -74,22 +74,30 @@
             </x-card>
 
             <x-card title="Stock Settings">
+                @php
+                    $totalStock = $item->stocks->sum('quantity');
+                    $totalReserved = $item->stocks->sum('reserved_quantity');
+                @endphp
                 <dl class="space-y-4">
+                    <div class="p-3 rounded-lg bg-accent/10 border border-accent/20">
+                        <dt class="text-sm text-muted">Current Stock</dt>
+                        <dd class="mt-1 text-2xl font-bold text-accent">{{ number_format($totalStock, 0, ',', '.') }} <span class="text-sm font-normal">{{ $item->unit->abbreviation ?? '' }}</span></dd>
+                    </div>
                     <div>
                         <dt class="text-sm text-muted">Reorder Level</dt>
-                        <dd class="mt-1 font-medium text-text">{{ $item->reorder_level ?? '-' }}</dd>
+                        <dd class="mt-1 font-medium text-text">{{ $item->reorder_point ? number_format($item->reorder_point, 0, ',', '.') : '-' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-muted">Reorder Quantity</dt>
-                        <dd class="mt-1 text-text">{{ $item->reorder_quantity ?? '-' }}</dd>
+                        <dd class="mt-1 text-text">{{ $item->reorder_qty ? number_format($item->reorder_qty, 0, ',', '.') : '-' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-muted">Max Stock Level</dt>
-                        <dd class="mt-1 text-text">{{ $item->max_stock_level ?? '-' }}</dd>
+                        <dd class="mt-1 text-text">{{ $item->max_stock ? number_format($item->max_stock, 0, ',', '.') : '-' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-muted">Shelf Life</dt>
-                        <dd class="mt-1 text-text">{{ $item->shelf_life_days ? $item->shelf_life_days . ' days' : '-' }}</dd>
+                        <dd class="mt-1 text-text">{{ $item->shelf_life_days ? $item->shelf_life_days . ' ' . __('app.days') : '-' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-muted">Storage Location</dt>
