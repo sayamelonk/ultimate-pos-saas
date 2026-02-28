@@ -268,3 +268,8 @@ Route::middleware(['auth', 'tenant'])->group(function () {
 Route::get('/test-dialog', function () {
     return view('test-dialog');
 });
+
+// Test route for alerts & notifications
+Route::get('/test-alerts', function () {
+    return view('test-alerts');
+});
