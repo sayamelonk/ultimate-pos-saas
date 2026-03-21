@@ -20,7 +20,7 @@ class UnitSeeder extends Seeder
     private function seedUnitsForTenant(Tenant $tenant): void
     {
         // Weight Units
-        $kg = Unit::create([
+        $kg = Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Kilogram',
             'abbreviation' => 'kg',
@@ -29,7 +29,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Gram',
             'abbreviation' => 'g',
@@ -38,7 +38,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Miligram',
             'abbreviation' => 'mg',
@@ -47,7 +47,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Ons',
             'abbreviation' => 'ons',
@@ -57,7 +57,7 @@ class UnitSeeder extends Seeder
         ]);
 
         // Volume Units
-        $liter = Unit::create([
+        $liter = Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Liter',
             'abbreviation' => 'L',
@@ -66,7 +66,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Mililiter',
             'abbreviation' => 'ml',
@@ -75,7 +75,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Centiliter',
             'abbreviation' => 'cl',
@@ -85,7 +85,7 @@ class UnitSeeder extends Seeder
         ]);
 
         // Count Units
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Piece',
             'abbreviation' => 'pcs',
@@ -94,7 +94,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Dozen',
             'abbreviation' => 'doz',
@@ -103,7 +103,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Box',
             'abbreviation' => 'box',
@@ -112,7 +112,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Pack',
             'abbreviation' => 'pack',
@@ -121,7 +121,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Carton',
             'abbreviation' => 'ctn',
@@ -131,7 +131,7 @@ class UnitSeeder extends Seeder
         ]);
 
         // Food Service Units
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Portion',
             'abbreviation' => 'por',
@@ -140,7 +140,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Slice',
             'abbreviation' => 'slc',
@@ -149,7 +149,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Cup',
             'abbreviation' => 'cup',
@@ -158,7 +158,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Tablespoon',
             'abbreviation' => 'tbsp',
@@ -167,7 +167,7 @@ class UnitSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Unit::create([
+        Unit::firstOrCreate([
             'tenant_id' => $tenant->id,
             'name' => 'Teaspoon',
             'abbreviation' => 'tsp',

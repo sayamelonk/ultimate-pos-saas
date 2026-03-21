@@ -38,12 +38,14 @@ use App\Http\Controllers\POS\TransactionController;
 use App\Http\Controllers\Pricing\DiscountController;
 use App\Http\Controllers\Pricing\PaymentMethodController;
 use App\Http\Controllers\Pricing\PriceController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\Webhook\XenditWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Landing Page
 Route::get('/', function () {
-    return redirect()->route('login');
-});
+    return view('landing');
+})->name('landing');
 
 // Locale Switcher (available for all users)
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
@@ -269,7 +271,19 @@ Route::get('/test-dialog', function () {
     return view('test-dialog');
 });
 
-// Test route for alerts & notifications
-Route::get('/test-alerts', function () {
-    return view('test-alerts');
+// Xendit Webhook (no auth required)
+Route::post('/webhook/xendit/invoice', [XenditWebhookController::class, 'handleInvoice'])
+    ->name('webhook.xendit.invoice')
+    ->withoutMiddleware(['web']);
+
+// Subscription Routes (authenticated)
+Route::middleware(['auth', 'tenant'])->prefix('subscription')->name('subscription.')->group(function () {
+    Route::get('/', [SubscriptionController::class, 'index'])->name('index');
+    Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
+    Route::post('/subscribe/{plan}', [SubscriptionController::class, 'subscribe'])->name('subscribe');
+    Route::post('/renew', [SubscriptionController::class, 'renew'])->name('renew');
+    Route::post('/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
+    Route::get('/invoice/{invoice}', [SubscriptionController::class, 'showInvoice'])->name('invoice');
+    Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess'])->name('payment.success');
+    Route::get('/payment/failed', [SubscriptionController::class, 'paymentFailed'])->name('payment.failed');
 });
