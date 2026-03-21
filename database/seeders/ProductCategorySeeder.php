@@ -89,13 +89,13 @@ class ProductCategorySeeder extends Seeder
             $children = $categoryData['children'] ?? [];
             unset($categoryData['children']);
 
-            $parent = ProductCategory::create([
+            $parent = ProductCategory::firstOrCreate([
                 'tenant_id' => $tenant->id,
                 ...$categoryData,
             ]);
 
             foreach ($children as $childData) {
-                ProductCategory::create([
+                ProductCategory::firstOrCreate([
                     'tenant_id' => $tenant->id,
                     'parent_id' => $parent->id,
                     'icon' => $parent->icon,

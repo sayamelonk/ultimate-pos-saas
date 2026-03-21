@@ -47,7 +47,13 @@ class CustomerController extends Controller
 
     public function create(): View
     {
-        $code = $this->customerService->generateCustomerCode(auth()->user()->tenant_id);
+        $tenantId = auth()->user()->tenant_id;
+
+        // Super admin without tenant - use first available tenant or show default code
+        $code = 'CUST0001';
+        if ($tenantId) {
+            $code = $this->customerService->generateCustomerCode($tenantId);
+        }
 
         return view('customers.create', [
             'membershipLevels' => Customer::getMembershipLevels(),
@@ -57,8 +63,15 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request): RedirectResponse
     {
+        $tenantId = auth()->user()->tenant_id;
+
+        if (! $tenantId) {
+            return redirect()->back()
+                ->with('error', 'Cannot create customer without being assigned to a tenant.');
+        }
+
         Customer::create([
-            'tenant_id' => auth()->user()->tenant_id,
+            'tenant_id' => $tenantId,
             'code' => $request->code,
             'name' => $request->name,
             'email' => $request->email,

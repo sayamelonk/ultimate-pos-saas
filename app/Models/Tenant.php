@@ -6,6 +6,7 @@ use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Tenant extends Model
 {
@@ -95,5 +96,43 @@ class Tenant extends Model
     public function canAddOutlet(): bool
     {
         return $this->outlets()->count() < $this->max_outlets;
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)->where('status', 'active')->latest();
+    }
+
+    public function subscriptionInvoices(): HasMany
+    {
+        return $this->hasMany(SubscriptionInvoice::class);
+    }
+
+    public function currentPlan(): ?SubscriptionPlan
+    {
+        return $this->activeSubscription?->plan;
+    }
+
+    public function canAddUser(): bool
+    {
+        $maxUsers = $this->activeSubscription?->plan?->max_users ?? 2;
+
+        if ($maxUsers === -1) {
+            return true;
+        }
+
+        return $this->users()->count() < $maxUsers;
+    }
+
+    public function hasFeature(string $feature): bool
+    {
+        $features = $this->activeSubscription?->plan?->features ?? [];
+
+        return in_array($feature, $features);
     }
 }

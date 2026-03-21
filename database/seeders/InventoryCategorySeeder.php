@@ -20,7 +20,7 @@ class InventoryCategorySeeder extends Seeder
 
     private function createCategory(string $tenantId, ?string $parentId, string $name, string $description, int $sortOrder): InventoryCategory
     {
-        return InventoryCategory::create([
+        return InventoryCategory::firstOrCreate([
             'tenant_id' => $tenantId,
             'parent_id' => $parentId,
             'name' => $name,

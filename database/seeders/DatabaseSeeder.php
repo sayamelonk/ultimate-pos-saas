@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            // Phase 0 - Subscription Plans
+            SubscriptionPlanSeeder::class,
+
             // Phase 1 - Foundation
             PermissionSeeder::class,
             RoleSeeder::class,

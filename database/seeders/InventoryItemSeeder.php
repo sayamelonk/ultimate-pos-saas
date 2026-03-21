@@ -249,7 +249,7 @@ class InventoryItemSeeder extends Seeder
                 continue;
             }
 
-            $inventoryItem = InventoryItem::create([
+            $inventoryItem = InventoryItem::firstOrCreate([
                 'tenant_id' => $tenant->id,
                 'category_id' => $category->id,
                 'unit_id' => $unit->id,
@@ -270,7 +270,7 @@ class InventoryItemSeeder extends Seeder
             // Assign random supplier to item
             if ($suppliers->isNotEmpty()) {
                 $randomSupplier = $suppliers->random();
-                SupplierItem::create([
+                SupplierItem::firstOrCreate([
                     'supplier_id' => $randomSupplier->id,
                     'inventory_item_id' => $inventoryItem->id,
                     'supplier_sku' => strtoupper(fake()->bothify('???-####')),
