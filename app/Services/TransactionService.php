@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\Discount;
 use App\Models\InventoryItem;
+use App\Models\Modifier;
 use App\Models\Outlet;
 use App\Models\PaymentMethod;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Models\Transaction;
 use App\Models\TransactionDiscount;
@@ -37,28 +40,9 @@ class TransactionService
         $subtotal = 0;
 
         foreach ($items as $item) {
-            $inventoryItem = InventoryItem::findOrFail($item['inventory_item_id']);
-            $quantity = $item['quantity'] ?? 1;
-            $unitPrice = $item['unit_price'] ?? $this->priceService->getSellingPrice(
-                $item['inventory_item_id'],
-                $outletId,
-                $customerId
-            );
-
-            $itemSubtotal = $quantity * $unitPrice;
-            $subtotal += $itemSubtotal;
-
-            $lineItems[] = [
-                'inventory_item_id' => $inventoryItem->id,
-                'item_name' => $inventoryItem->name,
-                'item_sku' => $inventoryItem->sku,
-                'quantity' => $quantity,
-                'unit_name' => $inventoryItem->unit?->name ?? 'pcs',
-                'unit_price' => $unitPrice,
-                'cost_price' => $inventoryItem->cost_price,
-                'discount_amount' => 0,
-                'subtotal' => $itemSubtotal,
-            ];
+            $lineItem = $this->processLineItem($item, $outletId, $customerId);
+            $lineItems[] = $lineItem;
+            $subtotal += $lineItem['subtotal'];
         }
 
         $discountResult = $this->discountService->calculateOrderDiscount($discounts, $subtotal, $lineItems);
@@ -101,6 +85,125 @@ class TransactionService
             'points_earned' => $pointsEarned,
             'applied_discounts' => $discountResult['applied_discounts'],
             'customer' => $customer,
+        ];
+    }
+
+    private function processLineItem(array $item, string $outletId, ?string $customerId): array
+    {
+        $quantity = $item['quantity'] ?? 1;
+
+        // Product-based item (new flow)
+        if (! empty($item['product_id'])) {
+            return $this->processProductItem($item, $outletId, $quantity);
+        }
+
+        // Legacy inventory-based item (backward compatibility)
+        if (! empty($item['inventory_item_id'])) {
+            return $this->processInventoryItem($item, $outletId, $customerId, $quantity);
+        }
+
+        throw new \InvalidArgumentException('Item must have either product_id or inventory_item_id');
+    }
+
+    private function processProductItem(array $item, string $outletId, float $quantity): array
+    {
+        $product = Product::with(['productOutlets' => fn ($q) => $q->where('outlet_id', $outletId)])
+            ->findOrFail($item['product_id']);
+
+        $variant = null;
+        $variantPriceAdjustment = 0;
+
+        // Handle variant
+        if (! empty($item['variant_id'])) {
+            $variant = ProductVariant::findOrFail($item['variant_id']);
+            $variantPriceAdjustment = $variant->price - $product->base_price;
+        }
+
+        // Calculate base price (custom outlet price or product base price)
+        $productOutlet = $product->productOutlets->first();
+        $basePrice = $productOutlet?->custom_price ?? $product->base_price;
+
+        // Handle modifiers
+        $modifiersTotal = 0;
+        $modifiersData = [];
+
+        if (! empty($item['modifiers']) && is_array($item['modifiers'])) {
+            foreach ($item['modifiers'] as $modifierId) {
+                $modifier = Modifier::find($modifierId);
+                if ($modifier) {
+                    $modifiersTotal += $modifier->price;
+                    $modifiersData[] = [
+                        'id' => $modifier->id,
+                        'name' => $modifier->display_name ?? $modifier->name,
+                        'price' => $modifier->price,
+                        'inventory_item_id' => $modifier->inventory_item_id,
+                        'quantity_used' => $modifier->quantity_used,
+                    ];
+                }
+            }
+        }
+
+        // Calculate final unit price
+        $unitPrice = $item['unit_price'] ?? ($basePrice + $variantPriceAdjustment + $modifiersTotal);
+        $itemSubtotal = $quantity * $unitPrice;
+
+        // Determine display name
+        $itemName = $product->name;
+        if ($variant) {
+            $itemName = $variant->name;
+        }
+
+        // Get cost price (from variant, product, or recipe)
+        $costPrice = $variant?->cost_price ?? $product->cost_price ?? 0;
+
+        return [
+            'product_id' => $product->id,
+            'product_variant_id' => $variant?->id,
+            'inventory_item_id' => $variant?->inventory_item_id ?? $product->inventory_item_id,
+            'item_name' => $itemName,
+            'item_sku' => $variant?->sku ?? $product->sku,
+            'quantity' => $quantity,
+            'unit_name' => 'pcs',
+            'unit_price' => $unitPrice,
+            'base_price' => $basePrice,
+            'variant_price_adjustment' => $variantPriceAdjustment,
+            'modifiers_total' => $modifiersTotal,
+            'cost_price' => $costPrice,
+            'discount_amount' => 0,
+            'subtotal' => $itemSubtotal,
+            'modifiers' => $modifiersData,
+            'item_notes' => $item['notes'] ?? null,
+        ];
+    }
+
+    private function processInventoryItem(array $item, string $outletId, ?string $customerId, float $quantity): array
+    {
+        $inventoryItem = InventoryItem::findOrFail($item['inventory_item_id']);
+        $unitPrice = $item['unit_price'] ?? $this->priceService->getSellingPrice(
+            $item['inventory_item_id'],
+            $outletId,
+            $customerId
+        );
+
+        $itemSubtotal = $quantity * $unitPrice;
+
+        return [
+            'product_id' => null,
+            'product_variant_id' => null,
+            'inventory_item_id' => $inventoryItem->id,
+            'item_name' => $inventoryItem->name,
+            'item_sku' => $inventoryItem->sku,
+            'quantity' => $quantity,
+            'unit_name' => $inventoryItem->unit?->name ?? 'pcs',
+            'unit_price' => $unitPrice,
+            'base_price' => $unitPrice,
+            'variant_price_adjustment' => 0,
+            'modifiers_total' => 0,
+            'cost_price' => $inventoryItem->cost_price,
+            'discount_amount' => 0,
+            'subtotal' => $itemSubtotal,
+            'modifiers' => null,
+            'item_notes' => $item['notes'] ?? null,
         ];
     }
 
@@ -154,15 +257,22 @@ class TransactionService
             foreach ($calculation['items'] as $item) {
                 TransactionItem::create([
                     'transaction_id' => $transaction->id,
+                    'product_id' => $item['product_id'] ?? null,
+                    'product_variant_id' => $item['product_variant_id'] ?? null,
                     'inventory_item_id' => $item['inventory_item_id'],
                     'item_name' => $item['item_name'],
                     'item_sku' => $item['item_sku'],
                     'quantity' => $item['quantity'],
                     'unit_name' => $item['unit_name'],
                     'unit_price' => $item['unit_price'],
+                    'base_price' => $item['base_price'] ?? $item['unit_price'],
+                    'variant_price_adjustment' => $item['variant_price_adjustment'] ?? 0,
+                    'modifiers_total' => $item['modifiers_total'] ?? 0,
                     'cost_price' => $item['cost_price'],
                     'discount_amount' => $item['discount_amount'],
                     'subtotal' => $item['subtotal'] - $item['discount_amount'],
+                    'modifiers' => $item['modifiers'] ?? null,
+                    'item_notes' => $item['item_notes'] ?? null,
                 ]);
             }
 
@@ -371,16 +481,143 @@ class TransactionService
     private function deductStock(Transaction $transaction): void
     {
         foreach ($transaction->items as $item) {
+            // For product-based items, check product type and handle accordingly
+            if ($item->product_id) {
+                $product = Product::with([
+                    'recipe.items.unit',
+                    'recipe.items.inventoryItem.unit',
+                    'combo.items.product.recipe.items.unit',
+                    'combo.items.product.recipe.items.inventoryItem.unit',
+                ])->find($item->product_id);
+
+                if (! $product) {
+                    continue;
+                }
+
+                // Handle combo products - deduct stock for each combo item
+                if ($product->isCombo() && $product->combo && $product->combo->items->isNotEmpty()) {
+                    $this->deductComboIngredients($transaction, $product->combo, $item->quantity);
+                }
+                // If product has a recipe, deduct recipe ingredients
+                elseif ($product->recipe && $product->recipe->items->isNotEmpty()) {
+                    $this->deductRecipeIngredients(
+                        $transaction,
+                        $product->recipe,
+                        $item->quantity
+                    );
+                } elseif ($item->inventory_item_id) {
+                    // Otherwise deduct directly linked inventory item
+                    $this->stockService->issueStock(
+                        $transaction->outlet_id,
+                        $item->inventory_item_id,
+                        $item->quantity,
+                        StockMovement::TYPE_OUT,
+                        $transaction->user_id,
+                        'transaction',
+                        $transaction->id,
+                        "Sale: {$transaction->transaction_number}"
+                    );
+                }
+
+                // Deduct modifier ingredients
+                if (! empty($item->modifiers)) {
+                    $this->deductModifierIngredients($transaction, $item->modifiers, $item->quantity);
+                }
+            } elseif ($item->inventory_item_id) {
+                // Legacy flow - direct inventory deduction
+                $this->stockService->issueStock(
+                    $transaction->outlet_id,
+                    $item->inventory_item_id,
+                    $item->quantity,
+                    StockMovement::TYPE_OUT,
+                    $transaction->user_id,
+                    'transaction',
+                    $transaction->id,
+                    "Sale: {$transaction->transaction_number}"
+                );
+            }
+        }
+    }
+
+    private function deductRecipeIngredients(Transaction $transaction, $recipe, float $quantity): void
+    {
+        foreach ($recipe->items as $recipeItem) {
+            // Get recipe item quantity in its stored unit
+            $ingredientQty = $recipeItem->quantity * $quantity;
+
+            // Convert to inventory item's base unit if recipe uses different unit
+            $recipeUnit = $recipeItem->unit;
+            $inventoryItem = $recipeItem->inventoryItem;
+            $itemUnit = $inventoryItem?->unit;
+
+            if ($recipeUnit && $itemUnit && $recipeUnit->id !== $itemUnit->id) {
+                // Recipe uses different unit (e.g., gram), convert to base unit (e.g., kg)
+                // Formula: qty_in_recipe_unit * recipe_unit_conversion = qty_in_base_unit
+                // e.g., 18 gram * 0.001 = 0.018 kg
+                $conversionFactor = $recipeUnit->conversion_factor ?? 1;
+                $ingredientQty = $ingredientQty * $conversionFactor;
+            }
+
             $this->stockService->issueStock(
                 $transaction->outlet_id,
-                $item->inventory_item_id,
-                $item->quantity,
+                $recipeItem->inventory_item_id,
+                $ingredientQty,
                 StockMovement::TYPE_OUT,
                 $transaction->user_id,
                 'transaction',
                 $transaction->id,
-                "Sale: {$transaction->transaction_number}"
+                "Sale (Recipe): {$transaction->transaction_number}"
             );
+        }
+    }
+
+    private function deductComboIngredients(Transaction $transaction, $combo, float $comboQuantity): void
+    {
+        foreach ($combo->items as $comboItem) {
+            if (! $comboItem->product) {
+                continue;
+            }
+
+            $itemQty = $comboItem->quantity * $comboQuantity;
+            $product = $comboItem->product;
+
+            // If the combo item's product has a recipe, deduct recipe ingredients
+            if ($product->recipe && $product->recipe->items->isNotEmpty()) {
+                $this->deductRecipeIngredients($transaction, $product->recipe, $itemQty);
+            }
+            // Otherwise, deduct the product's linked inventory item
+            elseif ($product->inventory_item_id) {
+                $this->stockService->issueStock(
+                    $transaction->outlet_id,
+                    $product->inventory_item_id,
+                    $itemQty,
+                    StockMovement::TYPE_OUT,
+                    $transaction->user_id,
+                    'transaction',
+                    $transaction->id,
+                    "Sale (Combo): {$transaction->transaction_number}"
+                );
+            }
+        }
+    }
+
+    private function deductModifierIngredients(Transaction $transaction, array $modifiers, float $itemQty): void
+    {
+        foreach ($modifiers as $modifierData) {
+            if (! empty($modifierData['inventory_item_id'])) {
+                $qtyUsed = ($modifierData['quantity_used'] ?? 1) * $itemQty;
+
+                $this->stockService->issueStock(
+                    $transaction->outlet_id,
+                    $modifierData['inventory_item_id'],
+                    $qtyUsed,
+                    StockMovement::TYPE_OUT,
+                    $transaction->user_id,
+                    'transaction',
+                    $transaction->id,
+                    "Sale (Modifier): {$transaction->transaction_number}"
+                );
+            }
         }
     }
 

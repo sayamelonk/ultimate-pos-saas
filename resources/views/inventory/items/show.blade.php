@@ -160,7 +160,7 @@
                                 <code class="px-2 py-1 bg-secondary-100 rounded text-xs">{{ $batch->batch_number }}</code>
                             </x-td>
                             <x-td>{{ $batch->outlet->name ?? '-' }}</x-td>
-                            <x-td align="right">{{ number_format($batch->current_qty, 2) }}</x-td>
+                            <x-td align="right">{{ number_format($batch->current_quantity, 2) }}</x-td>
                             <x-td>
                                 @if($batch->expiry_date)
                                     @if($batch->expiry_date->isPast())
@@ -214,5 +214,80 @@
                 </x-table>
             </x-card>
         @endif
+
+        <!-- Stock Movement History -->
+        <x-card>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-text">Riwayat Pergerakan Stok</h3>
+                <a href="{{ route('inventory.stocks.movements', ['search' => $item->name]) }}" class="text-sm text-accent hover:underline">
+                    Lihat Semua
+                </a>
+            </div>
+
+            @if($recentMovements->count() > 0)
+                <x-table>
+                    <x-slot name="head">
+                        <x-th>Tanggal</x-th>
+                        <x-th>Outlet</x-th>
+                        <x-th>Tipe</x-th>
+                        <x-th align="right">Qty</x-th>
+                        <x-th align="right">Stok Akhir</x-th>
+                        <x-th>Keterangan</x-th>
+                        <x-th>User</x-th>
+                    </x-slot>
+
+                    @foreach($recentMovements as $movement)
+                        @php
+                            $qty = $movement->quantity;
+                            $decimals = (abs($qty) < 1) ? 4 : 2;
+                        @endphp
+                        <tr>
+                            <x-td>{{ $movement->created_at->format('d M Y H:i') }}</x-td>
+                            <x-td>{{ $movement->outlet->name ?? '-' }}</x-td>
+                            <x-td>
+                                @switch($movement->type)
+                                    @case('in')
+                                        <x-badge type="success">IN</x-badge>
+                                        @break
+                                    @case('out')
+                                        <x-badge type="danger">OUT</x-badge>
+                                        @break
+                                    @case('adjustment')
+                                        <x-badge type="warning">ADJ</x-badge>
+                                        @break
+                                    @case('transfer_in')
+                                        <x-badge type="info">TRANSFER IN</x-badge>
+                                        @break
+                                    @case('transfer_out')
+                                        <x-badge type="warning">TRANSFER OUT</x-badge>
+                                        @break
+                                    @default
+                                        <x-badge type="secondary">{{ strtoupper($movement->type) }}</x-badge>
+                                @endswitch
+                            </x-td>
+                            <x-td align="right">
+                                @if($qty > 0)
+                                    <span class="text-success-600 font-medium">+{{ number_format($qty, $decimals) }}</span>
+                                @elseif($qty < 0)
+                                    <span class="text-danger-600 font-medium">{{ number_format($qty, $decimals) }}</span>
+                                @else
+                                    <span class="font-medium">{{ number_format($qty, $decimals) }}</span>
+                                @endif
+                                {{ $item->unit->abbreviation ?? '' }}
+                            </x-td>
+                            <x-td align="right">{{ number_format($movement->stock_after, 2) }} {{ $item->unit->abbreviation ?? '' }}</x-td>
+                            <x-td class="max-w-xs truncate" title="{{ $movement->notes }}">{{ Str::limit($movement->notes, 30) ?? '-' }}</x-td>
+                            <x-td>{{ $movement->createdBy->name ?? '-' }}</x-td>
+                        </tr>
+                    @endforeach
+                </x-table>
+            @else
+                <x-empty-state
+                    title="Belum ada pergerakan stok"
+                    description="Riwayat pergerakan stok akan muncul di sini setelah ada transaksi."
+                    icon="switch-horizontal"
+                />
+            @endif
+        </x-card>
     </div>
 </x-app-layout>

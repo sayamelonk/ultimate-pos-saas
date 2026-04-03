@@ -237,6 +237,68 @@
                     </x-card>
                 </div>
 
+                <!-- Combo Items (shown when product_type = combo) -->
+                <div x-show="productType === 'combo'" x-cloak>
+                    <x-card title="Combo Items">
+                        <p class="text-muted mb-4">Add products that are included in this combo</p>
+
+                        <div class="space-y-3">
+                            <template x-for="(item, index) in comboItems" :key="index">
+                                <div class="flex items-start gap-3 p-4 bg-secondary-50 rounded-lg">
+                                    <div class="flex-1 grid grid-cols-3 gap-3">
+                                        <div class="col-span-2">
+                                            <label class="block text-xs text-muted mb-1">Product</label>
+                                            <select
+                                                :name="`combo_items[${index}][product_id]`"
+                                                x-model="item.product_id"
+                                                @change="updateComboItemPrice(index)"
+                                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+                                            >
+                                                <option value="">Select Product</option>
+                                                @foreach($comboProducts ?? [] as $cp)
+                                                    <option value="{{ $cp->id }}" data-price="{{ $cp->base_price }}">{{ $cp->name }} - Rp {{ number_format($cp->base_price, 0, ',', '.') }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-muted mb-1">Quantity</label>
+                                            <input
+                                                type="number"
+                                                :name="`combo_items[${index}][quantity]`"
+                                                x-model="item.quantity"
+                                                @change="calculateComboTotal()"
+                                                min="1"
+                                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+                                            >
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="removeComboItem(index)"
+                                        class="p-2 text-danger hover:bg-danger/10 rounded-lg transition-colors mt-5"
+                                        x-show="comboItems.length > 1"
+                                    >
+                                        <x-icon name="trash" class="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-4">
+                            <x-button type="button" variant="outline-secondary" size="sm" icon="plus" @click="addComboItem()">
+                                Add Product
+                            </x-button>
+                            <div class="text-sm text-muted">
+                                Items Total: <span class="font-medium text-text" x-text="'Rp ' + formatNumber(comboItemsTotal)"></span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-accent/10 rounded-lg border border-accent/20">
+                            <p class="text-sm text-muted">Set the <strong>Base Price</strong> above to define the combo selling price. The cost price will be calculated from the items.</p>
+                        </div>
+                    </x-card>
+                </div>
+
                 <!-- Modifier Groups -->
                 <x-card title="Modifier Groups">
                     <p class="text-muted mb-4">Select modifier groups for this product (e.g., Toppings, Extra)</p>
@@ -272,30 +334,61 @@
                     @endif
                 </x-card>
 
-                <!-- Inventory Link -->
-                <x-card title="Inventory Link">
-                    <div class="space-y-4">
-                        <x-form-group label="Linked Inventory Item" name="inventory_item_id">
-                            <x-select name="inventory_item_id">
-                                <option value="">None</option>
-                                @foreach($inventoryItems as $item)
-                                    <option value="{{ $item->id }}" @selected(old('inventory_item_id', $product->inventory_item_id) == $item->id)>
-                                        {{ $item->name }} ({{ $item->sku }})
-                                    </option>
-                                @endforeach
-                            </x-select>
-                        </x-form-group>
+                <!-- Inventory & Recipe Link -->
+                <x-card title="Inventory & Recipe Link">
+                    <div class="space-y-4" x-data="inventoryLink()">
+                        <div class="p-3 bg-info-50 border border-info-200 text-info-700 rounded-lg text-sm">
+                            <strong>Stock Deduction:</strong> When sold, stock is reduced from:
+                            <ul class="list-disc list-inside mt-1">
+                                <li>Recipe ingredients (if recipe linked)</li>
+                                <li>Or direct inventory item (if item linked)</li>
+                            </ul>
+                        </div>
 
                         <x-form-group label="Linked Recipe" name="recipe_id">
-                            <x-select name="recipe_id">
-                                <option value="">None</option>
+                            <x-select name="recipe_id" x-model="selectedRecipeId">
+                                <option value="">None - No stock deduction</option>
                                 @foreach($recipes as $recipe)
-                                    <option value="{{ $recipe->id }}" @selected(old('recipe_id', $product->recipe_id) == $recipe->id)>
-                                        {{ $recipe->name }}
+                                    <option value="{{ $recipe->id }}">
+                                        {{ $recipe->name }} (Cost: Rp {{ number_format($recipe->estimated_cost, 0, ',', '.') }})
                                     </option>
                                 @endforeach
                             </x-select>
+                            <p class="text-xs text-muted mt-1">Recipe ingredients will be deducted from stock on each sale.</p>
                         </x-form-group>
+
+                        <!-- Recipe Details Preview -->
+                        <template x-if="recipeDetails">
+                            <div class="p-4 bg-secondary-50 border border-border rounded-lg">
+                                <h4 class="font-medium text-text mb-2">Recipe Ingredients</h4>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">
+                                    <template x-for="item in recipeDetails.items" :key="item.id">
+                                        <div class="flex items-center justify-between text-sm py-1 border-b border-border last:border-0">
+                                            <span x-text="item.inventory_item?.name || 'Unknown'"></span>
+                                            <span class="text-muted" x-text="item.quantity + ' ' + (item.unit?.name || '')"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                                    <span class="font-medium">Estimated Cost</span>
+                                    <span class="font-bold text-primary" x-text="'Rp ' + formatNumber(recipeDetails.estimated_cost)"></span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="border-t border-border pt-4">
+                            <x-form-group label="Direct Inventory Item (Alternative)" name="inventory_item_id">
+                                <x-select name="inventory_item_id">
+                                    <option value="">None</option>
+                                    @foreach($inventoryItems as $item)
+                                        <option value="{{ $item->id }}" @selected(old('inventory_item_id', $product->inventory_item_id) == $item->id)>
+                                            {{ $item->name }} ({{ $item->sku }})
+                                        </option>
+                                    @endforeach
+                                </x-select>
+                                <p class="text-xs text-muted mt-1">Use this if product doesn't have a recipe (e.g., selling raw items directly).</p>
+                            </x-form-group>
+                        </div>
                     </div>
                 </x-card>
             </div>
@@ -414,11 +507,106 @@
         @csrf
     </form>
 
+    @php
+        $recipesData = $recipes->keyBy('id')->map(function($r) {
+            return [
+                'id' => $r->id,
+                'name' => $r->name,
+                'estimated_cost' => $r->estimated_cost,
+                'items' => $r->items->map(function($i) {
+                    return [
+                        'id' => $i->id,
+                        'quantity' => $i->quantity,
+                        'inventory_item' => $i->inventoryItem ? ['name' => $i->inventoryItem->name] : null,
+                        'unit' => $i->unit ? ['name' => $i->unit->name] : null,
+                    ];
+                }),
+            ];
+        });
+
+        $comboProductsData = ($comboProducts ?? collect([]))->map(function($p) {
+            return ['id' => $p->id, 'name' => $p->name, 'price' => $p->base_price];
+        })->keyBy('id')->toArray();
+
+        $existingComboItems = [];
+        if ($product->combo && $product->combo->items) {
+            $existingComboItems = $product->combo->items->map(function($i) {
+                return ['product_id' => $i->product_id, 'quantity' => $i->quantity];
+            })->toArray();
+        }
+        if (empty($existingComboItems)) {
+            $existingComboItems = [['product_id' => '', 'quantity' => 1]];
+        }
+        $defaultComboItems = old('combo_items', $existingComboItems);
+    @endphp
+
     @push('scripts')
     <script>
         function productForm() {
             return {
-                productType: '{{ old('product_type', $product->product_type) }}'
+                productType: '{{ old('product_type', $product->product_type) }}',
+                comboProducts: @json($comboProductsData),
+                comboItems: @json($defaultComboItems),
+                comboItemsTotal: 0,
+
+                init() {
+                    this.calculateComboTotal();
+                },
+
+                addComboItem() {
+                    this.comboItems.push({
+                        product_id: '',
+                        quantity: 1
+                    });
+                },
+
+                removeComboItem(index) {
+                    this.comboItems.splice(index, 1);
+                    this.calculateComboTotal();
+                },
+
+                updateComboItemPrice(index) {
+                    this.calculateComboTotal();
+                },
+
+                calculateComboTotal() {
+                    let total = 0;
+                    this.comboItems.forEach(item => {
+                        if (item.product_id && this.comboProducts[item.product_id]) {
+                            total += this.comboProducts[item.product_id].price * (item.quantity || 1);
+                        }
+                    });
+                    this.comboItemsTotal = total;
+                },
+
+                formatNumber(num) {
+                    return new Intl.NumberFormat('id-ID').format(num || 0);
+                }
+            }
+        }
+
+        function inventoryLink() {
+            return {
+                selectedRecipeId: '{{ old('recipe_id', $product->recipe_id) }}',
+                recipeDetails: null,
+                recipesData: @json($recipesData),
+
+                init() {
+                    this.loadRecipeDetails();
+                    this.$watch('selectedRecipeId', () => this.loadRecipeDetails());
+                },
+
+                loadRecipeDetails() {
+                    if (this.selectedRecipeId && this.recipesData[this.selectedRecipeId]) {
+                        this.recipeDetails = this.recipesData[this.selectedRecipeId];
+                    } else {
+                        this.recipeDetails = null;
+                    }
+                },
+
+                formatNumber(num) {
+                    return new Intl.NumberFormat('id-ID').format(num || 0);
+                }
             }
         }
     </script>

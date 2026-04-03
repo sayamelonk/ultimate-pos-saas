@@ -107,15 +107,19 @@
                             @endswitch
                         </x-td>
                         <x-td align="right">
-                            @if(in_array($movement->type, ['in', 'transfer_in']))
-                                <span class="text-success-600 font-medium">+{{ number_format($movement->quantity, 2) }}</span>
-                            @elseif($movement->type === 'adjustment')
-                                <span class="font-medium">{{ number_format($movement->quantity, 2) }}</span>
+                            @php
+                                $qty = $movement->quantity;
+                                $decimals = (abs($qty) < 1) ? 4 : 2;
+                            @endphp
+                            @if($qty > 0)
+                                <span class="text-success-600 font-medium">+{{ number_format($qty, $decimals) }}</span>
+                            @elseif($qty < 0)
+                                <span class="text-danger-600 font-medium">{{ number_format($qty, $decimals) }}</span>
                             @else
-                                <span class="text-danger-600 font-medium">-{{ number_format($movement->quantity, 2) }}</span>
+                                <span class="font-medium">{{ number_format($qty, $decimals) }}</span>
                             @endif
                         </x-td>
-                        <x-td align="right">Rp {{ number_format($movement->cost_price, 0, ',', '.') }}</x-td>
+                        <x-td align="right">Rp {{ number_format(abs($movement->quantity) * $movement->cost_price, 0, ',', '.') }}</x-td>
                         <x-td>
                             <code class="px-2 py-1 bg-secondary-100 rounded text-xs">{{ $movement->reference_number ?? '-' }}</code>
                         </x-td>

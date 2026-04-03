@@ -14,11 +14,13 @@
     // Determine which accordions should be open based on current route
     $currentRoute = request()->route()->getName() ?? '';
 
-    // Default: menu and inventory are open (for dashboard)
-    $openAccordions = ['menu' => true, 'inventory' => true];
+    // Default: pos, menu and inventory are open (for dashboard)
+    $openAccordions = ['pos' => true, 'menu' => true, 'inventory' => true];
 
     // Also open the section that matches current route
-    if (str_starts_with($currentRoute, 'pricing.')) {
+    if (str_starts_with($currentRoute, 'pos.') || str_starts_with($currentRoute, 'transactions.') || str_starts_with($currentRoute, 'customers.')) {
+        $openAccordions['pos'] = true;
+    } elseif (str_starts_with($currentRoute, 'pricing.')) {
         $openAccordions['pricing'] = true;
     } elseif (str_starts_with($currentRoute, 'inventory.reports.') || $currentRoute === 'inventory.waste-logs.report') {
         $openAccordions['reports'] = true;
@@ -96,12 +98,12 @@
             </a>
         </div>
 
-        {{-- POS Section - Hidden for now
+        <!-- POS Section -->
         <div class="mb-2">
             <button @click="openSections.pos = !openSections.pos"
                     class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
                     x-show="sidebarOpen">
-                <span class="text-xs font-semibold text-primary-300 uppercase tracking-wider">{{ __('menu.pos') }}</span>
+                <span class="text-xs font-semibold text-primary-300 uppercase tracking-wider">POS</span>
                 <svg class="w-4 h-4 text-primary-300 transition-transform duration-200"
                      :class="{ 'rotate-180': openSections.pos }"
                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +112,7 @@
             </button>
             <p class="px-3 text-xs font-semibold text-primary-300 uppercase tracking-wider mb-2"
                x-show="!sidebarOpen" x-transition>
-                {{ __('menu.pos') }}
+                POS
             </p>
 
             <div x-show="openSections.pos || !sidebarOpen"
@@ -123,7 +125,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.open_pos') }}</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Buka POS</span>
                 </a>
 
                 <a href="{{ route('pos.sessions.index') }}"
@@ -133,7 +135,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('pos.session') }}</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Sesi Kasir</span>
                 </a>
 
                 <a href="{{ route('transactions.index') }}"
@@ -143,7 +145,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.transactions') }}</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Riwayat Transaksi</span>
                 </a>
 
                 <a href="{{ route('customers.index') }}"
@@ -153,11 +155,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.customers') }}</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Pelanggan</span>
                 </a>
             </div>
         </div>
-        --}}
 
         <!-- Pricing Section -->
         <div class="mb-2">

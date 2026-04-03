@@ -87,7 +87,7 @@
                             <x-td>
                                 <code class="px-2 py-1 bg-secondary-100 rounded text-xs">{{ $batch->batch_number }}</code>
                             </x-td>
-                            <x-td align="right">{{ number_format($batch->current_qty, 2) }}</x-td>
+                            <x-td align="right">{{ number_format($batch->current_quantity, 2) }}</x-td>
                             <x-td>
                                 @if($batch->expiry_date)
                                     @if($batch->expiry_date->isPast())

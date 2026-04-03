@@ -200,6 +200,68 @@
                     </x-card>
                 </div>
 
+                <!-- Combo Items (shown when product_type = combo) -->
+                <div x-show="productType === 'combo'" x-cloak>
+                    <x-card title="Combo Items">
+                        <p class="text-muted mb-4">Add products that are included in this combo</p>
+
+                        <div class="space-y-3">
+                            <template x-for="(item, index) in comboItems" :key="index">
+                                <div class="flex items-start gap-3 p-4 bg-secondary-50 rounded-lg">
+                                    <div class="flex-1 grid grid-cols-3 gap-3">
+                                        <div class="col-span-2">
+                                            <label class="block text-xs text-muted mb-1">Product</label>
+                                            <select
+                                                :name="`combo_items[${index}][product_id]`"
+                                                x-model="item.product_id"
+                                                @change="updateComboItemPrice(index)"
+                                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+                                            >
+                                                <option value="">Select Product</option>
+                                                @foreach($comboProducts ?? $products ?? [] as $product)
+                                                    <option value="{{ $product->id }}" data-price="{{ $product->base_price }}">{{ $product->name }} - Rp {{ number_format($product->base_price, 0, ',', '.') }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-muted mb-1">Quantity</label>
+                                            <input
+                                                type="number"
+                                                :name="`combo_items[${index}][quantity]`"
+                                                x-model="item.quantity"
+                                                @change="calculateComboTotal()"
+                                                min="1"
+                                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+                                            >
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="removeComboItem(index)"
+                                        class="p-2 text-danger hover:bg-danger/10 rounded-lg transition-colors mt-5"
+                                        x-show="comboItems.length > 1"
+                                    >
+                                        <x-icon name="trash" class="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-4">
+                            <x-button type="button" variant="outline-secondary" size="sm" icon="plus" @click="addComboItem()">
+                                Add Product
+                            </x-button>
+                            <div class="text-sm text-muted">
+                                Items Total: <span class="font-medium text-text" x-text="'Rp ' + formatNumber(comboItemsTotal)"></span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-accent/10 rounded-lg border border-accent/20">
+                            <p class="text-sm text-muted">Set the <strong>Base Price</strong> above to define the combo selling price. The cost price will be calculated from the items.</p>
+                        </div>
+                    </x-card>
+                </div>
+
                 <!-- Modifier Groups -->
                 <x-card title="Modifier Groups">
                     <p class="text-muted mb-4">Select modifier groups for this product (e.g., Toppings, Extra)</p>
@@ -368,10 +430,55 @@
     </form>
 
     @push('scripts')
+    @php
+        $comboProductsData = ($comboProducts ?? $products ?? collect([]))->map(function($p) {
+            return ['id' => $p->id, 'name' => $p->name, 'price' => $p->base_price];
+        })->keyBy('id')->toArray();
+        $defaultComboItems = old('combo_items', [
+            ['product_id' => '', 'quantity' => 1]
+        ]);
+    @endphp
     <script>
         function productForm() {
             return {
-                productType: '{{ old('product_type', 'single') }}'
+                productType: '{{ old('product_type', 'single') }}',
+                comboProducts: @json($comboProductsData),
+                comboItems: @json($defaultComboItems),
+                comboItemsTotal: 0,
+
+                init() {
+                    this.calculateComboTotal();
+                },
+
+                addComboItem() {
+                    this.comboItems.push({
+                        product_id: '',
+                        quantity: 1
+                    });
+                },
+
+                removeComboItem(index) {
+                    this.comboItems.splice(index, 1);
+                    this.calculateComboTotal();
+                },
+
+                updateComboItemPrice(index) {
+                    this.calculateComboTotal();
+                },
+
+                calculateComboTotal() {
+                    let total = 0;
+                    this.comboItems.forEach(item => {
+                        if (item.product_id && this.comboProducts[item.product_id]) {
+                            total += this.comboProducts[item.product_id].price * (item.quantity || 1);
+                        }
+                    });
+                    this.comboItemsTotal = total;
+                },
+
+                formatNumber(num) {
+                    return new Intl.NumberFormat('id-ID').format(num || 0);
+                }
             }
         }
     </script>

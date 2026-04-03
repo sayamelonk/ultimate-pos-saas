@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
+use App\Models\Combo;
+use App\Models\ComboItem;
 use App\Models\InventoryItem;
 use App\Models\ModifierGroup;
 use App\Models\Outlet;
@@ -69,6 +71,7 @@ class ProductController extends Controller
 
         $recipes = Recipe::where('tenant_id', $tenantId)
             ->where('is_active', true)
+            ->with(['items.inventoryItem', 'items.unit'])
             ->orderBy('name')
             ->get();
 
@@ -94,13 +97,21 @@ class ProductController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Products available for combo (exclude combo products)
+        $comboProducts = Product::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->where('product_type', '!=', Product::TYPE_COMBO)
+            ->orderBy('name')
+            ->get();
+
         return view('menu.products.create', compact(
             'categories',
             'recipes',
             'inventoryItems',
             'variantGroups',
             'modifierGroups',
-            'outlets'
+            'outlets',
+            'comboProducts'
         ));
     }
 
@@ -137,6 +148,10 @@ class ProductController extends Controller
             'outlets.*.outlet_id' => ['exists:outlets,id'],
             'outlets.*.is_available' => ['boolean'],
             'outlets.*.custom_price' => ['nullable', 'numeric', 'min:0'],
+            // Combo items validation
+            'combo_items' => ['nullable', 'array'],
+            'combo_items.*.product_id' => ['required_with:combo_items', 'exists:products,id'],
+            'combo_items.*.quantity' => ['required_with:combo_items', 'integer', 'min:1'],
         ]);
 
         $validated['tenant_id'] = $tenantId;
@@ -195,6 +210,41 @@ class ProductController extends Controller
             $this->productService->generateVariants($product);
         }
 
+        // Create combo items if combo product
+        if ($product->product_type === Product::TYPE_COMBO && ! empty($validated['combo_items'])) {
+            $combo = Combo::create([
+                'product_id' => $product->id,
+                'pricing_type' => Combo::PRICING_FIXED,
+                'discount_value' => 0,
+                'allow_substitutions' => false,
+            ]);
+
+            $totalCost = 0;
+            foreach ($validated['combo_items'] as $index => $itemData) {
+                if (empty($itemData['product_id'])) {
+                    continue;
+                }
+
+                $comboProduct = Product::find($itemData['product_id']);
+                if ($comboProduct) {
+                    $totalCost += ($comboProduct->cost_price ?? 0) * ($itemData['quantity'] ?? 1);
+                }
+
+                ComboItem::create([
+                    'combo_id' => $combo->id,
+                    'product_id' => $itemData['product_id'],
+                    'quantity' => $itemData['quantity'] ?? 1,
+                    'is_required' => true,
+                    'allow_variant_selection' => true,
+                    'price_adjustment' => 0,
+                    'sort_order' => $index,
+                ]);
+            }
+
+            // Update product cost price from combo items
+            $product->update(['cost_price' => $totalCost]);
+        }
+
         return redirect()->route('menu.products.show', $product)
             ->with('success', 'Product created successfully.');
     }
@@ -204,7 +254,9 @@ class ProductController extends Controller
         $this->authorizeProduct($product);
         $product->load([
             'category',
-            'recipe',
+            'recipe.items.inventoryItem',
+            'recipe.items.unit',
+            'recipe.yieldUnit',
             'inventoryItem',
             'variants',
             'variantGroups.options',
@@ -212,7 +264,16 @@ class ProductController extends Controller
             'productOutlets.outlet',
         ]);
 
-        return view('menu.products.show', compact('product'));
+        // Get available recipes for linking
+        $tenantId = $this->getTenantId();
+        $availableRecipes = Recipe::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->whereNull('product_id')
+            ->orWhere('product_id', $product->id)
+            ->orderBy('name')
+            ->get();
+
+        return view('menu.products.show', compact('product', 'availableRecipes'));
     }
 
     public function edit(Product $product): View
@@ -224,6 +285,7 @@ class ProductController extends Controller
             'variantGroups',
             'modifierGroups',
             'productOutlets',
+            'combo.items.product',
         ]);
 
         $categories = ProductCategory::where('tenant_id', $tenantId)
@@ -233,6 +295,7 @@ class ProductController extends Controller
 
         $recipes = Recipe::where('tenant_id', $tenantId)
             ->where('is_active', true)
+            ->with(['items.inventoryItem', 'items.unit'])
             ->orderBy('name')
             ->get();
 
@@ -258,6 +321,14 @@ class ProductController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Products available for combo (exclude combo products and self)
+        $comboProducts = Product::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->where('product_type', '!=', Product::TYPE_COMBO)
+            ->where('id', '!=', $product->id)
+            ->orderBy('name')
+            ->get();
+
         return view('menu.products.edit', compact(
             'product',
             'categories',
@@ -265,7 +336,8 @@ class ProductController extends Controller
             'inventoryItems',
             'variantGroups',
             'modifierGroups',
-            'outlets'
+            'outlets',
+            'comboProducts'
         ));
     }
 
@@ -298,6 +370,10 @@ class ProductController extends Controller
             'variant_groups' => ['nullable', 'array'],
             'modifier_groups' => ['nullable', 'array'],
             'outlets' => ['nullable', 'array'],
+            // Combo items validation
+            'combo_items' => ['nullable', 'array'],
+            'combo_items.*.product_id' => ['required_with:combo_items', 'exists:products,id'],
+            'combo_items.*.quantity' => ['required_with:combo_items', 'integer', 'min:1'],
         ]);
 
         $validated['track_stock'] = $request->boolean('track_stock', true);
@@ -322,9 +398,9 @@ class ProductController extends Controller
 
         $product->update($validated);
 
-        // Update variant groups (detach all, then attach with UUID)
-        if (isset($validated['variant_groups'])) {
-            $product->variantGroups()->detach();
+        // Update variant groups (always detach all first, then attach selected)
+        $product->variantGroups()->detach();
+        if (! empty($validated['variant_groups'])) {
             foreach ($validated['variant_groups'] as $index => $groupId) {
                 $product->variantGroups()->attach($groupId, [
                     'id' => Str::uuid(),
@@ -333,9 +409,9 @@ class ProductController extends Controller
             }
         }
 
-        // Update modifier groups (detach all, then attach with UUID)
-        if (isset($validated['modifier_groups'])) {
-            $product->modifierGroups()->detach();
+        // Update modifier groups (always detach all first, then attach selected)
+        $product->modifierGroups()->detach();
+        if (! empty($validated['modifier_groups'])) {
             foreach ($validated['modifier_groups'] as $index => $groupId) {
                 $product->modifierGroups()->attach($groupId, [
                     'id' => Str::uuid(),
@@ -354,6 +430,56 @@ class ProductController extends Controller
                     'is_available' => $outletData['is_available'] ?? true,
                     'custom_price' => $outletData['custom_price'] ?? null,
                 ]);
+            }
+        }
+
+        // Update combo items if combo product
+        if ($product->product_type === Product::TYPE_COMBO) {
+            // Get or create combo
+            $combo = $product->combo;
+            if (! $combo) {
+                $combo = Combo::create([
+                    'product_id' => $product->id,
+                    'pricing_type' => Combo::PRICING_FIXED,
+                    'discount_value' => 0,
+                    'allow_substitutions' => false,
+                ]);
+            }
+
+            // Delete existing items and recreate
+            $combo->items()->delete();
+
+            $totalCost = 0;
+            if (! empty($validated['combo_items'])) {
+                foreach ($validated['combo_items'] as $index => $itemData) {
+                    if (empty($itemData['product_id'])) {
+                        continue;
+                    }
+
+                    $comboProduct = Product::find($itemData['product_id']);
+                    if ($comboProduct) {
+                        $totalCost += ($comboProduct->cost_price ?? 0) * ($itemData['quantity'] ?? 1);
+                    }
+
+                    ComboItem::create([
+                        'combo_id' => $combo->id,
+                        'product_id' => $itemData['product_id'],
+                        'quantity' => $itemData['quantity'] ?? 1,
+                        'is_required' => true,
+                        'allow_variant_selection' => true,
+                        'price_adjustment' => 0,
+                        'sort_order' => $index,
+                    ]);
+                }
+            }
+
+            // Update product cost price from combo items
+            $product->update(['cost_price' => $totalCost]);
+        } else {
+            // If product type changed from combo, delete combo data
+            if ($product->combo) {
+                $product->combo->items()->delete();
+                $product->combo->delete();
             }
         }
 
@@ -412,6 +538,45 @@ class ProductController extends Controller
         }
 
         return back()->with('success', 'Prices updated successfully.');
+    }
+
+    public function linkRecipe(Request $request, Product $product): RedirectResponse
+    {
+        $this->authorizeProduct($product);
+
+        $validated = $request->validate([
+            'recipe_id' => ['required', 'exists:recipes,id'],
+        ]);
+
+        $tenantId = $this->getTenantId();
+        $recipe = Recipe::where('id', $validated['recipe_id'])
+            ->where('tenant_id', $tenantId)
+            ->firstOrFail();
+
+        $product->update(['recipe_id' => $recipe->id]);
+
+        // Also update recipe's product_id for bidirectional linking
+        $recipe->update(['product_id' => $product->id]);
+
+        // Update product cost from recipe if available
+        if ($recipe->estimated_cost) {
+            $product->update(['cost_price' => $recipe->estimated_cost]);
+        }
+
+        return back()->with('success', 'Recipe linked successfully.');
+    }
+
+    public function unlinkRecipe(Product $product): RedirectResponse
+    {
+        $this->authorizeProduct($product);
+
+        if ($product->recipe_id) {
+            // Remove bidirectional link
+            Recipe::where('id', $product->recipe_id)->update(['product_id' => null]);
+            $product->update(['recipe_id' => null]);
+        }
+
+        return back()->with('success', 'Recipe unlinked successfully.');
     }
 
     private function authorizeProduct(Product $product): void

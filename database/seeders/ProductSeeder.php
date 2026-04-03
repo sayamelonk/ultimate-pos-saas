@@ -351,7 +351,7 @@ class ProductSeeder extends Seeder
             $variantGroups = array_filter($variantGroups);
             $modifierGroups = array_filter($modifierGroups);
 
-            $product = Product::firstOrCreate([
+            $product = Product::create([
                 'tenant_id' => $tenant->id,
                 'slug' => Str::slug($productData['name']),
                 'sort_order' => 0,

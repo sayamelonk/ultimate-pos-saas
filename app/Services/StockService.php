@@ -50,9 +50,9 @@ class StockService
                     'batch_number' => $batchNumber,
                     'production_date' => $grItem?->production_date,
                     'expiry_date' => $expiryDate,
-                    'initial_qty' => $quantity,
-                    'current_qty' => $quantity,
-                    'cost_price' => $costPrice,
+                    'initial_quantity' => $quantity,
+                    'current_quantity' => $quantity,
+                    'unit_cost' => $costPrice,
                     'goods_receive_item_id' => $grItem?->id,
                     'status' => 'available',
                 ]);
@@ -266,7 +266,7 @@ class StockService
         $batches = StockBatch::where('outlet_id', $outletId)
             ->where('inventory_item_id', $inventoryItemId)
             ->where('status', 'available')
-            ->where('current_qty', '>', 0)
+            ->where('current_quantity', '>', 0)
             ->orderBy('expiry_date') // FEFO - First Expiry First Out
             ->orderBy('created_at')  // Then FIFO
             ->get();
@@ -283,10 +283,10 @@ class StockService
                 $firstBatch = $batch;
             }
 
-            $deduct = min($batch->current_qty, $remaining);
-            $batch->current_qty -= $deduct;
+            $deduct = min($batch->current_quantity, $remaining);
+            $batch->current_quantity -= $deduct;
 
-            if ($batch->current_qty <= 0) {
+            if ($batch->current_quantity <= 0) {
                 $batch->status = 'depleted';
             }
 
@@ -325,7 +325,7 @@ class StockService
     {
         return StockBatch::where('outlet_id', $outletId)
             ->where('status', 'available')
-            ->where('current_qty', '>', 0)
+            ->where('current_quantity', '>', 0)
             ->whereNotNull('expiry_date')
             ->where('expiry_date', '<=', now()->addDays($days))
             ->with('inventoryItem')

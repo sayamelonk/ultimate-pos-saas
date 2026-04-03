@@ -63,7 +63,7 @@ class StockController extends Controller
         // Get batches for this item at this outlet
         $batches = StockBatch::where('inventory_item_id', $stock->inventory_item_id)
             ->where('outlet_id', $stock->outlet_id)
-            ->where('current_qty', '>', 0)
+            ->where('current_quantity', '>', 0)
             ->orderBy('expiry_date')
             ->get();
 
@@ -132,7 +132,7 @@ class StockController extends Controller
         $outletIds = Outlet::where('tenant_id', $tenantId)->pluck('id');
 
         $query = StockBatch::whereIn('outlet_id', $outletIds)
-            ->where('current_qty', '>', 0)
+            ->where('current_quantity', '>', 0)
             ->with(['inventoryItem.unit', 'outlet']);
 
         if ($request->filled('search')) {

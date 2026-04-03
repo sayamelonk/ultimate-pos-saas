@@ -20,7 +20,7 @@
         @endif
 
         <div class="flex gap-4 h-full">
-            <!-- Left Panel: Categories & Items -->
+            <!-- Left Panel: Categories & Products -->
             <div class="flex-1 flex flex-col bg-surface rounded-xl border border-border overflow-hidden">
                 <!-- Search Bar -->
                 <div class="p-4 border-b border-border">
@@ -30,14 +30,14 @@
                             <input
                                 type="text"
                                 x-model="search"
-                                @input.debounce.300ms="loadItems()"
+                                @input.debounce.300ms="loadProducts()"
                                 placeholder="Search by name, SKU, or barcode..."
                                 class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             />
                         </div>
                         <select
                             x-model="selectedCategory"
-                            @change="loadItems()"
+                            @change="loadProducts()"
                             class="px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                         >
                             <option value="">All Categories</option>
@@ -51,34 +51,46 @@
                     </div>
                 </div>
 
-                <!-- Items Grid -->
+                <!-- Products Grid -->
                 <div class="flex-1 overflow-y-auto p-4">
                     <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                        <template x-for="item in items" :key="item.id">
+                        <template x-for="product in products" :key="product.id">
                             <button
-                                @click="addToCart(item)"
+                                @click="handleProductClick(product)"
                                 :disabled="!sessionActive"
-                                class="bg-white border border-border rounded-lg p-3 hover:border-primary hover:shadow-md transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="bg-white border border-border rounded-lg p-3 hover:border-primary hover:shadow-md transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed relative"
                             >
+                                <!-- Product Type Badge -->
+                                <template x-if="product.has_variants || product.has_modifiers">
+                                    <div class="absolute top-2 right-2 flex gap-1">
+                                        <template x-if="product.has_variants">
+                                            <span class="px-1.5 py-0.5 bg-info-100 text-info-700 text-[10px] font-medium rounded">VAR</span>
+                                        </template>
+                                        <template x-if="product.has_modifiers">
+                                            <span class="px-1.5 py-0.5 bg-warning-100 text-warning-700 text-[10px] font-medium rounded">MOD</span>
+                                        </template>
+                                    </div>
+                                </template>
+
                                 <div class="aspect-square bg-secondary-100 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-                                    <template x-if="item.image">
-                                        <img :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+                                    <template x-if="product.image">
+                                        <img :src="product.image" :alt="product.name" class="w-full h-full object-cover" />
                                     </template>
-                                    <template x-if="!item.image">
+                                    <template x-if="!product.image">
                                         <x-icon name="cube" class="w-8 h-8 text-secondary-400" />
                                     </template>
                                 </div>
-                                <p class="font-medium text-sm text-text truncate" x-text="item.name"></p>
-                                <p class="text-xs text-muted truncate" x-text="item.category_name || 'Uncategorized'"></p>
-                                <p class="text-sm font-semibold text-primary mt-1" x-text="formatCurrency(item.selling_price)"></p>
+                                <p class="font-medium text-sm text-text truncate" x-text="product.name"></p>
+                                <p class="text-xs text-muted truncate" x-text="product.category_name || 'Uncategorized'"></p>
+                                <p class="text-sm font-semibold text-primary mt-1" x-text="formatCurrency(product.selling_price)"></p>
                             </button>
                         </template>
                     </div>
 
-                    <template x-if="items.length === 0 && !loading">
+                    <template x-if="products.length === 0 && !loading">
                         <div class="flex flex-col items-center justify-center h-64 text-muted">
                             <x-icon name="cube" class="w-12 h-12 mb-2" />
-                            <p>No items found</p>
+                            <p>No products found</p>
                         </div>
                     </template>
 
@@ -185,16 +197,26 @@
                         <div class="flex flex-col items-center justify-center h-full text-muted py-12">
                             <x-icon name="shopping-cart" class="w-12 h-12 mb-2 opacity-30" />
                             <p class="text-sm">Cart is empty</p>
-                            <p class="text-xs mt-1">Click on items to add</p>
+                            <p class="text-xs mt-1">Click on products to add</p>
                         </div>
                     </template>
 
                     <div class="divide-y divide-border">
-                        <template x-for="(item, index) in cart" :key="index">
+                        <template x-for="(item, index) in cart" :key="item.cart_id">
                             <div class="px-4 py-3 hover:bg-secondary-50/50 transition-colors">
                                 <div class="flex items-start gap-3">
                                     <div class="flex-1 min-w-0">
                                         <p class="font-medium text-text text-sm leading-tight" x-text="item.name"></p>
+                                        <!-- Show modifiers -->
+                                        <template x-if="item.modifiers && item.modifiers.length > 0">
+                                            <p class="text-xs text-info-600 mt-0.5">
+                                                + <span x-text="item.modifiers.map(m => m.name).join(', ')"></span>
+                                            </p>
+                                        </template>
+                                        <!-- Show notes -->
+                                        <template x-if="item.notes">
+                                            <p class="text-xs text-muted italic mt-0.5" x-text="'Note: ' + item.notes"></p>
+                                        </template>
                                         <p class="text-xs text-muted mt-0.5" x-text="formatCurrency(item.unit_price) + ' × ' + item.quantity"></p>
                                     </div>
                                     <p class="font-semibold text-sm text-primary shrink-0" x-text="formatCurrency(item.subtotal)"></p>
@@ -207,7 +229,7 @@
                                         <input
                                             type="number"
                                             x-model.number="item.quantity"
-                                            @change="recalculate()"
+                                            @change="recalculateItem(index)"
                                             min="0.01"
                                             step="0.01"
                                             class="w-12 h-7 px-1 text-center bg-white border-y border-secondary-200 text-sm font-semibold focus:outline-none focus:ring-0"
@@ -216,9 +238,17 @@
                                             <x-icon name="plus" class="w-3.5 h-3.5" />
                                         </button>
                                     </div>
-                                    <button @click="removeFromCart(index)" class="text-muted hover:text-danger p-1 hover:bg-danger/10 rounded transition-colors">
-                                        <x-icon name="trash" class="w-4 h-4" />
-                                    </button>
+                                    <div class="flex items-center gap-1">
+                                        <!-- Edit button for items with modifiers/notes -->
+                                        <template x-if="item.has_modifiers || item.allow_notes">
+                                            <button @click="editCartItem(index)" class="text-muted hover:text-primary p-1 hover:bg-primary/10 rounded transition-colors">
+                                                <x-icon name="pencil" class="w-4 h-4" />
+                                            </button>
+                                        </template>
+                                        <button @click="removeFromCart(index)" class="text-muted hover:text-danger p-1 hover:bg-danger/10 rounded transition-colors">
+                                            <x-icon name="trash" class="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -367,10 +397,174 @@
                     <div class="border-t border-border bg-white p-4">
                         <button disabled class="w-full py-4 bg-secondary-200 text-secondary-500 font-bold text-lg rounded-xl cursor-not-allowed flex items-center justify-center gap-3">
                             <x-icon name="credit-card" class="w-5 h-5" />
-                            <span>Add items to checkout</span>
+                            <span>Add products to checkout</span>
                         </button>
                     </div>
                 </template>
+            </div>
+        </div>
+
+        <!-- Product Options Modal (Variants & Modifiers) -->
+        <div
+            x-show="showProductModal"
+            x-transition
+            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            @click.self="showProductModal = false"
+        >
+            <div class="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 max-h-[80vh] flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-text" x-text="selectedProduct?.name"></h3>
+                        <p class="text-sm text-muted" x-text="formatCurrency(selectedProduct?.selling_price || 0)"></p>
+                    </div>
+                    <button @click="showProductModal = false" class="text-muted hover:text-text">
+                        <x-icon name="x" class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto space-y-4">
+                    <!-- Variant Selection -->
+                    <template x-if="selectedProduct?.has_variants">
+                        <div>
+                            <label class="block text-sm font-medium text-text mb-2">Select Variant <span class="text-danger">*</span></label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <template x-for="variant in selectedProduct.variants" :key="variant.id">
+                                    <button
+                                        @click="selectVariant(variant)"
+                                        :class="selectedVariant?.id === variant.id ? 'bg-primary text-white border-primary' : 'bg-white border-border hover:border-primary'"
+                                        class="px-3 py-2 border rounded-lg text-sm font-medium transition-all text-left"
+                                    >
+                                        <p x-text="variant.name"></p>
+                                        <p class="text-xs" :class="selectedVariant?.id === variant.id ? 'text-primary-100' : 'text-muted'">
+                                            <template x-if="variant.price_adjustment > 0">
+                                                <span x-text="'+ ' + formatCurrency(variant.price_adjustment)"></span>
+                                            </template>
+                                            <template x-if="variant.price_adjustment === 0">
+                                                <span>Base price</span>
+                                            </template>
+                                            <template x-if="variant.price_adjustment < 0">
+                                                <span x-text="formatCurrency(variant.price_adjustment)"></span>
+                                            </template>
+                                        </p>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Combo Items (shown for combo products) -->
+                    <template x-if="selectedProduct?.is_combo && selectedProduct?.combo_items?.length > 0">
+                        <div>
+                            <label class="block text-sm font-medium text-text mb-2">
+                                <x-icon name="rectangle-stack" class="w-4 h-4 inline mr-1" />
+                                Includes
+                            </label>
+                            <div class="space-y-2 bg-secondary-50 rounded-lg p-3">
+                                <template x-for="comboItem in selectedProduct.combo_items" :key="comboItem.id">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-medium" x-text="comboItem.quantity + 'x'"></span>
+                                            <span x-text="comboItem.product_name || 'Product'"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Modifier Groups -->
+                    <template x-for="group in selectedProduct?.modifier_groups" :key="group.id">
+                        <div>
+                            <label class="block text-sm font-medium text-text mb-2">
+                                <span x-text="group.display_name"></span>
+                                <template x-if="group.is_required">
+                                    <span class="text-danger">*</span>
+                                </template>
+                                <template x-if="group.selection_type === 'multiple' && group.max_selections">
+                                    <span class="text-muted text-xs font-normal ml-1">(max <span x-text="group.max_selections"></span>)</span>
+                                </template>
+                            </label>
+                            <div class="space-y-2">
+                                <template x-for="modifier in group.modifiers" :key="modifier.id">
+                                    <label class="flex items-center justify-between p-2 border border-border rounded-lg hover:bg-secondary-50 cursor-pointer">
+                                        <div class="flex items-center gap-2">
+                                            <template x-if="group.selection_type === 'single'">
+                                                <input
+                                                    type="radio"
+                                                    :name="'modifier_group_' + group.id"
+                                                    :value="modifier.id"
+                                                    @change="selectModifier(group.id, modifier, 'single')"
+                                                    :checked="isModifierSelected(modifier.id)"
+                                                    class="text-primary focus:ring-primary"
+                                                />
+                                            </template>
+                                            <template x-if="group.selection_type === 'multiple'">
+                                                <input
+                                                    type="checkbox"
+                                                    :value="modifier.id"
+                                                    @change="selectModifier(group.id, modifier, 'multiple', group.max_selections)"
+                                                    :checked="isModifierSelected(modifier.id)"
+                                                    class="text-primary focus:ring-primary rounded"
+                                                />
+                                            </template>
+                                            <span class="text-sm" x-text="modifier.display_name"></span>
+                                        </div>
+                                        <template x-if="modifier.price > 0">
+                                            <span class="text-sm text-muted" x-text="'+ ' + formatCurrency(modifier.price)"></span>
+                                        </template>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Item Notes -->
+                    <template x-if="selectedProduct?.allow_notes">
+                        <div>
+                            <label class="block text-sm font-medium text-text mb-2">Special Instructions</label>
+                            <textarea
+                                x-model="itemNotes"
+                                rows="2"
+                                placeholder="e.g., No onions, extra sauce..."
+                                class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                            ></textarea>
+                        </div>
+                    </template>
+
+                    <!-- Quantity -->
+                    <div>
+                        <label class="block text-sm font-medium text-text mb-2">Quantity</label>
+                        <div class="flex items-center gap-3">
+                            <button @click="modalQuantity = Math.max(1, modalQuantity - 1)" class="w-10 h-10 bg-secondary-100 hover:bg-secondary-200 rounded-lg flex items-center justify-center">
+                                <x-icon name="minus" class="w-4 h-4" />
+                            </button>
+                            <input
+                                type="number"
+                                x-model.number="modalQuantity"
+                                min="1"
+                                class="w-20 h-10 text-center border border-border rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                            <button @click="modalQuantity++" class="w-10 h-10 bg-secondary-100 hover:bg-secondary-200 rounded-lg flex items-center justify-center">
+                                <x-icon name="plus" class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="mt-4 pt-4 border-t border-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm text-muted">Total</span>
+                        <span class="text-xl font-bold text-primary" x-text="formatCurrency(calculateModalTotal())"></span>
+                    </div>
+                    <button
+                        @click="confirmAddToCart()"
+                        :disabled="selectedProduct?.has_variants && !selectedVariant"
+                        class="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        Add to Cart
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -688,7 +882,7 @@
                 // State
                 outletId: '{{ $currentOutlet->id }}',
                 sessionActive: {{ $session ? 'true' : 'false' }},
-                items: [],
+                products: [],
                 cart: [],
                 customers: [],
                 search: '',
@@ -704,6 +898,16 @@
                 processing: false,
                 showSuccessModal: false,
                 lastTransaction: null,
+                cartIdCounter: 0,
+
+                // Product Modal State
+                showProductModal: false,
+                selectedProduct: null,
+                selectedVariant: null,
+                selectedModifiers: [],
+                itemNotes: '',
+                modalQuantity: 1,
+                editingCartIndex: null,
 
                 // Held Orders State
                 showHoldModal: false,
@@ -744,13 +948,13 @@
                 },
 
                 init() {
-                    this.loadItems();
+                    this.loadProducts();
                     if (this.sessionActive) {
                         this.loadHeldOrdersCount();
                     }
                 },
 
-                async loadItems() {
+                async loadProducts() {
                     this.loading = true;
                     try {
                         const params = new URLSearchParams({
@@ -758,13 +962,217 @@
                             search: this.search,
                             category_id: this.selectedCategory
                         });
-                        const response = await fetch(`/pos/items?${params}`);
+                        const response = await fetch(`/pos/products?${params}`);
                         const data = await response.json();
-                        this.items = data.items;
+                        this.products = data.products;
                     } catch (error) {
-                        console.error('Failed to load items:', error);
+                        console.error('Failed to load products:', error);
                     } finally {
                         this.loading = false;
+                    }
+                },
+
+                handleProductClick(product) {
+                    // If product has variants or modifiers, show modal
+                    if (product.has_variants || product.has_modifiers || product.allow_notes) {
+                        this.openProductModal(product);
+                    } else {
+                        // Simple product - add directly to cart
+                        this.addSimpleProductToCart(product);
+                    }
+                },
+
+                openProductModal(product, editIndex = null) {
+                    this.selectedProduct = product;
+                    this.selectedVariant = null;
+                    this.selectedModifiers = [];
+                    this.itemNotes = '';
+                    this.modalQuantity = 1;
+                    this.editingCartIndex = editIndex;
+
+                    // If editing, populate with existing values
+                    if (editIndex !== null) {
+                        const item = this.cart[editIndex];
+                        this.modalQuantity = item.quantity;
+                        this.itemNotes = item.notes || '';
+                        if (item.variant_id) {
+                            this.selectedVariant = product.variants.find(v => v.id === item.variant_id);
+                        }
+                        if (item.modifiers) {
+                            this.selectedModifiers = [...item.modifiers];
+                        }
+                    } else {
+                        // Set default modifiers
+                        product.modifier_groups?.forEach(group => {
+                            group.modifiers.forEach(mod => {
+                                if (mod.is_default) {
+                                    this.selectedModifiers.push({
+                                        id: mod.id,
+                                        name: mod.display_name,
+                                        price: mod.price,
+                                        group_id: group.id
+                                    });
+                                }
+                            });
+                        });
+                    }
+
+                    this.showProductModal = true;
+                },
+
+                selectVariant(variant) {
+                    this.selectedVariant = variant;
+                },
+
+                selectModifier(groupId, modifier, selectionType, maxSelections = null) {
+                    const existingIndex = this.selectedModifiers.findIndex(m => m.id === modifier.id);
+                    const modifierPrice = parseFloat(modifier.price) || 0;
+
+                    if (selectionType === 'single') {
+                        // Remove other modifiers from same group
+                        this.selectedModifiers = this.selectedModifiers.filter(m => m.group_id !== groupId);
+                        // Add selected modifier
+                        this.selectedModifiers.push({
+                            id: modifier.id,
+                            name: modifier.display_name,
+                            price: modifierPrice,
+                            group_id: groupId
+                        });
+                    } else {
+                        // Multiple selection
+                        if (existingIndex > -1) {
+                            // Remove if already selected
+                            this.selectedModifiers.splice(existingIndex, 1);
+                        } else {
+                            // Check max selections
+                            const groupModifiers = this.selectedModifiers.filter(m => m.group_id === groupId);
+                            if (maxSelections && groupModifiers.length >= maxSelections) {
+                                return; // Max reached
+                            }
+                            this.selectedModifiers.push({
+                                id: modifier.id,
+                                name: modifier.display_name,
+                                price: modifierPrice,
+                                group_id: groupId
+                            });
+                        }
+                    }
+                },
+
+                isModifierSelected(modifierId) {
+                    return this.selectedModifiers.some(m => m.id === modifierId);
+                },
+
+                calculateModalTotal() {
+                    if (!this.selectedProduct) return 0;
+
+                    let price = parseFloat(this.selectedProduct.selling_price) || 0;
+
+                    // Add variant price adjustment
+                    if (this.selectedVariant) {
+                        price = parseFloat(this.selectedVariant.price) || price;
+                    }
+
+                    // Add modifiers
+                    const modifiersTotal = this.selectedModifiers.reduce((sum, m) => sum + (parseFloat(m.price) || 0), 0);
+
+                    return (price + modifiersTotal) * this.modalQuantity;
+                },
+
+                confirmAddToCart() {
+                    if (this.selectedProduct.has_variants && !this.selectedVariant) {
+                        alert('Please select a variant');
+                        return;
+                    }
+
+                    const product = this.selectedProduct;
+                    let unitPrice = parseFloat(product.selling_price) || 0;
+                    let itemName = product.name;
+                    let variantPriceAdjustment = 0;
+
+                    if (this.selectedVariant) {
+                        unitPrice = parseFloat(this.selectedVariant.price) || unitPrice;
+                        itemName = this.selectedVariant.name;
+                        variantPriceAdjustment = parseFloat(this.selectedVariant.price_adjustment) || 0;
+                    }
+
+                    const modifiersTotal = this.selectedModifiers.reduce((sum, m) => sum + (parseFloat(m.price) || 0), 0);
+                    unitPrice += modifiersTotal;
+
+                    const cartItem = {
+                        cart_id: this.editingCartIndex !== null ? this.cart[this.editingCartIndex].cart_id : ++this.cartIdCounter,
+                        product_id: product.id,
+                        variant_id: this.selectedVariant?.id || null,
+                        name: itemName,
+                        sku: this.selectedVariant?.sku || product.sku,
+                        base_price: parseFloat(product.selling_price) || 0,
+                        variant_price_adjustment: variantPriceAdjustment,
+                        modifiers_total: modifiersTotal,
+                        unit_price: unitPrice,
+                        cost_price: parseFloat(product.cost_price) || 0,
+                        quantity: this.modalQuantity,
+                        subtotal: unitPrice * this.modalQuantity,
+                        modifiers: this.selectedModifiers.length > 0 ? [...this.selectedModifiers] : null,
+                        modifier_ids: this.selectedModifiers.map(m => m.id),
+                        notes: this.itemNotes || null,
+                        has_modifiers: product.has_modifiers,
+                        allow_notes: product.allow_notes
+                    };
+
+                    if (this.editingCartIndex !== null) {
+                        this.cart[this.editingCartIndex] = cartItem;
+                    } else {
+                        this.cart.push(cartItem);
+                    }
+
+                    this.showProductModal = false;
+                    this.recalculate();
+                },
+
+                addSimpleProductToCart(product) {
+                    // Check if same simple product exists in cart
+                    const existingIndex = this.cart.findIndex(item =>
+                        item.product_id === product.id &&
+                        !item.variant_id &&
+                        !item.modifiers
+                    );
+
+                    const sellingPrice = parseFloat(product.selling_price) || 0;
+                    const costPrice = parseFloat(product.cost_price) || 0;
+
+                    if (existingIndex > -1) {
+                        this.cart[existingIndex].quantity += 1;
+                        this.cart[existingIndex].subtotal = this.cart[existingIndex].quantity * this.cart[existingIndex].unit_price;
+                    } else {
+                        this.cart.push({
+                            cart_id: ++this.cartIdCounter,
+                            product_id: product.id,
+                            variant_id: null,
+                            name: product.name,
+                            sku: product.sku,
+                            base_price: sellingPrice,
+                            variant_price_adjustment: 0,
+                            modifiers_total: 0,
+                            unit_price: sellingPrice,
+                            cost_price: costPrice,
+                            quantity: 1,
+                            subtotal: sellingPrice,
+                            modifiers: null,
+                            modifier_ids: [],
+                            notes: null,
+                            has_modifiers: product.has_modifiers,
+                            allow_notes: product.allow_notes
+                        });
+                    }
+
+                    this.recalculate();
+                },
+
+                editCartItem(index) {
+                    const item = this.cart[index];
+                    const product = this.products.find(p => p.id === item.product_id);
+                    if (product) {
+                        this.openProductModal(product, index);
                     }
                 },
 
@@ -794,29 +1202,6 @@
                     this.recalculate();
                 },
 
-                addToCart(item) {
-                    const existing = this.cart.find(i => i.inventory_item_id === item.id);
-                    if (existing) {
-                        existing.quantity += 1;
-                        existing.subtotal = existing.quantity * existing.unit_price;
-                    } else {
-                        const price = this.selectedCustomer && item.member_price
-                            ? item.member_price
-                            : item.selling_price;
-                        this.cart.push({
-                            inventory_item_id: item.id,
-                            name: item.name,
-                            sku: item.sku,
-                            unit_name: item.unit_name,
-                            unit_price: price,
-                            cost_price: item.cost_price,
-                            quantity: 1,
-                            subtotal: price
-                        });
-                    }
-                    this.recalculate();
-                },
-
                 removeFromCart(index) {
                     this.cart.splice(index, 1);
                     this.recalculate();
@@ -831,6 +1216,12 @@
                     } else {
                         this.recalculate();
                     }
+                },
+
+                recalculateItem(index) {
+                    const item = this.cart[index];
+                    item.subtotal = item.quantity * item.unit_price;
+                    this.recalculate();
                 },
 
                 recalculate() {
@@ -868,9 +1259,12 @@
                             },
                             body: JSON.stringify({
                                 items: this.cart.map(item => ({
-                                    inventory_item_id: item.inventory_item_id,
+                                    product_id: item.product_id,
+                                    variant_id: item.variant_id,
                                     quantity: item.quantity,
-                                    unit_price: item.unit_price
+                                    unit_price: item.unit_price,
+                                    modifiers: item.modifier_ids || [],
+                                    notes: item.notes
                                 })),
                                 customer_id: this.selectedCustomer?.id,
                                 payment_method_id: this.selectedPaymentMethod,

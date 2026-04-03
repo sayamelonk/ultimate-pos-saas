@@ -194,6 +194,8 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         Route::resource('products', ProductController::class);
         Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
         Route::post('/products/{product}/generate-variants', [ProductController::class, 'generateVariants'])->name('products.generate-variants');
+        Route::post('/products/{product}/link-recipe', [ProductController::class, 'linkRecipe'])->name('products.link-recipe');
+        Route::delete('/products/{product}/unlink-recipe', [ProductController::class, 'unlinkRecipe'])->name('products.unlink-recipe');
         Route::post('/products/bulk-update-prices', [ProductController::class, 'bulkUpdatePrices'])->name('products.bulk-update-prices');
 
         // Combos
@@ -223,7 +225,8 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::prefix('pos')->name('pos.')->group(function () {
         // Main POS
         Route::get('/', [PosController::class, 'index'])->name('index');
-        Route::get('/items', [PosController::class, 'getItems'])->name('items');
+        Route::get('/products', [PosController::class, 'getProducts'])->name('products');
+        Route::get('/items', [PosController::class, 'getItems'])->name('items'); // Backward compatibility
         Route::get('/customers', [PosController::class, 'searchCustomers'])->name('customers');
         Route::post('/calculate', [PosController::class, 'calculate'])->name('calculate');
         Route::post('/checkout', [PosController::class, 'checkout'])->name('checkout');

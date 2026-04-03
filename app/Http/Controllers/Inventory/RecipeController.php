@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
+use App\Models\Product;
 use App\Models\Recipe;
 use App\Models\Unit;
 use App\Services\Inventory\RecipeCostService;
@@ -43,7 +44,7 @@ class RecipeController extends Controller
         return view('inventory.recipes.index', compact('recipes', 'categories'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $tenantId = $this->getTenantId();
 
@@ -63,10 +64,22 @@ class RecipeController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Products will be available in Phase 3 - for now use empty collection
-        $products = collect();
+        // Get product if coming from product detail page
+        $linkedProduct = null;
+        if ($request->has('product_id')) {
+            $linkedProduct = Product::where('id', $request->product_id)
+                ->where('tenant_id', $tenantId)
+                ->first();
+        }
 
-        return view('inventory.recipes.create', compact('inventoryItems', 'units', 'categories', 'products'));
+        // Products for dropdown
+        $products = Product::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->whereNull('recipe_id')
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.recipes.create', compact('inventoryItems', 'units', 'categories', 'products', 'linkedProduct'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -76,6 +89,7 @@ class RecipeController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'product_id' => ['nullable', 'exists:products,id'],
             'yield_qty' => ['required', 'numeric', 'min:0.001'],
             'yield_unit_id' => ['required', 'exists:units,id'],
             'prep_time_minutes' => ['nullable', 'integer', 'min:0'],
@@ -85,6 +99,7 @@ class RecipeController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.inventory_item_id' => ['required', 'exists:inventory_items,id'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.unit_id' => ['nullable', 'exists:units,id'],
             'items.*.waste_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
@@ -94,14 +109,15 @@ class RecipeController extends Controller
 
         $recipe = Recipe::create($validated);
 
-        // Create recipe items
+        // Create recipe items - store in original unit, convert on stock deduction
         foreach ($validated['items'] as $index => $item) {
             $inventoryItem = InventoryItem::find($item['inventory_item_id']);
+            $unitId = $item['unit_id'] ?? $inventoryItem->unit_id;
 
             $recipe->items()->create([
                 'inventory_item_id' => $item['inventory_item_id'],
-                'quantity' => $item['quantity'],
-                'unit_id' => $inventoryItem->unit_id,
+                'quantity' => (float) $item['quantity'],
+                'unit_id' => $unitId,
                 'waste_percentage' => $item['waste_percentage'] ?? 0,
                 'notes' => $item['notes'] ?? null,
                 'sort_order' => $index,
@@ -110,6 +126,26 @@ class RecipeController extends Controller
 
         // Calculate and update recipe cost
         $this->recipeCostService->updateRecipeCost($recipe);
+
+        // Link recipe to product if product_id provided
+        if (! empty($validated['product_id'])) {
+            $product = Product::where('id', $validated['product_id'])
+                ->where('tenant_id', $tenantId)
+                ->first();
+
+            if ($product) {
+                $product->update([
+                    'recipe_id' => $recipe->id,
+                    'cost_price' => $recipe->estimated_cost,
+                ]);
+            }
+        }
+
+        // Redirect back to product if came from product page
+        if (! empty($validated['product_id'])) {
+            return redirect()->route('menu.products.show', $validated['product_id'])
+                ->with('success', 'Recipe created and linked to product successfully.');
+        }
 
         return redirect()->route('inventory.recipes.show', $recipe)
             ->with('success', 'Recipe created successfully.');
@@ -169,6 +205,7 @@ class RecipeController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.inventory_item_id' => ['required', 'exists:inventory_items,id'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.unit_id' => ['nullable', 'exists:units,id'],
             'items.*.waste_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
@@ -182,11 +219,12 @@ class RecipeController extends Controller
 
         foreach ($validated['items'] as $index => $item) {
             $inventoryItem = InventoryItem::find($item['inventory_item_id']);
+            $unitId = $item['unit_id'] ?? $inventoryItem->unit_id;
 
             $recipe->items()->create([
                 'inventory_item_id' => $item['inventory_item_id'],
-                'quantity' => $item['quantity'],
-                'unit_id' => $inventoryItem->unit_id,
+                'quantity' => (float) $item['quantity'],
+                'unit_id' => $unitId,
                 'waste_percentage' => $item['waste_percentage'] ?? 0,
                 'notes' => $item['notes'] ?? null,
                 'sort_order' => $index,
