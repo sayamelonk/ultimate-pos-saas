@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Products - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('products.products') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Products')
+    @section('page-title', __('products.products'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Products</h2>
-                <p class="text-muted mt-1">Manage your menu products</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('products.products') }}</h2>
+                <p class="text-muted mt-1">{{ __('products.manage_products') }}</p>
             </div>
             <x-button href="{{ route('menu.products.create') }}" icon="plus">
-                Add Product
+                {{ __('products.add_product') }}
             </x-button>
         </div>
     </x-slot>
@@ -21,12 +21,12 @@
             <x-input
                 type="search"
                 name="search"
-                placeholder="Search products..."
+                placeholder="{{ __('products.search_products') }}"
                 :value="request('search')"
                 class="w-64"
             />
             <x-select name="category_id" class="w-48">
-                <option value="">All Categories</option>
+                <option value="">{{ __('products.all_categories') }}</option>
                 @foreach($categories as $category)
                     <option value="{{ $category->id }}" @selected(request('category_id') == $category->id)>
                         {{ $category->name }}
@@ -34,19 +34,19 @@
                 @endforeach
             </x-select>
             <x-select name="product_type" class="w-40">
-                <option value="">All Types</option>
-                <option value="single" @selected(request('product_type') === 'single')>Single</option>
-                <option value="variant" @selected(request('product_type') === 'variant')>Variant</option>
-                <option value="combo" @selected(request('product_type') === 'combo')>Combo</option>
+                <option value="">{{ __('products.all_types') }}</option>
+                <option value="single" @selected(request('product_type') === 'single')>{{ __('products.single') }}</option>
+                <option value="variant" @selected(request('product_type') === 'variant')>{{ __('products.variant') }}</option>
+                <option value="combo" @selected(request('product_type') === 'combo')>{{ __('products.combo') }}</option>
             </x-select>
             <x-select name="status" class="w-32">
-                <option value="">All Status</option>
-                <option value="active" @selected(request('status') === 'active')>Active</option>
-                <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                <option value="">{{ __('products.all_status') }}</option>
+                <option value="active" @selected(request('status') === 'active')>{{ __('products.active') }}</option>
+                <option value="inactive" @selected(request('status') === 'inactive')>{{ __('products.inactive') }}</option>
             </x-select>
-            <x-button type="submit" variant="secondary">Filter</x-button>
+            <x-button type="submit" variant="secondary">{{ __('products.filter') }}</x-button>
             @if(request()->hasAny(['search', 'category_id', 'product_type', 'status']))
-                <x-button href="{{ route('menu.products.index') }}" variant="ghost">Clear</x-button>
+                <x-button href="{{ route('menu.products.index') }}" variant="ghost">{{ __('products.clear') }}</x-button>
             @endif
         </form>
 
@@ -54,14 +54,14 @@
         @if($products->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Product</x-th>
-                    <x-th>SKU</x-th>
-                    <x-th>Category</x-th>
-                    <x-th>Type</x-th>
-                    <x-th align="right">Price</x-th>
-                    <x-th align="right">Cost</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('products.product') }}</x-th>
+                    <x-th>{{ __('products.sku') }}</x-th>
+                    <x-th>{{ __('products.category') }}</x-th>
+                    <x-th>{{ __('products.type') }}</x-th>
+                    <x-th align="right">{{ __('products.price') }}</x-th>
+                    <x-th align="right">{{ __('products.cost') }}</x-th>
+                    <x-th align="center">{{ __('products.status') }}</x-th>
+                    <x-th align="right">{{ __('products.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($products as $product)
@@ -98,11 +98,11 @@
                         </x-td>
                         <x-td>
                             @if($product->product_type === 'single')
-                                <x-badge type="secondary">Single</x-badge>
+                                <x-badge type="secondary">{{ __('products.single') }}</x-badge>
                             @elseif($product->product_type === 'variant')
-                                <x-badge type="info">Variant</x-badge>
+                                <x-badge type="info">{{ __('products.variant') }}</x-badge>
                             @else
-                                <x-badge type="warning">Combo</x-badge>
+                                <x-badge type="warning">{{ __('products.combo') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -117,9 +117,9 @@
                         </x-td>
                         <x-td align="center">
                             @if($product->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('products.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('products.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -133,32 +133,32 @@
 
                                     <x-dropdown-item href="{{ route('menu.products.show', $product) }}">
                                         <x-icon name="eye" class="w-4 h-4" />
-                                        View Details
+                                        {{ __('products.view_details') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item href="{{ route('menu.products.edit', $product) }}">
                                         <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                        {{ __('products.edit') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item
                                         type="button"
                                         @click="$refs.duplicateForm{{ $loop->index }}.submit()"
                                     >
                                         <x-icon name="document-duplicate" class="w-4 h-4" />
-                                        Duplicate
+                                        {{ __('products.duplicate') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item
                                         type="button"
                                         danger
                                         @click="$dispatch('confirm', {
-                                            title: 'Delete Product',
-                                            message: 'Are you sure you want to delete {{ $product->name }}? This action cannot be undone.',
-                                            confirmText: 'Delete',
+                                            title: '{{ __('products.delete_product') }}',
+                                            message: '{{ __('products.confirm_delete', ['name' => $product->name]) }}',
+                                            confirmText: '{{ __('products.delete') }}',
                                             variant: 'danger',
                                             onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
                                         })"
                                     >
                                         <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
+                                        {{ __('products.delete') }}
                                     </x-dropdown-item>
                                 </x-dropdown>
                                 <form x-ref="duplicateForm{{ $loop->index }}" action="{{ route('menu.products.duplicate', $product) }}" method="POST" class="hidden">
@@ -179,12 +179,12 @@
             </div>
         @else
             <x-empty-state
-                title="No products found"
-                description="Get started by creating your first product."
+                title="{{ __('products.no_products') }}"
+                description="{{ __('products.no_products_desc') }}"
                 icon="cube"
             >
                 <x-button href="{{ route('menu.products.create') }}" icon="plus">
-                    Add Product
+                    {{ __('products.add_product') }}
                 </x-button>
             </x-empty-state>
         @endif

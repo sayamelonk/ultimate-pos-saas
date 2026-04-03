@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit {{ $category->name }} - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('products.edit_category') }} {{ $category->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit Category')
+    @section('page-title', __('products.edit_category'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('menu.categories.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('products.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Category</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('products.edit_category') }}</h2>
                 <p class="text-muted mt-1">{{ $category->name }}</p>
             </div>
         </div>
@@ -19,30 +19,30 @@
         @csrf
         @method('PUT')
 
-        <x-card title="Category Information">
+        <x-card title="{{ __('products.category_information') }}">
             <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
-                    <x-form-group label="Category Name" name="name" required>
+                    <x-form-group label="{{ __('products.category_name') }}" name="name" required>
                         <x-input
                             name="name"
                             :value="old('name', $category->name)"
-                            placeholder="e.g., Beverages"
+                            placeholder="{{ __('products.category_name_placeholder') }}"
                             required
                         />
                     </x-form-group>
 
-                    <x-form-group label="Code" name="code">
+                    <x-form-group label="{{ __('products.code') }}" name="code">
                         <x-input
                             name="code"
                             :value="old('code', $category->code)"
-                            placeholder="e.g., BEV"
+                            placeholder="{{ __('products.category_code_placeholder') }}"
                         />
                     </x-form-group>
                 </div>
 
-                <x-form-group label="Parent Category" name="parent_id">
+                <x-form-group label="{{ __('products.parent_category') }}" name="parent_id">
                     <x-select name="parent_id">
-                        <option value="">None (Root Category)</option>
+                        <option value="">{{ __('products.none_root') }}</option>
                         @foreach($parentCategories as $parent)
                             <option value="{{ $parent->id }}" @selected(old('parent_id', $category->parent_id) == $parent->id)>
                                 {{ $parent->name }}
@@ -51,17 +51,17 @@
                     </x-select>
                 </x-form-group>
 
-                <x-form-group label="Description" name="description">
+                <x-form-group label="{{ __('products.description') }}" name="description">
                     <x-textarea
                         name="description"
                         :value="old('description', $category->description)"
-                        placeholder="Optional description..."
+                        placeholder="{{ __('products.description_placeholder') }}"
                         rows="3"
                     />
                 </x-form-group>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <x-form-group label="Color" name="color">
+                    <x-form-group label="{{ __('products.color') }}" name="color">
                         <div class="flex items-center gap-2">
                             <input
                                 type="color"
@@ -79,7 +79,7 @@
                         </div>
                     </x-form-group>
 
-                    <x-form-group label="Sort Order" name="sort_order">
+                    <x-form-group label="{{ __('products.sort_order') }}" name="sort_order">
                         <x-input
                             type="number"
                             name="sort_order"
@@ -100,7 +100,7 @@
                                 {{ old('is_active', $category->is_active) ? 'checked' : '' }}
                                 class="rounded border-border text-accent focus:ring-accent"
                             >
-                            <span class="text-sm font-medium text-text">Active</span>
+                            <span class="text-sm font-medium text-text">{{ __('products.active') }}</span>
                         </label>
                     </x-form-group>
 
@@ -114,7 +114,7 @@
                                 {{ old('show_in_pos', $category->show_in_pos) ? 'checked' : '' }}
                                 class="rounded border-border text-accent focus:ring-accent"
                             >
-                            <span class="text-sm font-medium text-text">Show in POS</span>
+                            <span class="text-sm font-medium text-text">{{ __('products.show_in_pos') }}</span>
                         </label>
                     </x-form-group>
 
@@ -128,7 +128,7 @@
                                 {{ old('show_in_menu', $category->show_in_menu) ? 'checked' : '' }}
                                 class="rounded border-border text-accent focus:ring-accent"
                             >
-                            <span class="text-sm font-medium text-text">Show in Menu</span>
+                            <span class="text-sm font-medium text-text">{{ __('products.show_in_menu') }}</span>
                         </label>
                     </x-form-group>
                 </div>
@@ -136,8 +136,8 @@
 
             <x-slot name="footer">
                 <div class="flex justify-end gap-3">
-                    <x-button href="{{ route('menu.categories.index') }}" variant="ghost">Cancel</x-button>
-                    <x-button type="submit" icon="check">Update Category</x-button>
+                    <x-button href="{{ route('menu.categories.index') }}" variant="ghost">{{ __('products.cancel') }}</x-button>
+                    <x-button type="submit" icon="check">{{ __('products.update_category') }}</x-button>
                 </div>
             </x-slot>
         </x-card>

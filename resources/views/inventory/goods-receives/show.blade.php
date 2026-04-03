@@ -46,7 +46,7 @@
                             @break
                         @case('cancelled')
                             <x-icon name="x-circle" class="w-6 h-6 text-danger-600" />
-                            <span class="font-medium text-danger-700">{{ __('app.status_cancelled') }}</span>
+                            <span class="font-medium text-danger-700">{{ __('inventory.cancelled') }}</span>
                             @break
                     @endswitch
                 </div>
@@ -79,7 +79,7 @@
                         <dd>{{ $goodsReceive->invoice_number ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">{{ __('admin.outlet') }}</dt>
+                        <dt class="text-muted">{{ __('inventory.outlet') }}</dt>
                         <dd>{{ $goodsReceive->outlet->name }}</dd>
                     </div>
                     <div class="flex justify-between">
@@ -100,7 +100,7 @@
                         <dd>{{ $goodsReceive->purchaseOrder?->supplier?->contact_person ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">{{ __('app.phone') }}</dt>
+                        <dt class="text-muted">{{ __('inventory.phone') }}</dt>
                         <dd>{{ $goodsReceive->purchaseOrder?->supplier?->phone ?? '-' }}</dd>
                     </div>
                 </dl>
@@ -155,7 +155,7 @@
         </x-card>
 
         @if($goodsReceive->notes)
-            <x-card :title="__('app.notes')">
+            <x-card :title="__('inventory.notes')">
                 <p class="text-text">{{ $goodsReceive->notes }}</p>
             </x-card>
         @endif

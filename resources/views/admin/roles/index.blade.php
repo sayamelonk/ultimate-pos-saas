@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Roles - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.roles') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Roles')
+    @section('page-title', __('admin.roles'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Role Management</h2>
-                <p class="text-muted mt-1">Manage roles and permissions</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.role_management') }}</h2>
+                <p class="text-muted mt-1">{{ __('admin.manage_roles') }}</p>
             </div>
             <x-button href="{{ route('admin.roles.create') }}" icon="plus">
-                Add Role
+                {{ __('admin.add_role') }}
             </x-button>
         </div>
     </x-slot>
@@ -21,13 +21,13 @@
             <x-input
                 type="search"
                 name="search"
-                placeholder="Search roles..."
+                placeholder="{{ __('admin.search_roles') }}"
                 :value="request('search')"
                 class="w-64"
             />
-            <x-button type="submit" variant="secondary">Filter</x-button>
+            <x-button type="submit" variant="secondary">{{ __('app.filter') }}</x-button>
             @if(request()->has('search'))
-                <x-button href="{{ route('admin.roles.index') }}" variant="ghost">Clear</x-button>
+                <x-button href="{{ route('admin.roles.index') }}" variant="ghost">{{ __('app.clear') }}</x-button>
             @endif
         </form>
 
@@ -35,12 +35,12 @@
         @if($roles->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Role</x-th>
-                    <x-th>Description</x-th>
-                    <x-th align="center">Users</x-th>
-                    <x-th align="center">Permissions</x-th>
-                    <x-th align="center">Type</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('admin.role') }}</x-th>
+                    <x-th>{{ __('app.description') }}</x-th>
+                    <x-th align="center">{{ __('admin.users_count') }}</x-th>
+                    <x-th align="center">{{ __('admin.permissions_count') }}</x-th>
+                    <x-th align="center">{{ __('app.type') }}</x-th>
+                    <x-th align="right">{{ __('app.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($roles as $role)
@@ -69,27 +69,27 @@
                         </x-td>
                         <x-td align="center">
                             @if($role->is_system)
-                                <x-badge type="warning">System</x-badge>
+                                <x-badge type="warning">{{ __('admin.system_role') }}</x-badge>
                             @else
-                                <x-badge type="accent">Custom</x-badge>
+                                <x-badge type="accent">{{ __('admin.custom_role') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
                             <div class="flex items-center justify-end gap-1">
                                 <a href="{{ route('admin.roles.show', $role) }}"
                                    class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
-                                   title="View Details">
+                                   title="{{ __('app.view') }}">
                                     <x-icon name="eye" class="w-4 h-4" />
                                 </a>
                                 <a href="{{ route('admin.roles.permissions', $role) }}"
                                    class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
-                                   title="Manage Permissions">
+                                   title="{{ __('admin.manage_permissions') }}">
                                     <x-icon name="shield" class="w-4 h-4" />
                                 </a>
                                 @if(!$role->is_system)
                                     <a href="{{ route('admin.roles.edit', $role) }}"
                                        class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
-                                       title="Edit">
+                                       title="{{ __('app.edit') }}">
                                         <x-icon name="pencil" class="w-4 h-4" />
                                     </a>
                                     <form x-ref="deleteRole{{ $loop->index }}" action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="inline">
@@ -97,12 +97,12 @@
                                         @method('DELETE')
                                         <button type="button"
                                                 class="p-2 text-danger-500 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-colors"
-                                                title="Delete"
+                                                title="{{ __('app.delete') }}"
                                                 x-on:click="$dispatch('confirm', {
-                                                    title: 'Delete Role',
-                                                    message: 'Are you sure you want to delete {{ $role->name }}? Users with this role will lose these permissions.',
-                                                    confirmText: 'Yes, Delete',
-                                                    cancelText: 'Cancel',
+                                                    title: '{{ __('admin.delete_role') }}',
+                                                    message: '{{ __('admin.confirm_delete_role', ['name' => $role->name]) }}',
+                                                    confirmText: '{{ __('app.yes_delete') }}',
+                                                    cancelText: '{{ __('app.cancel') }}',
                                                     variant: 'danger',
                                                     onConfirm: () => $refs.deleteRole{{ $loop->index }}.submit()
                                                 })">
@@ -121,12 +121,12 @@
             </div>
         @else
             <x-empty-state
-                title="No roles found"
-                description="Get started by creating your first custom role."
+                title="{{ __('admin.no_roles_found') }}"
+                description="{{ __('admin.no_roles_desc') }}"
                 icon="shield"
             >
                 <x-button href="{{ route('admin.roles.create') }}" icon="plus">
-                    Add Role
+                    {{ __('admin.add_role') }}
                 </x-button>
             </x-empty-state>
         @endif

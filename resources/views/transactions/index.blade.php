@@ -1,13 +1,13 @@
 <x-app-layout>
-    <x-slot name="title">Transactions - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('transactions.transactions') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Transactions')
+    @section('page-title', __('transactions.transactions'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Transaction History</h2>
-                <p class="text-muted mt-1">View and manage all transactions</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('transactions.transaction_history') }}</h2>
+                <p class="text-muted mt-1">{{ __('transactions.manage_transactions') }}</p>
             </div>
         </div>
     </x-slot>
@@ -18,19 +18,19 @@
             <div class="flex flex-wrap items-end gap-3">
                 <!-- Search -->
                 <div class="flex-1 min-w-[200px] max-w-xs">
-                    <label class="block text-xs font-medium text-muted mb-1">Search</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('transactions.search') }}</label>
                     <x-input
                         name="search"
-                        placeholder="Transaction number..."
+                        :placeholder="__('transactions.search_placeholder')"
                         :value="request('search')"
                     />
                 </div>
 
                 <!-- Outlet -->
                 <div class="w-40">
-                    <label class="block text-xs font-medium text-muted mb-1">Outlet</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('transactions.outlet') }}</label>
                     <x-select name="outlet_id">
-                        <option value="">All Outlets</option>
+                        <option value="">{{ __('transactions.all_outlets') }}</option>
                         @foreach($outlets as $outlet)
                             <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                                 {{ $outlet->name }}
@@ -41,30 +41,30 @@
 
                 <!-- Type -->
                 <div class="w-32">
-                    <label class="block text-xs font-medium text-muted mb-1">Type</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('transactions.type') }}</label>
                     <x-select name="type">
-                        <option value="">All</option>
-                        <option value="sale" @selected(request('type') === 'sale')>Sale</option>
-                        <option value="refund" @selected(request('type') === 'refund')>Refund</option>
-                        <option value="void" @selected(request('type') === 'void')>Void</option>
+                        <option value="">{{ __('transactions.all_types') }}</option>
+                        <option value="sale" @selected(request('type') === 'sale')>{{ __('transactions.sale') }}</option>
+                        <option value="refund" @selected(request('type') === 'refund')>{{ __('transactions.refund') }}</option>
+                        <option value="void" @selected(request('type') === 'void')>{{ __('transactions.void') }}</option>
                     </x-select>
                 </div>
 
                 <!-- Status -->
                 <div class="w-36">
-                    <label class="block text-xs font-medium text-muted mb-1">Status</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('transactions.status') }}</label>
                     <x-select name="status">
-                        <option value="">All</option>
-                        <option value="completed" @selected(request('status') === 'completed')>Completed</option>
-                        <option value="pending" @selected(request('status') === 'pending')>Pending</option>
-                        <option value="voided" @selected(request('status') === 'voided')>Voided</option>
+                        <option value="">{{ __('transactions.all_status') }}</option>
+                        <option value="completed" @selected(request('status') === 'completed')>{{ __('transactions.completed') }}</option>
+                        <option value="pending" @selected(request('status') === 'pending')>{{ __('transactions.pending') }}</option>
+                        <option value="voided" @selected(request('status') === 'voided')>{{ __('transactions.voided') }}</option>
                     </x-select>
                 </div>
 
                 <!-- Date Range -->
                 <div class="flex items-end gap-2">
                     <div class="w-36">
-                        <label class="block text-xs font-medium text-muted mb-1">From</label>
+                        <label class="block text-xs font-medium text-muted mb-1">{{ __('transactions.from') }}</label>
                         <input
                             type="date"
                             name="date_from"
@@ -73,7 +73,7 @@
                         />
                     </div>
                     <div class="w-36">
-                        <label class="block text-xs font-medium text-muted mb-1">To</label>
+                        <label class="block text-xs font-medium text-muted mb-1">{{ __('transactions.to') }}</label>
                         <input
                             type="date"
                             name="date_to"
@@ -86,11 +86,11 @@
                 <!-- Buttons -->
                 <div class="flex items-center gap-2">
                     <x-button type="submit" variant="primary" icon="search">
-                        Filter
+                        {{ __('transactions.filter') }}
                     </x-button>
                     @if(request()->hasAny(['search', 'outlet_id', 'type', 'status', 'date_from', 'date_to']))
                         <x-button href="{{ route('transactions.index') }}" variant="ghost">
-                            Clear
+                            {{ __('transactions.clear') }}
                         </x-button>
                     @endif
                 </div>
@@ -103,14 +103,14 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot name="head">
-                        <x-th>Transaction</x-th>
-                        <x-th>Customer</x-th>
-                        <x-th>Date</x-th>
-                        <x-th>Payment</x-th>
-                        <x-th align="center">Type</x-th>
-                        <x-th align="right">Total</x-th>
-                        <x-th align="center">Status</x-th>
-                        <x-th align="center">Actions</x-th>
+                        <x-th>{{ __('transactions.transaction') }}</x-th>
+                        <x-th>{{ __('transactions.customer') }}</x-th>
+                        <x-th>{{ __('transactions.date') }}</x-th>
+                        <x-th>{{ __('transactions.payment') }}</x-th>
+                        <x-th align="center">{{ __('transactions.type') }}</x-th>
+                        <x-th align="right">{{ __('transactions.total') }}</x-th>
+                        <x-th align="center">{{ __('transactions.status') }}</x-th>
+                        <x-th align="center">{{ __('transactions.actions') }}</x-th>
                     </x-slot>
 
                     @foreach($transactions as $transaction)
@@ -128,9 +128,9 @@
                                     @if($transaction->customer)
                                         <p class="font-medium">{{ $transaction->customer->name }}</p>
                                     @else
-                                        <p class="text-muted">Walk-in</p>
+                                        <p class="text-muted">{{ __('transactions.walk_in') }}</p>
                                     @endif
-                                    <p class="text-xs text-muted">by {{ $transaction->user->name }}</p>
+                                    <p class="text-xs text-muted">{{ __('transactions.by') }} {{ $transaction->user->name }}</p>
                                 </div>
                             </x-td>
                             <x-td>
@@ -149,9 +149,14 @@
                                         'refund' => 'warning',
                                         'void' => 'danger',
                                     ];
+                                    $typeLabels = [
+                                        'sale' => __('transactions.sale'),
+                                        'refund' => __('transactions.refund'),
+                                        'void' => __('transactions.void'),
+                                    ];
                                 @endphp
                                 <x-badge type="{{ $typeColors[$transaction->type] ?? 'secondary' }}">
-                                    {{ ucfirst($transaction->type) }}
+                                    {{ $typeLabels[$transaction->type] ?? ucfirst($transaction->type) }}
                                 </x-badge>
                             </x-td>
                             <x-td align="right">
@@ -166,9 +171,14 @@
                                         'pending' => 'warning',
                                         'voided' => 'danger',
                                     ];
+                                    $statusLabels = [
+                                        'completed' => __('transactions.completed'),
+                                        'pending' => __('transactions.pending'),
+                                        'voided' => __('transactions.voided'),
+                                    ];
                                 @endphp
                                 <x-badge type="{{ $statusColors[$transaction->status] ?? 'secondary' }}" dot>
-                                    {{ ucfirst($transaction->status) }}
+                                    {{ $statusLabels[$transaction->status] ?? ucfirst($transaction->status) }}
                                 </x-badge>
                             </x-td>
                             <x-td align="center">
@@ -176,7 +186,7 @@
                                     <x-button href="{{ route('transactions.show', $transaction) }}" size="sm" variant="ghost" icon="eye" />
                                     @if($transaction->status === 'completed' && $transaction->type === 'sale')
                                         <x-button href="{{ route('transactions.refund', $transaction) }}" size="sm" variant="warning" icon="arrow-uturn-left">
-                                            Refund
+                                            {{ __('transactions.refund') }}
                                         </x-button>
                                     @endif
                                 </div>
@@ -191,8 +201,8 @@
             </div>
         @else
             <x-empty-state
-                title="No transactions found"
-                description="No transactions match your filters."
+                :title="__('transactions.no_transactions')"
+                :description="__('transactions.no_transactions_desc')"
                 icon="receipt"
             />
         @endif

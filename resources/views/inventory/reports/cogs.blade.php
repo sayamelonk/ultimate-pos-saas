@@ -1,20 +1,20 @@
 <x-app-layout>
     <x-slot name="title">COGS Report - Ultimate POS</x-slot>
 
-    @section('page-title', 'COGS Report')
+    @section('page-title', __('inventory.cogs_report'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Cost of Goods Sold Report</h2>
-                <p class="text-muted mt-1">Analyze your cost of goods sold by period</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.cogs_report') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.analyze_cogs') }}</p>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('inventory.reports.stock-valuation') }}" variant="outline-secondary" icon="currency-dollar">
-                    Valuation Report
+                    {{ __('inventory.stock_valuation_report') }}
                 </x-button>
                 <x-button href="{{ route('inventory.reports.food-cost') }}" variant="outline-secondary" icon="beaker">
-                    Food Cost Report
+                    {{ __('inventory.food_cost_report') }}
                 </x-button>
             </div>
         </div>
@@ -37,7 +37,7 @@
                     class="w-40"
                 />
                 <x-select name="outlet_id" class="w-48">
-                    <option value="">All Outlets</option>
+                    <option value="">{{ __('inventory.all_outlets') }}</option>
                     @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                             {{ $outlet->name }}
@@ -45,7 +45,7 @@
                     @endforeach
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Generate Report
+                    {{ __('inventory.generate_report') }}
                 </x-button>
             </form>
         </x-card>
@@ -55,14 +55,14 @@
             <x-card>
                 <div class="text-center">
                     <p class="text-4xl font-bold text-danger-600">Rp {{ number_format($totalCogs, 0, ',', '.') }}</p>
-                    <p class="text-sm text-muted mt-2">Total COGS</p>
+                    <p class="text-sm text-muted mt-2">{{ __('inventory.total_cost') }} COGS</p>
                     <p class="text-xs text-muted">{{ $dateFrom }} - {{ $dateTo }}</p>
                 </div>
             </x-card>
             <x-card>
                 <div class="text-center">
                     <p class="text-4xl font-bold text-text">{{ $cogsByItem->count() }}</p>
-                    <p class="text-sm text-muted mt-2">Items Sold</p>
+                    <p class="text-sm text-muted mt-2">{{ __('inventory.items') }} {{ __('inventory.usage') }}</p>
                 </div>
             </x-card>
             <x-card>
@@ -72,14 +72,14 @@
                         $avgDaily = $days > 0 ? $totalCogs / $days : 0;
                     @endphp
                     <p class="text-4xl font-bold text-text">Rp {{ number_format($avgDaily, 0, ',', '.') }}</p>
-                    <p class="text-sm text-muted mt-2">Avg Daily COGS</p>
+                    <p class="text-sm text-muted mt-2">Avg {{ __('inventory.date') }} COGS</p>
                 </div>
             </x-card>
         </div>
 
         <div class="grid grid-cols-2 gap-6">
             <!-- COGS by Category -->
-            <x-card title="COGS by Category">
+            <x-card title="COGS {{ __('inventory.category') }}">
                 @if($cogsByCategory->count() > 0)
                     <div class="space-y-4">
                         @foreach($cogsByCategory as $category => $data)
@@ -90,7 +90,7 @@
                                 <div class="flex items-center justify-between mb-2">
                                     <div>
                                         <span class="font-medium">{{ $category }}</span>
-                                        <span class="text-sm text-muted">({{ $data['count'] }} items)</span>
+                                        <span class="text-sm text-muted">({{ $data['count'] }} {{ __('inventory.items') }})</span>
                                     </div>
                                     <span class="font-medium">Rp {{ number_format($data['total_cost'], 0, ',', '.') }}</span>
                                 </div>
@@ -102,15 +102,15 @@
                     </div>
                 @else
                     <x-empty-state
-                        title="No data"
-                        description="No sales recorded in this period."
+                        title="{{ __('inventory.no_data_for_period') }}"
+                        description="{{ __('inventory.no_data_for_period') }}"
                         icon="chart-bar"
                     />
                 @endif
             </x-card>
 
             <!-- COGS by Outlet -->
-            <x-card title="COGS by Outlet">
+            <x-card title="COGS {{ __('inventory.outlet') }}">
                 @if($cogsByOutlet->count() > 0)
                     <div class="space-y-4">
                         @foreach($cogsByOutlet as $data)
@@ -130,8 +130,8 @@
                     </div>
                 @else
                     <x-empty-state
-                        title="No data"
-                        description="No sales recorded in this period."
+                        title="{{ __('inventory.no_data_for_period') }}"
+                        description="{{ __('inventory.no_data_for_period') }}"
                         icon="building-storefront"
                     />
                 @endif
@@ -140,7 +140,7 @@
 
         <!-- Daily COGS Trend -->
         @if($dailyCogs->count() > 0)
-            <x-card title="Daily COGS Trend">
+            <x-card title="{{ __('inventory.date') }} COGS Trend">
                 <div class="h-48 flex items-end gap-1">
                     @php
                         $maxVal = $dailyCogs->max('total_cost') ?: 1;
@@ -163,18 +163,18 @@
         @endif
 
         <!-- COGS by Item Table -->
-        <x-card title="COGS by Item">
+        <x-card title="COGS {{ __('inventory.item') }}">
             @if($cogsByItem->count() > 0)
                 <x-table>
                     <x-slot name="head">
                         <x-th>Rank</x-th>
-                        <x-th>Item</x-th>
-                        <x-th>SKU</x-th>
-                        <x-th>Category</x-th>
-                        <x-th align="right">Qty Sold</x-th>
-                        <x-th align="right">Avg Cost</x-th>
-                        <x-th align="right">Total COGS</x-th>
-                        <x-th align="right">% of Total</x-th>
+                        <x-th>{{ __('inventory.item') }}</x-th>
+                        <x-th>{{ __('inventory.sku') }}</x-th>
+                        <x-th>{{ __('inventory.category') }}</x-th>
+                        <x-th align="right">{{ __('inventory.quantity') }}</x-th>
+                        <x-th align="right">{{ __('inventory.avg_cost') }}</x-th>
+                        <x-th align="right">{{ __('inventory.total_cost') }} COGS</x-th>
+                        <x-th align="right">% {{ __('inventory.total') }}</x-th>
                     </x-slot>
 
                     @foreach($cogsByItem->take(20) as $index => $data)
@@ -207,12 +207,12 @@
                 </x-table>
 
                 @if($cogsByItem->count() > 20)
-                    <p class="mt-4 text-sm text-muted text-center">Showing top 20 items by COGS. Export report for complete data.</p>
+                    <p class="mt-4 text-sm text-muted text-center">Showing top 20 {{ __('inventory.items') }} by COGS. {{ __('inventory.export') }} {{ __('inventory.reports') }} for complete data.</p>
                 @endif
             @else
                 <x-empty-state
-                    title="No sales data"
-                    description="No sales recorded in this period."
+                    title="{{ __('inventory.no_data_for_period') }}"
+                    description="{{ __('inventory.no_data_for_period') }}"
                     icon="calculator"
                 />
             @endif

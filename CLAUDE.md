@@ -1,3 +1,41 @@
+=== ultimate-pos rules ===
+
+# Ultimate POS Business & Technical Rules
+
+## Single Source of Truth (SSOT)
+- **ALWAYS** refer to `docs/analisis/pricing.md` for all business logic, pricing, features, and technical decisions.
+- This document contains all decisions from Product Manager, Tech Lead, Owner, QA, and Software Engineer perspectives.
+- When implementing any feature related to subscription, pricing, trial, feature gating, or limits - READ the pricing.md first.
+
+## Key Business Rules (Quick Reference)
+- **Pricing Tiers**: Starter (Rp 99K), Growth (Rp 299K), Professional (Rp 599K), Enterprise (Rp 1.499K)
+- **Trial**: 14 hari, full akses Professional, no credit card required
+- **Grace Period**: 1 hari setelah expire sebelum freeze
+- **Freeze**: Read-only, bisa lihat data, tidak bisa transaksi
+- **Data Retention**: 1 tahun frozen → data dihapus (dengan warning email)
+- **No Refund**: Sudah ada trial 14 hari
+- **Upgrade**: Proration (bayar selisih pro-rata)
+- **Downgrade**: Cancel dulu → freeze → subscribe tier baru
+
+## Key Technical Rules (Quick Reference)
+- **Database**: MySQL
+- **Cache & Queue**: Redis
+- **Session**: No timeout, logout manual. Single session untuk Cashier/Manager/Owner, multi untuk Waiter/Kitchen
+- **Email Verification**: Wajib, block akses sampai verify, link valid 24 jam
+- **Timezone**: Trial expire berdasarkan timezone tenant
+- **Transaction Number**: Format {OUTLET_CODE}-{YYYYMMDD}-{SEQ}
+- **Audit Log**: Retention 90 hari
+- **API Versioning**: Support 2 versi, deprecate after 6 bulan
+- **Force Update**: Block app sampai update untuk critical fix
+
+## Feature Gating
+- Selalu cek `docs/analisis/pricing.md` untuk feature flags per tier
+- POS Core (cash drawer, held order, multi-payment, split bill) tersedia di SEMUA tier
+- Inventory Basic: Growth+, Inventory Advanced: Professional+
+- QR Order, KDS, API Access: lihat pricing.md untuk detail per tier
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
@@ -8,13 +46,14 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 ## Foundational Context
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.4.11
+- php - 8.3.22
 - laravel/framework (LARAVEL) - v12
 - laravel/prompts (PROMPTS) - v0
 - laravel/mcp (MCP) - v0
 - laravel/pint (PINT) - v1
 - laravel/sail (SAIL) - v1
 - phpunit/phpunit (PHPUNIT) - v11
+- alpinejs (ALPINEJS) - v3
 - tailwindcss (TAILWINDCSS) - v4
 
 ## Conventions

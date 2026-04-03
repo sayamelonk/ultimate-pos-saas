@@ -1,9 +1,9 @@
 <x-app-layout>
-    <x-slot name="title">Pilih Paket - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('subscription.choose_plan') }} - Ultimate POS</x-slot>
 
     <x-slot name="header">
-        <h2 class="text-2xl font-bold text-text">Pilih Paket Langganan</h2>
-        <p class="text-muted mt-1">Pilih paket yang sesuai dengan kebutuhan bisnis Anda</p>
+        <h2 class="text-2xl font-bold text-text">{{ __('subscription.choose_plan') }}</h2>
+        <p class="text-muted mt-1">{{ __('subscription.choose_plan_subtitle') }}</p>
     </x-slot>
 
     @if(session('error'))
@@ -19,14 +19,14 @@
                     id="btn-monthly"
                     class="px-4 py-2 rounded-md text-sm font-medium transition-colors billing-toggle active"
                     data-cycle="monthly">
-                Bulanan
+                {{ __('subscription.monthly') }}
             </button>
             <button type="button"
                     id="btn-yearly"
                     class="px-4 py-2 rounded-md text-sm font-medium transition-colors billing-toggle"
                     data-cycle="yearly">
-                Tahunan
-                <span class="ml-1 text-xs bg-success text-white px-2 py-0.5 rounded-full">Hemat 20%</span>
+                {{ __('subscription.yearly') }}
+                <span class="ml-1 text-xs bg-success text-white px-2 py-0.5 rounded-full">{{ __('subscription.save_percent', ['percent' => 20]) }}</span>
             </button>
         </div>
     </div>
@@ -38,7 +38,7 @@
                 @if($loop->index === 1)
                     <div class="absolute -top-3 left-1/2 -translate-x-1/2">
                         <span class="bg-primary text-white text-xs font-medium px-3 py-1 rounded-full">
-                            Paling Populer
+                            {{ __('subscription.most_popular') }}
                         </span>
                     </div>
                 @endif
@@ -51,15 +51,15 @@
                 <!-- Monthly Price -->
                 <div class="text-center mb-6 price-display price-monthly">
                     <span class="text-4xl font-bold text-text">{{ $plan->getFormattedPriceMonthly() }}</span>
-                    <span class="text-muted">/bulan</span>
+                    <span class="text-muted">{{ __('subscription.per_month') }}</span>
                 </div>
 
                 <!-- Yearly Price -->
                 <div class="text-center mb-6 price-display price-yearly hidden">
                     <span class="text-4xl font-bold text-text">{{ $plan->getFormattedPriceYearly() }}</span>
-                    <span class="text-muted">/tahun</span>
+                    <span class="text-muted">{{ __('subscription.per_year') }}</span>
                     <p class="text-sm text-success mt-1">
-                        Hemat Rp {{ number_format(($plan->price_monthly * 12) - $plan->price_yearly, 0, ',', '.') }}
+                        {{ __('subscription.save_amount', ['amount' => number_format(($plan->price_monthly * 12) - $plan->price_yearly, 0, ',', '.')]) }}
                     </p>
                 </div>
 
@@ -68,13 +68,13 @@
                     <li class="flex items-center gap-2">
                         <x-icon name="check-circle" class="w-5 h-5 text-success" />
                         <span class="text-sm text-text">
-                            {{ $plan->max_outlets === -1 ? 'Unlimited' : $plan->max_outlets }} Outlet
+                            {{ $plan->max_outlets === -1 ? __('subscription.unlimited') : $plan->max_outlets }} Outlet
                         </span>
                     </li>
                     <li class="flex items-center gap-2">
                         <x-icon name="check-circle" class="w-5 h-5 text-success" />
                         <span class="text-sm text-text">
-                            {{ $plan->max_users === -1 ? 'Unlimited' : $plan->max_users }} User
+                            {{ $plan->max_users === -1 ? __('subscription.unlimited') : $plan->max_users }} User
                         </span>
                     </li>
                     @if($plan->features)
@@ -91,15 +91,27 @@
                 @if($currentSubscription && $currentSubscription->plan->id === $plan->id)
                     <button type="button" disabled
                             class="w-full py-3 px-4 bg-secondary-200 text-secondary-500 rounded-lg font-medium cursor-not-allowed">
-                        Paket Aktif
+                        {{ __('subscription.current_plan') }}
                     </button>
+                @elseif($currentSubscription && $currentSubscription->isActive() && !$currentSubscription->isTrial())
+                    {{-- Existing active subscription (not trial) - show proration preview --}}
+                    <a href="{{ route('subscription.upgrade.preview', $plan) }}?billing_cycle=monthly"
+                       class="block plan-upgrade-btn w-full py-3 px-4 text-center {{ $loop->index === 1 ? 'bg-primary text-white hover:bg-primary-600' : 'bg-secondary-100 text-text hover:bg-secondary-200' }} rounded-lg font-medium transition-colors"
+                       data-monthly-url="{{ route('subscription.upgrade.preview', $plan) }}?billing_cycle=monthly"
+                       data-yearly-url="{{ route('subscription.upgrade.preview', $plan) }}?billing_cycle=yearly">
+                        @if($plan->price_monthly > $currentSubscription->plan->price_monthly)
+                            {{ __('subscription.upgrade_to', ['plan' => $plan->name]) }}
+                        @else
+                            {{ __('subscription.downgrade_to', ['plan' => $plan->name]) }}
+                        @endif
+                    </a>
                 @else
                     <form action="{{ route('subscription.subscribe', $plan) }}" method="POST">
                         @csrf
                         <input type="hidden" name="billing_cycle" class="billing-cycle-input" value="monthly">
                         <button type="submit"
                                 class="w-full py-3 px-4 {{ $loop->index === 1 ? 'bg-primary text-white hover:bg-primary-600' : 'bg-secondary-100 text-text hover:bg-secondary-200' }} rounded-lg font-medium transition-colors">
-                            Pilih {{ $plan->name }}
+                            {{ __('subscription.select_plan', ['plan' => $plan->name]) }}
                         </button>
                     </form>
                 @endif
@@ -111,19 +123,19 @@
     @if($currentSubscription)
         <div class="mt-8 max-w-2xl mx-auto">
             <div class="bg-surface rounded-xl border border-border p-6">
-                <h3 class="font-semibold text-text mb-4">Langganan Aktif</h3>
+                <h3 class="font-semibold text-text mb-4">{{ __('subscription.active_subscription') }}</h3>
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-lg font-medium text-text">{{ $currentSubscription->plan->name }}</p>
                         <p class="text-sm text-muted">
-                            Berakhir: {{ $currentSubscription->ends_at?->format('d M Y') ?? '-' }}
+                            {{ __('subscription.ends_at') }}: {{ $currentSubscription->ends_at?->format('d M Y') ?? '-' }}
                             @if($currentSubscription->daysRemaining() <= 7 && $currentSubscription->daysRemaining() > 0)
-                                <span class="text-warning">({{ $currentSubscription->daysRemaining() }} hari lagi)</span>
+                                <span class="text-warning">({{ __('subscription.days_remaining', ['days' => $currentSubscription->daysRemaining()]) }})</span>
                             @endif
                         </p>
                     </div>
                     <a href="{{ route('subscription.index') }}" class="text-primary hover:underline text-sm">
-                        Kelola Langganan
+                        {{ __('subscription.manage_subscription_link') }}
                     </a>
                 </div>
             </div>
@@ -137,6 +149,7 @@
             const monthlyPrices = document.querySelectorAll('.price-monthly');
             const yearlyPrices = document.querySelectorAll('.price-yearly');
             const billingInputs = document.querySelectorAll('.billing-cycle-input');
+            const upgradeBtns = document.querySelectorAll('.plan-upgrade-btn');
 
             toggleBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -154,6 +167,15 @@
                     }
 
                     billingInputs.forEach(input => input.value = cycle);
+
+                    // Update upgrade links
+                    upgradeBtns.forEach(link => {
+                        if (cycle === 'yearly') {
+                            link.href = link.dataset.yearlyUrl;
+                        } else {
+                            link.href = link.dataset.monthlyUrl;
+                        }
+                    });
                 });
             });
 

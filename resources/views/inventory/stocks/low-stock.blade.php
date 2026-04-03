@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Low Stock Items - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.low_stock') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Low Stock')
+    @section('page-title', __('inventory.low_stock'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.stocks.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Low Stock Items</h2>
-                <p class="text-muted mt-1">Items below reorder level</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.low_stock') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.items_low_stock', ['count' => $lowStockItems->count()]) }}</p>
             </div>
         </div>
     </x-slot>
@@ -19,12 +19,12 @@
         @if($lowStockItems->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Item</x-th>
-                    <x-th>SKU</x-th>
-                    <x-th align="right">Total Stock</x-th>
-                    <x-th align="right">Reorder Level</x-th>
-                    <x-th align="right">Reorder Qty</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('inventory.item') }}</x-th>
+                    <x-th>{{ __('inventory.sku') }}</x-th>
+                    <x-th align="right">{{ __('inventory.current_stock') }}</x-th>
+                    <x-th align="right">{{ __('inventory.reorder_level') }}</x-th>
+                    <x-th align="right">{{ __('inventory.reorder_quantity') }}</x-th>
+                    <x-th align="right">{{ __('inventory.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($lowStockItems as $item)
@@ -55,7 +55,7 @@
                         <x-td align="right">{{ number_format($item->reorder_qty ?? 0, 2) }}</x-td>
                         <x-td align="right">
                             <x-button href="{{ route('inventory.purchase-orders.create') }}" variant="outline-secondary" size="sm">
-                                Create PO
+                                {{ __('inventory.create_po') }}
                             </x-button>
                         </x-td>
                     </tr>
@@ -63,8 +63,8 @@
             </x-table>
         @else
             <x-empty-state
-                title="No low stock items"
-                description="All items are above their reorder levels."
+                :title="__('inventory.no_items_found')"
+                :description="__('inventory.no_stock_description')"
                 icon="check-circle"
             />
         @endif

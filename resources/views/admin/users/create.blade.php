@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Create User - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.create_user') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Create User')
+    @section('page-title', __('admin.create_user'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('admin.users.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('app.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Create User</h2>
-                <p class="text-muted mt-1">Add a new staff member</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.create_user') }}</h2>
+                <p class="text-muted mt-1">{{ __('admin.add_new_staff') }}</p>
             </div>
         </div>
     </x-slot>
@@ -22,8 +22,8 @@
 
                 <x-input
                     name="name"
-                    label="Full Name"
-                    placeholder="Enter full name"
+                    label="{{ __('admin.full_name') }}"
+                    placeholder="{{ __('admin.enter_full_name') }}"
                     required
                 />
 
@@ -31,23 +31,23 @@
                     <x-input
                         type="email"
                         name="email"
-                        label="Email Address"
-                        placeholder="Enter email"
+                        label="{{ __('admin.email') }}"
+                        placeholder="{{ __('admin.enter_email') }}"
                         required
                     />
 
                     <x-input
                         type="tel"
                         name="phone"
-                        label="Phone Number"
-                        placeholder="Enter phone number"
+                        label="{{ __('admin.phone') }}"
+                        placeholder="{{ __('admin.enter_phone') }}"
                     />
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-text mb-1.5">
-                            Password <span class="text-danger">*</span>
+                            {{ __('admin.password') }} <span class="text-danger">*</span>
                         </label>
                         <input type="password"
                                name="password"
@@ -56,7 +56,7 @@
                                class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
                                       focus:ring-2 focus:ring-accent/20 focus:border-accent
                                       placeholder:text-muted transition-colors"
-                               placeholder="Create password">
+                               placeholder="{{ __('admin.create_password') }}">
                         @error('password')
                             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
                         @enderror
@@ -64,7 +64,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-text mb-1.5">
-                            Confirm Password <span class="text-danger">*</span>
+                            {{ __('admin.confirm_password') }} <span class="text-danger">*</span>
                         </label>
                         <input type="password"
                                name="password_confirmation"
@@ -73,14 +73,14 @@
                                class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
                                       focus:ring-2 focus:ring-accent/20 focus:border-accent
                                       placeholder:text-muted transition-colors"
-                               placeholder="Confirm password">
+                               placeholder="{{ __('admin.confirm_password') }}">
                     </div>
                 </div>
 
                 <!-- Roles -->
                 <div>
                     <label class="block text-sm font-medium text-text mb-2">
-                        Roles <span class="text-danger">*</span>
+                        {{ __('admin.roles') }} <span class="text-danger">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
                         @foreach($roles as $role)
@@ -108,7 +108,7 @@
                 @if($tenants->count() > 0)
                     <div>
                         <label class="block text-sm font-medium text-text mb-1.5">
-                            Tenant <span class="text-danger">*</span>
+                            {{ __('admin.tenant') }} <span class="text-danger">*</span>
                         </label>
                         <select name="tenant_id"
                                 x-model="selectedTenant"
@@ -116,7 +116,7 @@
                                 class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
                                        focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
                                 required>
-                            <option value="">-- Select Tenant --</option>
+                            <option value="">-- {{ __('admin.select_tenant') }} --</option>
                             @foreach($tenants as $tenant)
                                 <option value="{{ $tenant->id }}" @selected(old('tenant_id') == $tenant->id)>
                                     {{ $tenant->name }} ({{ $tenant->code }})
@@ -131,7 +131,7 @@
                     <!-- Dynamic Outlets based on selected Tenant -->
                     <div x-show="outlets.length > 0" x-cloak>
                         <label class="block text-sm font-medium text-text mb-2">
-                            Assigned Outlets
+                            {{ __('admin.assigned_outlets') }}
                         </label>
                         <div class="grid grid-cols-2 gap-2">
                             <template x-for="outlet in outlets" :key="outlet.id">
@@ -147,7 +147,7 @@
                                 </label>
                             </template>
                         </div>
-                        <p class="mt-1.5 text-sm text-muted">First selected outlet will be the default.</p>
+                        <p class="mt-1.5 text-sm text-muted">{{ __('admin.first_outlet_default') }}</p>
                     </div>
 
                     <!-- Loading indicator -->
@@ -156,19 +156,19 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span class="text-sm">Loading outlets...</span>
+                        <span class="text-sm">{{ __('admin.loading_outlets') }}</span>
                     </div>
 
                     <!-- No outlets message -->
                     <div x-show="selectedTenant && !loading && outlets.length === 0" class="text-sm text-warning bg-warning/10 p-3 rounded-lg">
-                        No active outlets found for this tenant.
+                        {{ __('admin.no_outlets_for_tenant') }}
                     </div>
                 @else
                     <!-- Non-Super Admin: Show outlets directly -->
                     @if($outlets->count() > 0)
                         <div>
                             <label class="block text-sm font-medium text-text mb-2">
-                                Assigned Outlets
+                                {{ __('admin.assigned_outlets') }}
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 @foreach($outlets as $outlet)
@@ -185,24 +185,24 @@
                                     </label>
                                 @endforeach
                             </div>
-                            <p class="mt-1.5 text-sm text-muted">First selected outlet will be the default.</p>
+                            <p class="mt-1.5 text-sm text-muted">{{ __('admin.first_outlet_default') }}</p>
                         </div>
                     @endif
                 @endif
 
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive users cannot log in"
+                    label="{{ __('app.active') }}"
+                    hint="{{ __('admin.inactive_cannot_login') }}"
                     checked
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('admin.users.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('app.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Create User
+                        {{ __('admin.create_user') }}
                     </x-button>
                 </div>
             </form>

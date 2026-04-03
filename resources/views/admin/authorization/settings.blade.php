@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">Authorization Settings - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.authorization_settings') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Authorization Settings')
+    @section('page-title', __('admin.authorization_settings'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
@@ -9,8 +9,8 @@
                 <x-icon name="arrow-left" class="w-4 h-4" />
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Authorization Settings</h2>
-                <p class="text-muted mt-1">Configure PIN authorization requirements for sensitive actions</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.authorization_settings') }}</h2>
+                <p class="text-muted mt-1">{{ __('admin.configure_pin_auth') }}</p>
             </div>
         </div>
     </x-slot>
@@ -27,8 +27,8 @@
                         <x-icon name="shield-check" class="w-5 h-5 text-danger" />
                     </div>
                     <div>
-                        <h3 class="font-semibold text-lg">Actions Requiring SPV Authorization</h3>
-                        <p class="text-sm text-muted">Select which actions require supervisor PIN approval</p>
+                        <h3 class="font-semibold text-lg">{{ __('admin.actions_requiring_auth') }}</h3>
+                        <p class="text-sm text-muted">{{ __('admin.select_actions_requiring_auth') }}</p>
                     </div>
                 </div>
 
@@ -42,8 +42,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Void Transaction</span>
-                            <p class="text-sm text-muted">Cancel a completed transaction</p>
+                            <span class="font-medium text-text">{{ __('admin.void_transaction_label') }}</span>
+                            <p class="text-sm text-muted">{{ __('admin.void_transaction_desc') }}</p>
                         </div>
                     </label>
 
@@ -56,8 +56,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Refund</span>
-                            <p class="text-sm text-muted">Process customer refunds</p>
+                            <span class="font-medium text-text">{{ __('admin.refund_label') }}</span>
+                            <p class="text-sm text-muted">{{ __('admin.refund_desc') }}</p>
                         </div>
                     </label>
 
@@ -70,8 +70,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Cancel Order</span>
-                            <p class="text-sm text-muted">Cancel order before payment</p>
+                            <span class="font-medium text-text">{{ __('admin.cancel_order_label') }}</span>
+                            <p class="text-sm text-muted">{{ __('admin.cancel_order_desc') }}</p>
                         </div>
                     </label>
 
@@ -84,8 +84,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Price Override</span>
-                            <p class="text-sm text-muted">Change item price manually</p>
+                            <span class="font-medium text-text">{{ __('admin.price_override_label') }}</span>
+                            <p class="text-sm text-muted">{{ __('admin.price_override_desc') }}</p>
                         </div>
                     </label>
 
@@ -98,8 +98,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">No Sale (Open Drawer)</span>
-                            <p class="text-sm text-muted">Open cash drawer without sale</p>
+                            <span class="font-medium text-text">{{ __('admin.no_sale_label') }}</span>
+                            <p class="text-sm text-muted">{{ __('admin.no_sale_desc') }}</p>
                         </div>
                     </label>
 
@@ -112,8 +112,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Reprint Receipt</span>
-                            <p class="text-sm text-muted">Print receipt again</p>
+                            <span class="font-medium text-text">{{ __('admin.reprint_label') }}</span>
+                            <p class="text-sm text-muted">{{ __('admin.reprint_desc') }}</p>
                         </div>
                     </label>
                 </div>
@@ -129,10 +129,10 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div class="flex-1">
-                            <span class="font-medium text-text">Manual Discount</span>
-                            <p class="text-sm text-muted mb-3">Require authorization for discounts above threshold</p>
+                            <span class="font-medium text-text">{{ __('admin.manual_discount_label') }}</span>
+                            <p class="text-sm text-muted mb-3">{{ __('admin.manual_discount_desc') }}</p>
                             <div class="flex items-center gap-2">
-                                <span class="text-sm text-muted">Threshold:</span>
+                                <span class="text-sm text-muted">{{ __('admin.threshold') }}:</span>
                                 <input
                                     type="number"
                                     name="discount_threshold_percent"
@@ -156,23 +156,23 @@
                         <x-icon name="key" class="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h3 class="font-semibold text-lg">PIN Settings</h3>
-                        <p class="text-sm text-muted">Configure PIN security settings</p>
+                        <h3 class="font-semibold text-lg">{{ __('admin.pin_settings') }}</h3>
+                        <p class="text-sm text-muted">{{ __('admin.configure_pin_security') }}</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-text mb-1">PIN Length</label>
+                        <label class="block text-sm font-medium text-text mb-1">{{ __('admin.pin_length') }}</label>
                         <x-select name="pin_length">
-                            <option value="4" @selected(old('pin_length', $settings->pin_length) == 4)>4 digits</option>
-                            <option value="6" @selected(old('pin_length', $settings->pin_length) == 6)>6 digits</option>
+                            <option value="4" @selected(old('pin_length', $settings->pin_length) == 4)>{{ __('admin.digits', ['count' => 4]) }}</option>
+                            <option value="6" @selected(old('pin_length', $settings->pin_length) == 6)>{{ __('admin.digits', ['count' => 6]) }}</option>
                         </x-select>
-                        <p class="text-xs text-muted mt-1">Number of digits for PIN</p>
+                        <p class="text-xs text-muted mt-1">{{ __('admin.number_of_digits') }}</p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-text mb-1">Max Attempts</label>
+                        <label class="block text-sm font-medium text-text mb-1">{{ __('admin.max_attempts') }}</label>
                         <x-input
                             type="number"
                             name="max_pin_attempts"
@@ -180,11 +180,11 @@
                             min="1"
                             max="10"
                         />
-                        <p class="text-xs text-muted mt-1">Failed attempts before lockout</p>
+                        <p class="text-xs text-muted mt-1">{{ __('admin.failed_attempts_before_lockout') }}</p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-text mb-1">Lockout Duration</label>
+                        <label class="block text-sm font-medium text-text mb-1">{{ __('admin.lockout_duration') }}</label>
                         <div class="flex items-center gap-2">
                             <x-input
                                 type="number"
@@ -193,9 +193,9 @@
                                 min="1"
                                 max="60"
                             />
-                            <span class="text-sm text-muted">minutes</span>
+                            <span class="text-sm text-muted">{{ __('admin.minutes') }}</span>
                         </div>
-                        <p class="text-xs text-muted mt-1">Duration after max attempts</p>
+                        <p class="text-xs text-muted mt-1">{{ __('admin.duration_after_max_attempts') }}</p>
                     </div>
                 </div>
             </x-card>
@@ -208,8 +208,8 @@
                             <x-icon name="users" class="w-5 h-5 text-success" />
                         </div>
                         <div>
-                            <h3 class="font-semibold text-lg">Authorized Users</h3>
-                            <p class="text-sm text-muted">Users who can authorize with their PIN</p>
+                            <h3 class="font-semibold text-lg">{{ __('admin.authorized_users') }}</h3>
+                            <p class="text-sm text-muted">{{ __('admin.users_can_authorize') }}</p>
                         </div>
                     </div>
                 </div>
@@ -227,25 +227,25 @@
                                         <p class="text-sm text-muted">{{ $authorizer->roles->pluck('name')->join(', ') }}</p>
                                     </div>
                                 </div>
-                                <x-badge type="success">PIN Active</x-badge>
+                                <x-badge type="success">{{ __('admin.pin_active') }}</x-badge>
                             </div>
                         @endforeach
                     </div>
                 @else
                     <div class="text-center py-8">
                         <x-icon name="user-plus" class="w-12 h-12 text-muted mx-auto mb-3" />
-                        <p class="text-muted">No users have set up their PIN yet.</p>
-                        <p class="text-sm text-muted mt-1">Supervisors and managers need to set their PIN in their profile.</p>
+                        <p class="text-muted">{{ __('admin.no_users_with_pin') }}</p>
+                        <p class="text-sm text-muted mt-1">{{ __('admin.users_need_pin') }}</p>
                     </div>
                 @endif
             </x-card>
 
             <div class="flex items-center justify-end gap-3">
                 <x-button href="{{ route('admin.dashboard') }}" variant="secondary">
-                    Cancel
+                    {{ __('app.cancel') }}
                 </x-button>
                 <x-button type="submit" icon="check">
-                    Save Settings
+                    {{ __('admin.save_settings') }}
                 </x-button>
             </div>
         </form>

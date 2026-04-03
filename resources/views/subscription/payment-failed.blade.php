@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Pembayaran Gagal - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('subscription.payment_failed') }} - Ultimate POS</x-slot>
 
     <div class="min-h-[60vh] flex items-center justify-center">
         <div class="text-center max-w-md mx-auto p-8">
@@ -7,29 +7,28 @@
                 <x-icon name="x-circle" class="w-12 h-12 text-danger" />
             </div>
 
-            <h1 class="text-2xl font-bold text-text mb-4">Pembayaran Gagal</h1>
+            <h1 class="text-2xl font-bold text-text mb-4">{{ __('subscription.payment_failed') }}</h1>
 
             <p class="text-muted mb-8">
-                Maaf, pembayaran Anda tidak dapat diproses.
-                Silakan coba lagi atau gunakan metode pembayaran lain.
+                {{ __('subscription.payment_failed_message') }}
             </p>
 
             <div class="flex flex-col gap-3">
                 <a href="{{ route('subscription.plans') }}"
                    class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors">
                     <x-icon name="arrow-path" class="w-5 h-5" />
-                    Coba Lagi
+                    {{ __('subscription.try_again') }}
                 </a>
 
                 <a href="{{ route('dashboard') }}"
                    class="inline-flex items-center justify-center gap-2 px-6 py-3 border border-border text-text rounded-lg hover:bg-secondary-50 transition-colors">
                     <x-icon name="home" class="w-5 h-5" />
-                    Ke Dashboard
+                    {{ __('subscription.go_to_dashboard') }}
                 </a>
             </div>
 
             <p class="text-sm text-muted mt-8">
-                Butuh bantuan? Hubungi support kami di
+                {{ __('subscription.need_help') }}
                 <a href="mailto:support@ultimatepos.id" class="text-primary hover:underline">support@ultimatepos.id</a>
             </p>
         </div>

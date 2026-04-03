@@ -15,7 +15,7 @@
     $currentRoute = request()->route()->getName() ?? '';
 
     // Default: pos, menu and inventory are open (for dashboard)
-    $openAccordions = ['pos' => true, 'menu' => true, 'inventory' => true];
+    $openAccordions = ['pos' => true, 'menu' => true, 'inventory' => true, 'settings' => false, 'superadmin' => true];
 
     // Also open the section that matches current route
     if (str_starts_with($currentRoute, 'pos.') || str_starts_with($currentRoute, 'transactions.') || str_starts_with($currentRoute, 'customers.')) {
@@ -26,11 +26,30 @@
         $openAccordions['reports'] = true;
     } elseif (str_starts_with($currentRoute, 'admin.') && !in_array($currentRoute, ['admin.dashboard', 'dashboard'])) {
         $openAccordions['admin'] = true;
+    } elseif (str_starts_with($currentRoute, 'subscription.') || str_starts_with($currentRoute, 'profile.') || $currentRoute === 'admin.my-pin') {
+        $openAccordions['settings'] = true;
     }
+
+    // Get feature flags from sidebar composer
+    $features = $sidebarFeatures ?? [];
+    $hasInventoryBasic = $features['inventory_basic'] ?? false;
+    $hasInventoryAdvanced = $features['inventory_advanced'] ?? false;
+    $hasRecipeBom = $features['recipe_bom'] ?? false;
+    $hasStockTransfer = $features['stock_transfer'] ?? false;
+
+    // Role-based access flags
+    $user = auth()->user();
+    $isSuperAdmin = $user->isSuperAdmin();
+    $canAccessMenu = $user->canAccessMenu();
+    $canAccessPricing = $user->canAccessPricing();
+    $canAccessInventory = $user->canAccessInventory();
+    $canAccessAdmin = $user->canAccessAdmin();
+    $canAccessReports = $user->canAccessReports();
 @endphp
 
 <!-- Sidebar -->
-<aside class="fixed inset-y-0 left-0 z-50 flex flex-col bg-primary text-white transition-all duration-300 ease-in-out"
+<aside class="fixed inset-y-0 left-0 z-50 flex flex-col text-white transition-all duration-300 ease-in-out"
+       style="background: linear-gradient(180deg, #7C3AED 0%, #6B21A8 100%);"
        :class="{
            'w-64': sidebarOpen,
            'w-20': !sidebarOpen,
@@ -40,7 +59,7 @@
        x-data="{ openSections: {{ json_encode($openAccordions) }} }">
 
     <!-- Logo -->
-    <div class="flex items-center justify-between h-16 px-4 border-b border-primary-400/30">
+    <div class="flex items-center justify-between h-16 px-4 border-b border-white/10">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
             <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,6 +117,7 @@
             </a>
         </div>
 
+        @if(!$isSuperAdmin)
         <!-- POS Section -->
         <div class="mb-2">
             <button @click="openSections.pos = !openSections.pos"
@@ -125,7 +145,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Buka POS</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.open_pos') }}</span>
                 </a>
 
                 <a href="{{ route('pos.sessions.index') }}"
@@ -135,7 +155,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Sesi Kasir</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.cashier_sessions') }}</span>
                 </a>
 
                 <a href="{{ route('transactions.index') }}"
@@ -145,7 +165,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Riwayat Transaksi</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.transaction_history') }}</span>
                 </a>
 
                 <a href="{{ route('customers.index') }}"
@@ -155,12 +175,15 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Pelanggan</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.customers') }}</span>
                 </a>
             </div>
         </div>
 
         <!-- Pricing Section -->
+        @endif
+
+        @if(!$isSuperAdmin && $canAccessPricing)
         <div class="mb-2">
             <button @click="openSections.pricing = !openSections.pricing"
                     class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -214,7 +237,9 @@
                 </a>
             </div>
         </div>
+        @endif
 
+        @if(!$isSuperAdmin && $canAccessMenu)
         <!-- Menu Section -->
         <div class="mb-2">
             <button @click="openSections.menu = !openSections.menu"
@@ -291,8 +316,10 @@
                 </a>
             </div>
         </div>
+        @endif
 
-        <!-- Inventory Section -->
+        {{-- Inventory Section - Only show if has inventory_basic feature and has access --}}
+        @if($hasInventoryBasic && !$isSuperAdmin && $canAccessInventory)
         <div class="mb-2">
             <button @click="openSections.inventory = !openSections.inventory"
                     class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -378,7 +405,8 @@
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('inventory.suppliers') }}</span>
                 </a>
 
-                <!-- Purchase Orders -->
+                {{-- Purchase Orders - Requires inventory_advanced --}}
+                @if($hasInventoryAdvanced)
                 <a href="{{ route('inventory.purchase-orders.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
                           {{ request()->routeIs('inventory.purchase-orders.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
@@ -399,6 +427,7 @@
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.goods_receives') }}</span>
                 </a>
+                @endif
 
                 <!-- Stock Adjustments -->
                 <a href="{{ route('inventory.stock-adjustments.index') }}"
@@ -422,7 +451,8 @@
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('inventory.stock_opname') }}</span>
                 </a>
 
-                <!-- Stock Transfers -->
+                {{-- Stock Transfers - Requires stock_transfer feature --}}
+                @if($hasStockTransfer)
                 <a href="{{ route('inventory.stock-transfers.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
                           {{ request()->routeIs('inventory.stock-transfers.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
@@ -432,8 +462,10 @@
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.stock_transfers') }}</span>
                 </a>
+                @endif
 
-                <!-- Recipes -->
+                {{-- Recipes - Requires recipe_bom feature --}}
+                @if($hasRecipeBom)
                 <a href="{{ route('inventory.recipes.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
                           {{ request()->routeIs('inventory.recipes.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
@@ -443,6 +475,7 @@
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.recipes') }}</span>
                 </a>
+                @endif
 
                 <!-- Waste Logs -->
                 <a href="{{ route('inventory.waste-logs.index') }}"
@@ -455,7 +488,8 @@
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.waste_logs') }}</span>
                 </a>
 
-                <!-- Stock Batches -->
+                {{-- Stock Batches - Requires inventory_advanced --}}
+                @if($hasInventoryAdvanced)
                 <a href="{{ route('inventory.batches.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
                           {{ request()->routeIs('inventory.batches.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
@@ -465,10 +499,13 @@
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('inventory.batches') }}</span>
                 </a>
+                @endif
             </div>
         </div>
+        @endif
 
-        <!-- Reports Section -->
+        {{-- Reports Section - Only show if has inventory_basic feature and has access --}}
+        @if($hasInventoryBasic && !$isSuperAdmin && $canAccessReports)
         <div class="mb-2">
             <button @click="openSections.reports = !openSections.reports"
                     class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -544,8 +581,78 @@
                 </a>
             </div>
         </div>
+        @endif
 
-        <!-- Admin Section -->
+        {{-- Super Admin Section - Only for Super Admin --}}
+        @if($isSuperAdmin)
+        <div class="mb-2">
+            <button @click="openSections.superadmin = !openSections.superadmin"
+                    class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+                    x-show="sidebarOpen">
+                <span class="text-xs font-semibold text-primary-300 uppercase tracking-wider">{{ __('menu.subscription_management') }}</span>
+                <svg class="w-4 h-4 text-primary-300 transition-transform duration-200"
+                     :class="{ 'rotate-180': openSections.superadmin }"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <p class="px-3 text-xs font-semibold text-primary-300 uppercase tracking-wider mb-2"
+               x-show="!sidebarOpen" x-transition>
+                SUBS
+            </p>
+
+            <div x-show="openSections.superadmin || !sidebarOpen"
+                 x-collapse
+                 class="space-y-1 mt-1">
+                <!-- Subscription Plans -->
+                <a href="{{ route('admin.subscription-plans.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+                          {{ request()->routeIs('admin.subscription-plans.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.subscription_plans') }}</span>
+                </a>
+
+                <!-- All Subscriptions -->
+                <a href="{{ route('admin.subscriptions.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+                          {{ request()->routeIs('admin.subscriptions.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.subscriptions') }}</span>
+                </a>
+
+                <!-- All Invoices -->
+                <a href="{{ route('admin.invoices.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+                          {{ request()->routeIs('admin.invoices.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/>
+                    </svg>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.invoices') }}</span>
+                </a>
+
+                <!-- Tenants -->
+                <a href="{{ route('admin.tenants.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+                          {{ request()->routeIs('admin.tenants.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.tenants') }}</span>
+                </a>
+            </div>
+        </div>
+        @endif
+
+        {{-- Admin Section - For Tenant Users with Admin access --}}
+        @if(!$isSuperAdmin && $canAccessAdmin)
         <div class="mb-2">
             <button @click="openSections.admin = !openSections.admin"
                     class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -565,19 +672,6 @@
             <div x-show="openSections.admin || !sidebarOpen"
                  x-collapse
                  class="space-y-1 mt-1">
-                @if(auth()->user()->isSuperAdmin())
-                <!-- Tenants -->
-                <a href="{{ route('admin.tenants.index') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
-                          {{ request()->routeIs('admin.tenants.*') ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.tenants') }}</span>
-                </a>
-                @endif
-
                 <!-- Outlets -->
                 <a href="{{ route('admin.outlets.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
@@ -623,7 +717,30 @@
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('pos.spv_authorization') }}</span>
                 </a>
+            </div>
+        </div>
+        @endif
 
+        {{-- Settings Section --}}
+        <div class="mb-2">
+            <button @click="openSections.settings = !openSections.settings"
+                    class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+                    x-show="sidebarOpen">
+                <span class="text-xs font-semibold text-primary-300 uppercase tracking-wider">{{ __('menu.settings') }}</span>
+                <svg class="w-4 h-4 text-primary-300 transition-transform duration-200"
+                     :class="{ 'rotate-180': openSections.settings }"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <p class="px-3 text-xs font-semibold text-primary-300 uppercase tracking-wider mb-2"
+               x-show="!sidebarOpen" x-transition>
+                ⚙️
+            </p>
+
+            <div x-show="openSections.settings || !sidebarOpen"
+                 x-collapse
+                 class="space-y-1 mt-1">
                 @if(auth()->user()->canAuthorize())
                 <!-- My PIN -->
                 <a href="{{ route('admin.my-pin') }}"
@@ -637,7 +754,7 @@
                 </a>
                 @endif
 
-                <!-- Settings -->
+                <!-- Business Settings -->
                 <a href="#"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-primary-100 hover:bg-white/5 hover:text-white">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -648,7 +765,7 @@
                     <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('app.settings') }}</span>
                 </a>
 
-                @if(!auth()->user()->isSuperAdmin())
+                @if(!$isSuperAdmin)
                 <!-- Subscription -->
                 <a href="{{ route('subscription.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
@@ -657,9 +774,33 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                     </svg>
-                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">Langganan</span>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.subscription') }}</span>
                 </a>
                 @endif
+
+                <!-- Profile -->
+                <a href="{{ route('admin.users.edit', auth()->id()) }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+                          {{ request()->routeIs('admin.users.edit') && request()->route('user') == auth()->id() ? 'bg-white/10 text-white' : 'text-primary-100 hover:bg-white/5 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('app.my_profile') }}</span>
+                </a>
+
+                <!-- Logout -->
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit"
+                       class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-primary-100 hover:bg-white/5 hover:text-white">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        <span x-show="sidebarOpen" x-transition class="whitespace-nowrap">{{ __('menu.logout') }}</span>
+                    </button>
+                </form>
             </div>
         </div>
     </nav>

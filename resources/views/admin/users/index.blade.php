@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Users - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.users') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Users')
+    @section('page-title', __('admin.users'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">User Management</h2>
-                <p class="text-muted mt-1">Manage staff and user accounts</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.user_management') }}</h2>
+                <p class="text-muted mt-1">{{ __('admin.manage_users') }}</p>
             </div>
             <x-button href="{{ route('admin.users.create') }}" icon="plus">
-                Add User
+                {{ __('admin.add_user') }}
             </x-button>
         </div>
     </x-slot>
@@ -21,18 +21,18 @@
             <x-input
                 type="search"
                 name="search"
-                placeholder="Search users..."
+                placeholder="{{ __('admin.search_users') }}"
                 :value="request('search')"
                 class="w-64"
             />
             <x-select name="status" class="w-40">
-                <option value="">All Status</option>
-                <option value="active" @selected(request('status') === 'active')>Active</option>
-                <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                <option value="">{{ __('admin.all_status') }}</option>
+                <option value="active" @selected(request('status') === 'active')>{{ __('app.active') }}</option>
+                <option value="inactive" @selected(request('status') === 'inactive')>{{ __('app.inactive') }}</option>
             </x-select>
-            <x-button type="submit" variant="secondary">Filter</x-button>
+            <x-button type="submit" variant="secondary">{{ __('app.filter') }}</x-button>
             @if(request()->hasAny(['search', 'status', 'role']))
-                <x-button href="{{ route('admin.users.index') }}" variant="ghost">Clear</x-button>
+                <x-button href="{{ route('admin.users.index') }}" variant="ghost">{{ __('app.clear') }}</x-button>
             @endif
         </form>
 
@@ -40,15 +40,15 @@
         @if($users->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>User</x-th>
-                    <x-th>Roles</x-th>
-                    <x-th>Outlets</x-th>
+                    <x-th>{{ __('admin.user') }}</x-th>
+                    <x-th>{{ __('admin.roles') }}</x-th>
+                    <x-th>{{ __('admin.outlets') }}</x-th>
                     @if(auth()->user()->isSuperAdmin())
-                        <x-th>Tenant</x-th>
+                        <x-th>{{ __('admin.tenant') }}</x-th>
                     @endif
-                    <x-th align="center">Status</x-th>
-                    <x-th align="center">Last Login</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th align="center">{{ __('app.status') }}</x-th>
+                    <x-th align="center">{{ __('admin.last_login') }}</x-th>
+                    <x-th align="right">{{ __('app.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($users as $user)
@@ -89,33 +89,33 @@
                         </x-td>
                         @if(auth()->user()->isSuperAdmin())
                             <x-td>
-                                <span class="text-sm text-muted">{{ $user->tenant?->name ?? 'System' }}</span>
+                                <span class="text-sm text-muted">{{ $user->tenant?->name ?? __('admin.system') }}</span>
                             </x-td>
                         @endif
                         <x-td align="center">
                             @if($user->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('app.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('app.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="center">
                             @if($user->last_login_at)
                                 <span class="text-xs text-muted">{{ $user->last_login_at->diffForHumans() }}</span>
                             @else
-                                <span class="text-xs text-muted">Never</span>
+                                <span class="text-xs text-muted">{{ __('admin.never') }}</span>
                             @endif
                         </x-td>
                         <x-td align="right">
                             <div class="flex items-center justify-end gap-1">
                                 <a href="{{ route('admin.users.show', $user) }}"
                                    class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
-                                   title="View Details">
+                                   title="{{ __('app.view') }}">
                                     <x-icon name="eye" class="w-4 h-4" />
                                 </a>
                                 <a href="{{ route('admin.users.edit', $user) }}"
                                    class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
-                                   title="Edit">
+                                   title="{{ __('app.edit') }}">
                                     <x-icon name="pencil" class="w-4 h-4" />
                                 </a>
                                 @if($user->id !== auth()->id())
@@ -124,12 +124,12 @@
                                         @method('DELETE')
                                         <button type="button"
                                                 class="p-2 text-danger-500 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-colors"
-                                                title="Delete"
+                                                title="{{ __('app.delete') }}"
                                                 x-on:click="$dispatch('confirm', {
-                                                    title: 'Delete User',
-                                                    message: 'Are you sure you want to delete {{ $user->name }}? This action cannot be undone.',
-                                                    confirmText: 'Yes, Delete',
-                                                    cancelText: 'Cancel',
+                                                    title: '{{ __('admin.delete_user') }}',
+                                                    message: '{{ __('admin.confirm_delete_user', ['name' => $user->name]) }}',
+                                                    confirmText: '{{ __('app.yes_delete') }}',
+                                                    cancelText: '{{ __('app.cancel') }}',
                                                     variant: 'danger',
                                                     onConfirm: () => $refs.deleteUser{{ $loop->index }}.submit()
                                                 })">
@@ -148,12 +148,12 @@
             </div>
         @else
             <x-empty-state
-                title="No users found"
-                description="Get started by creating your first user."
+                title="{{ __('admin.no_users_found') }}"
+                description="{{ __('admin.no_users_desc') }}"
                 icon="users"
             >
                 <x-button href="{{ route('admin.users.create') }}" icon="plus">
-                    Add User
+                    {{ __('admin.add_user') }}
                 </x-button>
             </x-empty-state>
         @endif

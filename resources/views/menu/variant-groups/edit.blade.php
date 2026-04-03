@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit {{ $variantGroup->name }} - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('products.edit_variant_group') }} {{ $variantGroup->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit Variant Group')
+    @section('page-title', __('products.edit_variant_group'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('menu.variant-groups.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('products.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Variant Group</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('products.edit_variant_group') }}</h2>
                 <p class="text-muted mt-1">{{ $variantGroup->name }}</p>
             </div>
         </div>
@@ -22,37 +22,37 @@
         <div class="grid grid-cols-3 gap-6">
             <div class="col-span-2 space-y-6">
                 <!-- Basic Information -->
-                <x-card title="Group Information">
+                <x-card title="{{ __('products.group_information') }}">
                     <div class="space-y-4">
-                        <x-form-group label="Group Name" name="name" required>
+                        <x-form-group label="{{ __('products.group_name') }}" name="name" required>
                             <x-input
                                 name="name"
                                 :value="old('name', $variantGroup->name)"
-                                placeholder="e.g., Size, Ice Level, Sugar Level"
+                                placeholder="{{ __('products.variant_name_placeholder') }}"
                                 required
                             />
                         </x-form-group>
 
-                        <x-form-group label="Description" name="description">
+                        <x-form-group label="{{ __('products.description') }}" name="description">
                             <x-textarea
                                 name="description"
                                 :value="old('description', $variantGroup->description)"
-                                placeholder="Optional description..."
+                                placeholder="{{ __('products.description_placeholder') }}"
                                 rows="2"
                             />
                         </x-form-group>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <x-form-group label="Display Type" name="display_type">
+                            <x-form-group label="{{ __('products.display_type') }}" name="display_type">
                                 <x-select name="display_type" x-model="displayType">
-                                    <option value="button" @selected(old('display_type', $variantGroup->display_type) === 'button')>Button</option>
-                                    <option value="dropdown" @selected(old('display_type', $variantGroup->display_type) === 'dropdown')>Dropdown</option>
-                                    <option value="color" @selected(old('display_type', $variantGroup->display_type) === 'color')>Color Swatch</option>
-                                    <option value="image" @selected(old('display_type', $variantGroup->display_type) === 'image')>Image</option>
+                                    <option value="button" @selected(old('display_type', $variantGroup->display_type) === 'button')>{{ __('products.display_button') }}</option>
+                                    <option value="dropdown" @selected(old('display_type', $variantGroup->display_type) === 'dropdown')>{{ __('products.display_dropdown') }}</option>
+                                    <option value="color" @selected(old('display_type', $variantGroup->display_type) === 'color')>{{ __('products.display_color') }}</option>
+                                    <option value="image" @selected(old('display_type', $variantGroup->display_type) === 'image')>{{ __('products.display_image') }}</option>
                                 </x-select>
                             </x-form-group>
 
-                            <x-form-group label="Sort Order" name="sort_order">
+                            <x-form-group label="{{ __('products.sort_order') }}" name="sort_order">
                                 <x-input
                                     type="number"
                                     name="sort_order"
@@ -72,15 +72,15 @@
                                     {{ old('is_active', $variantGroup->is_active) ? 'checked' : '' }}
                                     class="rounded border-border text-accent focus:ring-accent"
                                 >
-                                <span class="text-sm font-medium text-text">Active</span>
+                                <span class="text-sm font-medium text-text">{{ __('products.active') }}</span>
                             </label>
                         </x-form-group>
                     </div>
                 </x-card>
 
                 <!-- Options -->
-                <x-card title="Variant Options">
-                    <p class="text-muted mb-4">Manage options for this variant group</p>
+                <x-card title="{{ __('products.variant_options') }}">
+                    <p class="text-muted mb-4">{{ __('products.manage_variant_options') }}</p>
 
                     <div class="space-y-3" x-ref="optionsContainer">
                         <template x-for="(option, index) in options" :key="option.id || index">
@@ -88,18 +88,18 @@
                                 <input type="hidden" :name="`options[${index}][id]`" :value="option.id">
                                 <div class="flex-1 grid grid-cols-3 gap-3">
                                     <div>
-                                        <label class="block text-xs text-muted mb-1">Option Name *</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.option_name_required') }}</label>
                                         <input
                                             type="text"
                                             :name="`options[${index}][name]`"
                                             x-model="option.name"
-                                            placeholder="e.g., Small"
+                                            placeholder="{{ __('products.option_placeholder') }}"
                                             class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                                             required
                                         >
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-muted mb-1">Price Adjustment</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.price_adjustment') }}</label>
                                         <div class="relative">
                                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">Rp</span>
                                             <input
@@ -113,7 +113,7 @@
                                         </div>
                                     </div>
                                     <div x-show="displayType === 'color'">
-                                        <label class="block text-xs text-muted mb-1">Color</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.color') }}</label>
                                         <input
                                             type="color"
                                             :name="`options[${index}][color_code]`"
@@ -122,7 +122,7 @@
                                         >
                                     </div>
                                     <div x-show="displayType !== 'color'">
-                                        <label class="block text-xs text-muted mb-1">Sort Order</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.sort_order') }}</label>
                                         <input
                                             type="number"
                                             :name="`options[${index}][sort_order]`"
@@ -142,7 +142,7 @@
                                             value="1"
                                             class="rounded border-border text-accent focus:ring-accent"
                                         >
-                                        Active
+                                        {{ __('products.active') }}
                                     </label>
                                     <button
                                         type="button"
@@ -158,7 +158,7 @@
                     </div>
 
                     <x-button type="button" variant="outline-secondary" size="sm" icon="plus" @click="addOption()" class="mt-4">
-                        Add Option
+                        {{ __('products.add_option') }}
                     </x-button>
                 </x-card>
             </div>
@@ -166,15 +166,15 @@
             <!-- Sidebar -->
             <div class="space-y-6">
                 <!-- Preview -->
-                <x-card title="Preview">
+                <x-card title="{{ __('products.preview') }}">
                     <div class="space-y-3">
-                        <p class="text-sm text-muted">How options will appear:</p>
+                        <p class="text-sm text-muted">{{ __('products.how_options_appear') }}</p>
 
                         <!-- Button Preview -->
                         <div x-show="displayType === 'button'" class="flex flex-wrap gap-2">
                             <template x-for="(option, index) in options.filter(o => o.is_active !== false)" :key="index">
                                 <button type="button" class="px-4 py-2 border-2 border-border rounded-lg hover:border-accent transition-colors" :class="index === 0 ? 'border-accent bg-accent/5' : ''">
-                                    <span x-text="option.name || 'Option ' + (index + 1)"></span>
+                                    <span x-text="option.name || '{{ __('products.option') }} ' + (index + 1)"></span>
                                 </button>
                             </template>
                         </div>
@@ -183,7 +183,7 @@
                         <div x-show="displayType === 'dropdown'">
                             <select class="w-full px-3 py-2 border border-border rounded-lg">
                                 <template x-for="(option, index) in options.filter(o => o.is_active !== false)" :key="index">
-                                    <option x-text="option.name || 'Option ' + (index + 1)"></option>
+                                    <option x-text="option.name || '{{ __('products.option') }} ' + (index + 1)"></option>
                                 </template>
                             </select>
                         </div>
@@ -208,7 +208,7 @@
 
                 <!-- Products Using -->
                 @if($variantGroup->products->count() > 0)
-                    <x-card title="Products Using This Group">
+                    <x-card title="{{ __('products.products_using_group') }}">
                         <div class="space-y-2 max-h-48 overflow-y-auto">
                             @foreach($variantGroup->products as $product)
                                 <a href="{{ route('menu.products.show', $product) }}" class="flex items-center gap-2 p-2 bg-secondary-50 rounded hover:bg-secondary-100 transition-colors">
@@ -221,18 +221,18 @@
                 @endif
 
                 <!-- Metadata -->
-                <x-card title="Information">
+                <x-card title="{{ __('products.information') }}">
                     <dl class="space-y-3 text-sm">
                         <div class="flex justify-between">
-                            <dt class="text-muted">Options</dt>
+                            <dt class="text-muted">{{ __('products.options') }}</dt>
                             <dd class="font-medium">{{ $variantGroup->options->count() }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-muted">Products</dt>
+                            <dt class="text-muted">{{ __('products.products') }}</dt>
                             <dd class="font-medium">{{ $variantGroup->products->count() }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-muted">Created</dt>
+                            <dt class="text-muted">{{ __('products.created') }}</dt>
                             <dd>{{ $variantGroup->created_at->format('d M Y') }}</dd>
                         </div>
                     </dl>
@@ -241,10 +241,10 @@
                 <!-- Actions -->
                 <div class="flex flex-col gap-3">
                     <x-button type="submit" icon="check" class="w-full">
-                        Update Variant Group
+                        {{ __('products.update_variant_group') }}
                     </x-button>
                     <x-button href="{{ route('menu.variant-groups.index') }}" variant="ghost" class="w-full">
-                        Cancel
+                        {{ __('products.cancel') }}
                     </x-button>
                 </div>
             </div>

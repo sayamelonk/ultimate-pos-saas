@@ -95,7 +95,7 @@
                         <dd>{{ $purchaseOrder->expected_date?->translatedFormat('d M Y') ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">{{ __('admin.outlet') }}</dt>
+                        <dt class="text-muted">{{ __('inventory.outlet') }}</dt>
                         <dd>{{ $purchaseOrder->outlet->name }}</dd>
                     </div>
                     <div class="flex justify-between">
@@ -116,11 +116,11 @@
                         <dd>{{ $purchaseOrder->supplier->contact_person ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">{{ __('app.phone') }}</dt>
+                        <dt class="text-muted">{{ __('inventory.phone') }}</dt>
                         <dd>{{ $purchaseOrder->supplier->phone ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">{{ __('app.email') }}</dt>
+                        <dt class="text-muted">{{ __('inventory.email') }}</dt>
                         <dd>{{ $purchaseOrder->supplier->email ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between">
@@ -136,9 +136,9 @@
                 <x-slot name="head">
                     <x-th>{{ __('inventory.item') }}</x-th>
                     <x-th>{{ __('inventory.sku') }}</x-th>
-                    <x-th align="right">{{ __('app.quantity') }}</x-th>
+                    <x-th align="right">{{ __('inventory.quantity') }}</x-th>
                     <x-th align="right">{{ __('inventory.unit_price') }}</x-th>
-                    <x-th align="right">{{ __('app.total') }}</x-th>
+                    <x-th align="right">{{ __('inventory.total') }}</x-th>
                     @if($purchaseOrder->status !== 'draft')
                         <x-th align="right">{{ __('inventory.received') }}</x-th>
                     @endif
@@ -172,7 +172,7 @@
                 @endforeach
 
                 <tr class="bg-secondary-50">
-                    <x-td colspan="{{ $purchaseOrder->status !== 'draft' ? 4 : 3 }}" class="text-right font-medium">{{ __('app.subtotal') }}</x-td>
+                    <x-td colspan="{{ $purchaseOrder->status !== 'draft' ? 4 : 3 }}" class="text-right font-medium">{{ __('inventory.subtotal') }}</x-td>
                     <x-td align="right" class="font-medium">Rp {{ number_format($purchaseOrder->subtotal, 0, ',', '.') }}</x-td>
                     @if($purchaseOrder->status !== 'draft')
                         <x-td></x-td>
@@ -180,7 +180,7 @@
                 </tr>
                 @if($purchaseOrder->tax_amount > 0)
                     <tr class="bg-secondary-50">
-                        <x-td colspan="{{ $purchaseOrder->status !== 'draft' ? 4 : 3 }}" class="text-right">{{ __('app.tax') }}</x-td>
+                        <x-td colspan="{{ $purchaseOrder->status !== 'draft' ? 4 : 3 }}" class="text-right">{{ __('inventory.tax') }}</x-td>
                         <x-td align="right">Rp {{ number_format($purchaseOrder->tax_amount, 0, ',', '.') }}</x-td>
                         @if($purchaseOrder->status !== 'draft')
                             <x-td></x-td>
@@ -188,7 +188,7 @@
                     </tr>
                 @endif
                 <tr class="bg-secondary-100">
-                    <x-td colspan="{{ $purchaseOrder->status !== 'draft' ? 4 : 3 }}" class="text-right font-bold">{{ __('app.total') }}</x-td>
+                    <x-td colspan="{{ $purchaseOrder->status !== 'draft' ? 4 : 3 }}" class="text-right font-bold">{{ __('inventory.total') }}</x-td>
                     <x-td align="right" class="font-bold">Rp {{ number_format($purchaseOrder->total ?? $purchaseOrder->subtotal, 0, ',', '.') }}</x-td>
                     @if($purchaseOrder->status !== 'draft')
                         <x-td></x-td>
@@ -198,7 +198,7 @@
         </x-card>
 
         @if($purchaseOrder->notes)
-            <x-card :title="__('app.notes')">
+            <x-card :title="__('inventory.notes')">
                 <p class="text-text">{{ $purchaseOrder->notes }}</p>
             </x-card>
         @endif
@@ -208,10 +208,10 @@
                 <x-table>
                     <x-slot name="head">
                         <x-th>{{ __('inventory.gr_number') }}</x-th>
-                        <x-th>{{ __('app.date') }}</x-th>
-                        <x-th>Invoice</x-th>
-                        <x-th align="center">{{ __('app.status') }}</x-th>
-                        <x-th align="right">{{ __('app.actions') }}</x-th>
+                        <x-th>{{ __('inventory.date') }}</x-th>
+                        <x-th>{{ __('inventory.invoice_number') }}</x-th>
+                        <x-th align="center">{{ __('inventory.status') }}</x-th>
+                        <x-th align="right">{{ __('inventory.actions') }}</x-th>
                     </x-slot>
 
                     @foreach($purchaseOrder->goodsReceives as $gr)
@@ -226,19 +226,19 @@
                             <x-td align="center">
                                 @switch($gr->status)
                                     @case('draft')
-                                        <x-badge type="secondary">{{ __('app.status_draft') }}</x-badge>
+                                        <x-badge type="secondary">{{ __('inventory.draft') }}</x-badge>
                                         @break
                                     @case('completed')
-                                        <x-badge type="success">{{ __('app.status_completed') }}</x-badge>
+                                        <x-badge type="success">{{ __('inventory.completed') }}</x-badge>
                                         @break
                                     @case('cancelled')
-                                        <x-badge type="danger">{{ __('app.status_cancelled') }}</x-badge>
+                                        <x-badge type="danger">{{ __('inventory.cancelled') }}</x-badge>
                                         @break
                                 @endswitch
                             </x-td>
                             <x-td align="right">
                                 <x-button href="{{ route('inventory.goods-receives.show', $gr) }}" variant="ghost" size="sm" icon="eye">
-                                    {{ __('app.view') }}
+                                    {{ __('inventory.view_details') }}
                                 </x-button>
                             </x-td>
                         </tr>

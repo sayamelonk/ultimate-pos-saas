@@ -1,20 +1,20 @@
 <x-app-layout>
-    <x-slot name="title">Stock Levels - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.stock_levels') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Stock Levels')
+    @section('page-title', __('inventory.stock_levels'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Stock Levels</h2>
-                <p class="text-muted mt-1">Monitor inventory stock across outlets</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.stock_levels') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.monitor_stock') }}</p>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('inventory.stocks.low') }}" variant="outline-secondary" icon="alert-triangle">
-                    Low Stock
+                    {{ __('inventory.low_stock') }}
                 </x-button>
                 <x-button href="{{ route('inventory.stocks.expiring') }}" variant="outline-secondary" icon="clock">
-                    Expiring Items
+                    {{ __('inventory.expiring_items') }}
                 </x-button>
             </div>
         </div>
@@ -28,12 +28,12 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search items..."
+                        placeholder="{{ __('inventory.search_items') }}"
                         :value="request('search')"
                     />
                 </div>
                 <x-select name="outlet_id" class="w-48">
-                    <option value="">All Outlets</option>
+                    <option value="">{{ __('inventory.all_outlets') }}</option>
                     @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                             {{ $outlet->name }}
@@ -41,16 +41,16 @@
                     @endforeach
                 </x-select>
                 <x-select name="status" class="w-40">
-                    <option value="">All Status</option>
-                    <option value="low" @selected(request('status') === 'low')>Low Stock</option>
-                    <option value="out" @selected(request('status') === 'out')>Out of Stock</option>
+                    <option value="">{{ __('inventory.all_status') }}</option>
+                    <option value="low" @selected(request('status') === 'low')>{{ __('inventory.low_stock') }}</option>
+                    <option value="out" @selected(request('status') === 'out')>{{ __('inventory.out_of_stock') }}</option>
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Filter
+                    {{ __('app.filter') }}
                 </x-button>
                 @if(request()->hasAny(['search', 'outlet_id', 'status']))
                     <x-button href="{{ route('inventory.stocks.index') }}" variant="ghost">
-                        Clear
+                        {{ __('app.clear') }}
                     </x-button>
                 @endif
             </form>
@@ -60,14 +60,14 @@
         @if($stocks->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Item</x-th>
-                    <x-th>Outlet</x-th>
-                    <x-th align="right">Quantity</x-th>
-                    <x-th align="right">Reserved</x-th>
-                    <x-th align="right">Available</x-th>
-                    <x-th align="right">Avg Cost</x-th>
-                    <x-th align="right">Value</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('inventory.item') }}</x-th>
+                    <x-th>{{ __('inventory.outlet') }}</x-th>
+                    <x-th align="right">{{ __('inventory.quantity') }}</x-th>
+                    <x-th align="right">{{ __('inventory.reserved') }}</x-th>
+                    <x-th align="right">{{ __('inventory.available') }}</x-th>
+                    <x-th align="right">{{ __('inventory.avg_cost') }}</x-th>
+                    <x-th align="right">{{ __('inventory.value') }}</x-th>
+                    <x-th align="right">{{ __('app.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($stocks as $stock)
@@ -101,7 +101,7 @@
                         <x-td align="right">Rp {{ number_format($stock->quantity * $stock->avg_cost, 0, ',', '.') }}</x-td>
                         <x-td align="right">
                             <x-button href="{{ route('inventory.stocks.show', $stock) }}" variant="ghost" size="sm" icon="eye">
-                                View
+                                {{ __('app.view') }}
                             </x-button>
                         </x-td>
                     </tr>
@@ -113,12 +113,12 @@
             </div>
         @else
             <x-empty-state
-                title="No stock records found"
-                description="Stock will appear here once you receive inventory."
+                title="{{ __('inventory.no_stock_records') }}"
+                description="{{ __('inventory.no_stock_description') }}"
                 icon="cube"
             >
                 <x-button href="{{ route('inventory.purchase-orders.create') }}" icon="plus">
-                    Create Purchase Order
+                    {{ __('inventory.create_po') }}
                 </x-button>
             </x-empty-state>
         @endif

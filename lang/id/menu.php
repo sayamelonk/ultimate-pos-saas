@@ -5,8 +5,15 @@ return [
     'dashboard' => 'Dasbor',
     'pos' => 'Kasir',
     'open_pos' => 'Buka Kasir',
+    'cashier_sessions' => 'Sesi Kasir',
     'transactions' => 'Transaksi',
     'transaction_history' => 'Riwayat Transaksi',
+    'settings' => 'Pengaturan',
+    'subscription' => 'Langganan',
+    'subscription_management' => 'Langganan',
+    'subscription_plans' => 'Paket Langganan',
+    'subscriptions' => 'Semua Langganan',
+    'invoices' => 'Invoice',
 
     // Admin Section
     'admin' => 'Admin',

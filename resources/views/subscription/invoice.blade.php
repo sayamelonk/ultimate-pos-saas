@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Invoice {{ $invoice->invoice_number }} - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('subscription.invoice') }} {{ $invoice->invoice_number }} - Ultimate POS</x-slot>
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Invoice</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('subscription.invoice') }}</h2>
                 <p class="text-muted mt-1">{{ $invoice->invoice_number }}</p>
             </div>
             <a href="{{ route('subscription.index') }}"
                class="inline-flex items-center gap-2 px-4 py-2 border border-border text-text rounded-lg hover:bg-secondary-50 transition-colors">
                 <x-icon name="arrow-left" class="w-5 h-5" />
-                Kembali
+                {{ __('subscription.go_back_link') }}
             </a>
         </div>
     </x-slot>
@@ -40,17 +40,17 @@
             <div class="p-6 border-b border-border">
                 <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <p class="text-sm text-muted mb-1">Ditagihkan kepada:</p>
+                        <p class="text-sm text-muted mb-1">{{ __('subscription.billed_to') }}</p>
                         <p class="font-medium text-text">{{ $invoice->tenant->name }}</p>
                         <p class="text-sm text-muted">{{ $invoice->tenant->email }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-muted mb-1">No. Invoice:</p>
+                        <p class="text-sm text-muted mb-1">{{ __('subscription.invoice_no') }}</p>
                         <p class="font-medium text-text">{{ $invoice->invoice_number }}</p>
-                        <p class="text-sm text-muted mt-2">Tanggal:</p>
+                        <p class="text-sm text-muted mt-2">{{ __('subscription.date_label') }}</p>
                         <p class="font-medium text-text">{{ $invoice->created_at->format('d M Y') }}</p>
                         @if($invoice->paid_at)
-                            <p class="text-sm text-muted mt-2">Dibayar:</p>
+                            <p class="text-sm text-muted mt-2">{{ __('subscription.paid_on') }}</p>
                             <p class="font-medium text-text">{{ $invoice->paid_at->format('d M Y H:i') }}</p>
                         @endif
                     </div>
@@ -62,15 +62,15 @@
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-border">
-                            <th class="pb-3 text-left text-sm font-medium text-muted">Deskripsi</th>
-                            <th class="pb-3 text-right text-sm font-medium text-muted">Jumlah</th>
+                            <th class="pb-3 text-left text-sm font-medium text-muted">{{ __('subscription.description') }}</th>
+                            <th class="pb-3 text-right text-sm font-medium text-muted">{{ __('subscription.amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td class="py-4">
-                                <p class="font-medium text-text">Langganan {{ $invoice->plan->name }}</p>
-                                <p class="text-sm text-muted">Periode: {{ ucfirst($invoice->billing_cycle) }}</p>
+                                <p class="font-medium text-text">{{ __('subscription.subscription_to', ['plan' => $invoice->plan->name]) }}</p>
+                                <p class="text-sm text-muted">{{ __('subscription.period') }}: {{ ucfirst($invoice->billing_cycle) }}</p>
                             </td>
                             <td class="py-4 text-right font-medium text-text">
                                 Rp {{ number_format($invoice->amount, 0, ',', '.') }}
@@ -80,14 +80,14 @@
                     <tfoot class="border-t border-border">
                         @if($invoice->tax_amount > 0)
                             <tr>
-                                <td class="pt-4 text-right text-sm text-muted">Pajak:</td>
+                                <td class="pt-4 text-right text-sm text-muted">{{ __('subscription.tax_label') }}</td>
                                 <td class="pt-4 text-right text-text">
                                     Rp {{ number_format($invoice->tax_amount, 0, ',', '.') }}
                                 </td>
                             </tr>
                         @endif
                         <tr>
-                            <td class="pt-2 text-right font-medium text-text">Total:</td>
+                            <td class="pt-2 text-right font-medium text-text">{{ __('subscription.total_label') }}</td>
                             <td class="pt-2 text-right text-xl font-bold text-primary">
                                 {{ $invoice->getFormattedAmount() }}
                             </td>
@@ -102,10 +102,10 @@
                     <div class="flex items-center gap-3">
                         <x-icon name="check-circle" class="w-6 h-6 text-success" />
                         <div>
-                            <p class="font-medium text-success">Pembayaran Diterima</p>
+                            <p class="font-medium text-success">{{ __('subscription.payment_received') }}</p>
                             @if($invoice->payment_method || $invoice->payment_channel)
                                 <p class="text-sm text-muted">
-                                    via {{ $invoice->payment_channel ?? $invoice->payment_method }}
+                                    {{ __('subscription.via') }} {{ $invoice->payment_channel ?? $invoice->payment_method }}
                                 </p>
                             @endif
                         </div>
@@ -115,11 +115,11 @@
                 <div class="p-6">
                     <a href="{{ $invoice->xendit_invoice_url }}" target="_blank"
                        class="block w-full text-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors">
-                        Bayar Sekarang
+                        {{ __('subscription.pay_now') }}
                     </a>
                     @if($invoice->expired_at)
                         <p class="text-center text-sm text-muted mt-2">
-                            Berlaku hingga: {{ $invoice->expired_at->format('d M Y H:i') }}
+                            {{ __('subscription.valid_until', ['date' => $invoice->expired_at->format('d M Y H:i')]) }}
                         </p>
                     @endif
                 </div>
@@ -132,7 +132,7 @@
                 <button onclick="window.print()"
                         class="inline-flex items-center gap-2 px-4 py-2 border border-border text-text rounded-lg hover:bg-secondary-50 transition-colors">
                     <x-icon name="printer" class="w-5 h-5" />
-                    Cetak Invoice
+                    {{ __('subscription.print_invoice') }}
                 </button>
             </div>
         @endif

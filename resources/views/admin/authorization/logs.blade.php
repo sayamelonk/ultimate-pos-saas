@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">Authorization Logs - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.authorization_logs_title') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Authorization Logs')
+    @section('page-title', __('admin.authorization_logs_title'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -10,8 +10,8 @@
                     <x-icon name="arrow-left" class="w-4 h-4" />
                 </x-button>
                 <div>
-                    <h2 class="text-2xl font-bold text-text">Authorization Logs</h2>
-                    <p class="text-muted mt-1">Track all authorization requests and approvals</p>
+                    <h2 class="text-2xl font-bold text-text">{{ __('admin.authorization_logs_title') }}</h2>
+                    <p class="text-muted mt-1">{{ __('admin.track_authorization') }}</p>
                 </div>
             </div>
         </div>
@@ -22,44 +22,44 @@
         <form method="GET" action="{{ route('admin.authorization.logs') }}">
             <div class="flex flex-wrap items-end gap-3">
                 <div class="w-40">
-                    <label class="block text-xs font-medium text-muted mb-1">Action Type</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('admin.action_type_label') }}</label>
                     <x-select name="action_type">
-                        <option value="">All Actions</option>
-                        <option value="void" @selected(request('action_type') == 'void')>Void</option>
-                        <option value="refund" @selected(request('action_type') == 'refund')>Refund</option>
-                        <option value="discount" @selected(request('action_type') == 'discount')>Discount</option>
-                        <option value="price_override" @selected(request('action_type') == 'price_override')>Price Override</option>
-                        <option value="no_sale" @selected(request('action_type') == 'no_sale')>No Sale</option>
-                        <option value="cancel_order" @selected(request('action_type') == 'cancel_order')>Cancel Order</option>
+                        <option value="">{{ __('admin.all_actions') }}</option>
+                        <option value="void" @selected(request('action_type') == 'void')>{{ __('admin.void_transaction_label') }}</option>
+                        <option value="refund" @selected(request('action_type') == 'refund')>{{ __('admin.refund_label') }}</option>
+                        <option value="discount" @selected(request('action_type') == 'discount')>{{ __('admin.manual_discount_label') }}</option>
+                        <option value="price_override" @selected(request('action_type') == 'price_override')>{{ __('admin.price_override_label') }}</option>
+                        <option value="no_sale" @selected(request('action_type') == 'no_sale')>{{ __('admin.no_sale_label') }}</option>
+                        <option value="cancel_order" @selected(request('action_type') == 'cancel_order')>{{ __('admin.cancel_order_label') }}</option>
                     </x-select>
                 </div>
 
                 <div class="w-32">
-                    <label class="block text-xs font-medium text-muted mb-1">Status</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('app.status') }}</label>
                     <x-select name="status">
-                        <option value="">All Status</option>
-                        <option value="approved" @selected(request('status') == 'approved')>Approved</option>
-                        <option value="denied" @selected(request('status') == 'denied')>Denied</option>
+                        <option value="">{{ __('admin.all_status') }}</option>
+                        <option value="approved" @selected(request('status') == 'approved')>{{ __('admin.approved') }}</option>
+                        <option value="denied" @selected(request('status') == 'denied')>{{ __('admin.denied') }}</option>
                     </x-select>
                 </div>
 
                 <div class="w-36">
-                    <label class="block text-xs font-medium text-muted mb-1">From Date</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('admin.from_date') }}</label>
                     <x-input type="date" name="date_from" :value="request('date_from')" />
                 </div>
 
                 <div class="w-36">
-                    <label class="block text-xs font-medium text-muted mb-1">To Date</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('admin.to_date') }}</label>
                     <x-input type="date" name="date_to" :value="request('date_to')" />
                 </div>
 
                 <x-button type="submit" variant="primary" icon="search">
-                    Filter
+                    {{ __('app.filter') }}
                 </x-button>
 
                 @if(request()->hasAny(['action_type', 'status', 'date_from', 'date_to']))
                     <x-button href="{{ route('admin.authorization.logs') }}" variant="ghost">
-                        Clear
+                        {{ __('app.clear') }}
                     </x-button>
                 @endif
             </div>
@@ -71,13 +71,13 @@
         @if($logs->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Date/Time</x-th>
-                    <x-th>Action</x-th>
-                    <x-th>Requested By</x-th>
-                    <x-th>Authorized By</x-th>
-                    <x-th>Reference</x-th>
-                    <x-th align="right">Amount</x-th>
-                    <x-th align="center">Status</x-th>
+                    <x-th>{{ __('admin.date_time') }}</x-th>
+                    <x-th>{{ __('admin.action') }}</x-th>
+                    <x-th>{{ __('admin.requested_by') }}</x-th>
+                    <x-th>{{ __('admin.authorized_by_label') }}</x-th>
+                    <x-th>{{ __('admin.reference') }}</x-th>
+                    <x-th align="right">{{ __('admin.amount') }}</x-th>
+                    <x-th align="center">{{ __('app.status') }}</x-th>
                 </x-slot>
 
                 @foreach($logs as $log)
@@ -140,8 +140,8 @@
             </div>
         @else
             <x-empty-state
-                title="No authorization logs"
-                description="Authorization activity will appear here once users start using PIN verification."
+                title="{{ __('admin.no_authorization_logs_title') }}"
+                description="{{ __('admin.authorization_logs_empty') }}"
                 icon="shield-check"
             />
         @endif

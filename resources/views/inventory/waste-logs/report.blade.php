@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Waste Report - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.waste_report') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Waste Report')
+    @section('page-title', __('inventory.waste_report'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.waste-logs.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Waste Report</h2>
-                <p class="text-muted mt-1">Analyze waste patterns and losses</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.waste_report') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.analyze_waste') }}</p>
             </div>
         </div>
     </x-slot>
@@ -20,7 +20,7 @@
         <x-card>
             <form method="GET" action="{{ route('inventory.waste-logs.report') }}" class="flex flex-wrap gap-4">
                 <x-select name="outlet_id" class="w-48">
-                    <option value="">All Outlets</option>
+                    <option value="">{{ __('inventory.all_outlets') }}</option>
                     @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                             {{ $outlet->name }}
@@ -40,7 +40,7 @@
                     class="w-40"
                 />
                 <x-button type="submit" variant="secondary">
-                    Generate Report
+                    {{ __('inventory.generate_report') }}
                 </x-button>
             </form>
         </x-card>
@@ -50,13 +50,13 @@
             <x-card>
                 <div class="text-center">
                     <p class="text-3xl font-bold text-text">{{ $wasteByReason->sum('count') }}</p>
-                    <p class="text-sm text-muted mt-1">Total Records</p>
+                    <p class="text-sm text-muted mt-1">{{ __('app.total_records') }}</p>
                 </div>
             </x-card>
             <x-card>
                 <div class="text-center">
                     <p class="text-3xl font-bold text-danger-600">Rp {{ number_format($totalWasteValue ?? 0, 0, ',', '.') }}</p>
-                    <p class="text-sm text-muted mt-1">Total Value Lost</p>
+                    <p class="text-sm text-muted mt-1">{{ __('app.total_value_lost') }}</p>
                 </div>
             </x-card>
             <x-card>
@@ -66,38 +66,38 @@
                         $avgDaily = $totalWasteValue / $dayCount;
                     @endphp
                     <p class="text-3xl font-bold text-warning-600">Rp {{ number_format($avgDaily, 0, ',', '.') }}</p>
-                    <p class="text-sm text-muted mt-1">Avg Daily Loss</p>
+                    <p class="text-sm text-muted mt-1">{{ __('app.avg_daily_loss') }}</p>
                 </div>
             </x-card>
             <x-card>
                 <div class="text-center">
                     <p class="text-3xl font-bold text-text">{{ $wasteByItem->count() }}</p>
-                    <p class="text-sm text-muted mt-1">Items Affected</p>
+                    <p class="text-sm text-muted mt-1">{{ __('app.items_affected') }}</p>
                 </div>
             </x-card>
         </div>
 
         <div class="grid grid-cols-2 gap-6">
             <!-- Waste by Reason -->
-            <x-card title="Waste by Reason">
+            <x-card :title="__('app.waste_by_reason')">
                 @if($wasteByReason->count() > 0)
                     <div class="space-y-4">
                         @foreach($wasteByReason as $data)
                             @php
                                 $percentage = $totalWasteValue > 0 ? ($data->total_cost / $totalWasteValue) * 100 : 0;
                                 $reasonLabel = match($data->reason) {
-                                    'expired' => 'Expired',
-                                    'damaged' => 'Damaged',
-                                    'spillage' => 'Spillage',
-                                    'overproduction' => 'Overproduction',
-                                    'quality_issue' => 'Quality Issue',
-                                    default => 'Other',
+                                    'expired' => __('inventory.waste_expired'),
+                                    'damaged' => __('inventory.waste_damaged'),
+                                    'spoiled' => __('inventory.waste_spoiled'),
+                                    'overproduction' => __('inventory.waste_overproduction'),
+                                    'quality_issue' => __('inventory.waste_quality_issue'),
+                                    default => __('inventory.waste_other'),
                                 };
                                 $badgeType = match($data->reason) {
                                     'expired' => 'danger',
                                     'damaged', 'quality_issue' => 'warning',
-                                    'spillage' => 'info',
-                                    'overproduction' => 'secondary',
+                                    'spoiled' => 'danger',
+                                    'overproduction' => 'info',
                                     default => 'secondary',
                                 };
                             @endphp
@@ -105,7 +105,7 @@
                                 <div class="flex items-center justify-between mb-2">
                                     <div class="flex items-center gap-2">
                                         <x-badge type="{{ $badgeType }}">{{ $reasonLabel }}</x-badge>
-                                        <span class="text-sm text-muted">({{ $data->count }} records)</span>
+                                        <span class="text-sm text-muted">({{ $data->count }} {{ __('app.records') }})</span>
                                     </div>
                                     <span class="font-medium">Rp {{ number_format($data->total_cost, 0, ',', '.') }}</span>
                                 </div>
@@ -117,15 +117,15 @@
                     </div>
                 @else
                     <x-empty-state
-                        title="No data"
-                        description="No waste records in selected period."
+                        :title="__('app.no_data')"
+                        :description="__('inventory.no_data_for_period')"
                         icon="chart-bar"
                     />
                 @endif
             </x-card>
 
             <!-- Top Wasted Items -->
-            <x-card title="Top Wasted Items">
+            <x-card :title="__('app.top_wasted_items')">
                 @if($wasteByItem->count() > 0)
                     <div class="space-y-4">
                         @foreach($wasteByItem->take(10) as $item)
@@ -148,8 +148,8 @@
                     </div>
                 @else
                     <x-empty-state
-                        title="No data"
-                        description="No waste records in selected period."
+                        :title="__('app.no_data')"
+                        :description="__('inventory.no_data_for_period')"
                         icon="cube"
                     />
                 @endif
@@ -157,7 +157,7 @@
         </div>
 
         <!-- Daily Trend -->
-        <x-card title="Daily Waste Trend">
+        <x-card :title="__('app.daily_waste_trend')">
             @if($dailyTrend->count() > 0)
                 <div class="h-64 flex items-end gap-1">
                     @php
@@ -179,8 +179,8 @@
                 </div>
             @else
                 <x-empty-state
-                    title="No data"
-                    description="No waste records in selected period."
+                    :title="__('app.no_data')"
+                    :description="__('inventory.no_data_for_period')"
                     icon="chart-bar"
                 />
             @endif

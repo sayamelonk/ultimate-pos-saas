@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit Purchase Order - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.edit_po') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit PO')
+    @section('page-title', __('inventory.edit_po'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.purchase-orders.show', $purchaseOrder) }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Purchase Order</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.edit_po') }}</h2>
                 <p class="text-muted mt-1">{{ $purchaseOrder->po_number }}</p>
             </div>
         </div>
@@ -21,11 +21,11 @@
 
         <div class="grid grid-cols-3 gap-6">
             <div class="col-span-2 space-y-6">
-                <x-card title="Order Details">
+                <x-card :title="__('inventory.order_information')">
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
-                            <x-select name="supplier_id" label="Supplier" required>
-                                <option value="">Select Supplier</option>
+                            <x-select name="supplier_id" :label="__('inventory.supplier')" required>
+                                <option value="">{{ __('inventory.select_supplier') }}</option>
                                 @foreach($suppliers as $supplier)
                                     <option value="{{ $supplier->id }}" @selected(old('supplier_id', $purchaseOrder->supplier_id) == $supplier->id)>
                                         {{ $supplier->name }}
@@ -33,8 +33,8 @@
                                 @endforeach
                             </x-select>
 
-                            <x-select name="outlet_id" label="Delivery Outlet" required>
-                                <option value="">Select Outlet</option>
+                            <x-select name="outlet_id" :label="__('inventory.outlet')" required>
+                                <option value="">{{ __('inventory.select_outlet') }}</option>
                                 @foreach($outlets as $outlet)
                                     <option value="{{ $outlet->id }}" @selected(old('outlet_id', $purchaseOrder->outlet_id) == $outlet->id)>
                                         {{ $outlet->name }}
@@ -46,42 +46,42 @@
                         <x-input
                             type="date"
                             name="expected_date"
-                            label="Expected Delivery Date"
+                            :label="__('inventory.expected_date')"
                             :value="old('expected_date', $purchaseOrder->expected_date?->format('Y-m-d'))"
                         />
 
                         <x-textarea
                             name="notes"
-                            label="Notes"
-                            placeholder="Additional notes for this order..."
+                            :label="__('inventory.notes')"
+                            :placeholder="__('inventory.notes')"
                             :value="old('notes', $purchaseOrder->notes)"
                             rows="2"
                         />
                     </div>
                 </x-card>
 
-                <x-card title="Order Items">
+                <x-card :title="__('inventory.order_items')">
                     <template x-for="(item, index) in items" :key="index">
                         <div class="flex gap-4 mb-4 p-4 bg-secondary-50 rounded-lg">
                             <div class="flex-1">
-                                <label class="text-sm font-medium text-text">Item</label>
+                                <label class="text-sm font-medium text-text">{{ __('inventory.item') }}</label>
                                 <select x-model="item.inventory_item_id" :name="'items[' + index + '][inventory_item_id]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" required>
-                                    <option value="">Select Item</option>
+                                    <option value="">{{ __('inventory.select_item') }}</option>
                                     @foreach($items as $inventoryItem)
                                         <option value="{{ $inventoryItem->id }}">{{ $inventoryItem->name }} ({{ $inventoryItem->sku }})</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="w-32">
-                                <label class="text-sm font-medium text-text">Quantity</label>
+                                <label class="text-sm font-medium text-text">{{ __('inventory.quantity') }}</label>
                                 <input type="number" step="0.001" x-model="item.quantity" :name="'items[' + index + '][quantity]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" placeholder="0" required>
                             </div>
                             <div class="w-40">
-                                <label class="text-sm font-medium text-text">Unit Price (Rp)</label>
+                                <label class="text-sm font-medium text-text">{{ __('inventory.unit_price') }} (Rp)</label>
                                 <input type="number" step="0.01" x-model="item.unit_price" :name="'items[' + index + '][unit_price]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" placeholder="0" required>
                             </div>
                             <div class="w-40">
-                                <label class="text-sm font-medium text-text">Total</label>
+                                <label class="text-sm font-medium text-text">{{ __('inventory.total') }}</label>
                                 <div class="mt-1 px-3 py-2 bg-secondary-100 rounded-lg font-medium" x-text="'Rp ' + formatNumber(item.quantity * item.unit_price)"></div>
                             </div>
                             <div class="flex items-end">
@@ -93,34 +93,34 @@
                     </template>
 
                     <x-button type="button" @click="addItem()" variant="outline-secondary" icon="plus" class="mt-4">
-                        Add Item
+                        {{ __('inventory.add_item') }}
                     </x-button>
                 </x-card>
             </div>
 
             <div class="space-y-6">
-                <x-card title="Order Summary">
+                <x-card :title="__('inventory.po_summary')">
                     <dl class="space-y-4">
                         <div class="flex justify-between">
-                            <dt class="text-muted">PO Number</dt>
+                            <dt class="text-muted">{{ __('inventory.po_number') }}</dt>
                             <dd class="font-medium">{{ $purchaseOrder->po_number }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-muted">Items</dt>
+                            <dt class="text-muted">{{ __('inventory.items') }}</dt>
                             <dd class="font-medium" x-text="items.length"></dd>
                         </div>
                         <div class="flex justify-between pt-4 border-t border-border">
-                            <dt class="font-bold">Total</dt>
+                            <dt class="font-bold">{{ __('inventory.total') }}</dt>
                             <dd class="font-bold text-lg" x-text="'Rp ' + formatNumber(total)"></dd>
                         </div>
                     </dl>
 
                     <div class="mt-6 space-y-3">
                         <x-button type="submit" class="w-full">
-                            Update Purchase Order
+                            {{ __('inventory.update_po') }}
                         </x-button>
                         <x-button href="{{ route('inventory.purchase-orders.show', $purchaseOrder) }}" variant="outline-secondary" class="w-full">
-                            Cancel
+                            {{ __('inventory.cancel') }}
                         </x-button>
                     </div>
                 </x-card>

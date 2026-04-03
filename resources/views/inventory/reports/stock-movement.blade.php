@@ -1,20 +1,20 @@
 <x-app-layout>
     <x-slot name="title">Stock Movement Report - Ultimate POS</x-slot>
 
-    @section('page-title', 'Stock Movement')
+    @section('page-title', __('inventory.stock_movement_report'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Stock Movement Report</h2>
-                <p class="text-muted mt-1">Track all stock movements and transactions</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.stock_movement_report') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.analyze_stock_movements') }}</p>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('inventory.reports.stock-valuation') }}" variant="outline-secondary" icon="currency-dollar">
-                    Valuation Report
+                    {{ __('inventory.stock_valuation_report') }}
                 </x-button>
                 <x-button href="{{ route('inventory.reports.cogs') }}" variant="outline-secondary" icon="calculator">
-                    COGS Report
+                    {{ __('inventory.cogs_report') }}
                 </x-button>
             </div>
         </div>
@@ -37,7 +37,7 @@
                     class="w-40"
                 />
                 <x-select name="outlet_id" class="w-48">
-                    <option value="">All Outlets</option>
+                    <option value="">{{ __('inventory.all_outlets') }}</option>
                     @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                             {{ $outlet->name }}
@@ -45,7 +45,7 @@
                     @endforeach
                 </x-select>
                 <x-select name="item_id" class="w-56">
-                    <option value="">All Items</option>
+                    <option value="">{{ __('inventory.all_items') }}</option>
                     @foreach($items as $item)
                         <option value="{{ $item->id }}" @selected(request('item_id') == $item->id)>
                             {{ $item->name }}
@@ -53,18 +53,18 @@
                     @endforeach
                 </x-select>
                 <x-select name="movement_type" class="w-40">
-                    <option value="">All Types</option>
-                    <option value="goods_receive" @selected(request('movement_type') === 'goods_receive')>Goods Receive</option>
+                    <option value="">{{ __('inventory.all_types') }}</option>
+                    <option value="goods_receive" @selected(request('movement_type') === 'goods_receive')>{{ __('inventory.goods_receive') }}</option>
                     <option value="sale" @selected(request('movement_type') === 'sale')>Sale</option>
-                    <option value="transfer_out" @selected(request('movement_type') === 'transfer_out')>Transfer Out</option>
-                    <option value="transfer_in" @selected(request('movement_type') === 'transfer_in')>Transfer In</option>
-                    <option value="adjustment_add" @selected(request('movement_type') === 'adjustment_add')>Adjustment (+)</option>
-                    <option value="adjustment_sub" @selected(request('movement_type') === 'adjustment_sub')>Adjustment (-)</option>
-                    <option value="waste" @selected(request('movement_type') === 'waste')>Waste</option>
+                    <option value="transfer_out" @selected(request('movement_type') === 'transfer_out')>{{ __('inventory.transfers_out') }}</option>
+                    <option value="transfer_in" @selected(request('movement_type') === 'transfer_in')>{{ __('inventory.transfers_in') }}</option>
+                    <option value="adjustment_add" @selected(request('movement_type') === 'adjustment_add')>{{ __('inventory.adjustment_add') }} (+)</option>
+                    <option value="adjustment_sub" @selected(request('movement_type') === 'adjustment_sub')>{{ __('inventory.adjustment_subtract') }} (-)</option>
+                    <option value="waste" @selected(request('movement_type') === 'waste')>{{ __('inventory.waste') }}</option>
                     <option value="production" @selected(request('movement_type') === 'production')>Production</option>
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Generate Report
+                    {{ __('inventory.generate_report') }}
                 </x-button>
             </form>
         </x-card>
@@ -74,28 +74,28 @@
             <x-card>
                 <div class="text-center">
                     <p class="text-2xl font-bold text-success-600">+{{ number_format(abs($summaryByType->get('goods_receive')?->total_qty ?? 0), 2) }}</p>
-                    <p class="text-sm text-muted mt-1">Goods Received</p>
+                    <p class="text-sm text-muted mt-1">{{ __('inventory.goods_receive') }}</p>
                     <p class="text-xs text-muted">({{ $summaryByType->get('goods_receive')?->count ?? 0 }} transactions)</p>
                 </div>
             </x-card>
             <x-card>
                 <div class="text-center">
                     <p class="text-2xl font-bold text-danger-600">-{{ number_format(abs($summaryByType->get('sale')?->total_qty ?? 0), 2) }}</p>
-                    <p class="text-sm text-muted mt-1">Sales</p>
+                    <p class="text-sm text-muted mt-1">{{ __('inventory.usage') }}</p>
                     <p class="text-xs text-muted">({{ $summaryByType->get('sale')?->count ?? 0 }} transactions)</p>
                 </div>
             </x-card>
             <x-card>
                 <div class="text-center">
                     <p class="text-2xl font-bold text-info-600">{{ number_format(abs($summaryByType->get('transfer_out')?->total_qty ?? 0), 2) }}</p>
-                    <p class="text-sm text-muted mt-1">Transfers</p>
+                    <p class="text-sm text-muted mt-1">{{ __('inventory.stock_transfers') }}</p>
                     <p class="text-xs text-muted">({{ ($summaryByType->get('transfer_out')?->count ?? 0) + ($summaryByType->get('transfer_in')?->count ?? 0) }} transactions)</p>
                 </div>
             </x-card>
             <x-card>
                 <div class="text-center">
                     <p class="text-2xl font-bold text-warning-600">-{{ number_format(abs($summaryByType->get('waste')?->total_qty ?? 0), 2) }}</p>
-                    <p class="text-sm text-muted mt-1">Waste</p>
+                    <p class="text-sm text-muted mt-1">{{ __('inventory.waste') }}</p>
                     <p class="text-xs text-muted">({{ $summaryByType->get('waste')?->count ?? 0 }} transactions)</p>
                 </div>
             </x-card>
@@ -103,7 +103,7 @@
 
         <!-- Daily Trend Chart -->
         @if($dailyTrend->count() > 0)
-            <x-card title="Daily Movement Trend">
+            <x-card title="{{ __('inventory.date') }} {{ __('inventory.movement_type') }} Trend">
                 <div class="h-64 flex items-end gap-1">
                     @php
                         $maxIn = $dailyTrend->max(fn($d) => abs($d->get('goods_receive')?->total ?? 0));
@@ -131,28 +131,28 @@
                 <div class="flex justify-center gap-6 mt-4">
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 bg-success-400 rounded"></div>
-                        <span class="text-sm text-muted">Stock In</span>
+                        <span class="text-sm text-muted">{{ __('inventory.movement_in') }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 bg-danger-400 rounded"></div>
-                        <span class="text-sm text-muted">Stock Out</span>
+                        <span class="text-sm text-muted">{{ __('inventory.movement_out') }}</span>
                     </div>
                 </div>
             </x-card>
         @endif
 
         <!-- Movement Table -->
-        <x-card title="Movement Details">
+        <x-card title="{{ __('inventory.detailed_movements') }}">
             @if($movements->count() > 0)
                 <x-table>
                     <x-slot name="head">
-                        <x-th>Date</x-th>
-                        <x-th>Item</x-th>
-                        <x-th>Outlet</x-th>
-                        <x-th>Type</x-th>
-                        <x-th align="right">Quantity</x-th>
-                        <x-th align="right">Unit Cost</x-th>
-                        <x-th>Reference</x-th>
+                        <x-th>{{ __('inventory.date') }}</x-th>
+                        <x-th>{{ __('inventory.item') }}</x-th>
+                        <x-th>{{ __('inventory.outlet') }}</x-th>
+                        <x-th>{{ __('inventory.movement_type') }}</x-th>
+                        <x-th align="right">{{ __('inventory.quantity') }}</x-th>
+                        <x-th align="right">{{ __('inventory.unit_cost') }}</x-th>
+                        <x-th>{{ __('inventory.reference') }}</x-th>
                         <x-th>User</x-th>
                     </x-slot>
 
@@ -167,25 +167,25 @@
                             <x-td>
                                 @switch($movement->movement_type)
                                     @case('goods_receive')
-                                        <x-badge type="success">Goods Receive</x-badge>
+                                        <x-badge type="success">{{ __('inventory.goods_receive') }}</x-badge>
                                         @break
                                     @case('sale')
                                         <x-badge type="danger">Sale</x-badge>
                                         @break
                                     @case('transfer_out')
-                                        <x-badge type="info">Transfer Out</x-badge>
+                                        <x-badge type="info">{{ __('inventory.transfers_out') }}</x-badge>
                                         @break
                                     @case('transfer_in')
-                                        <x-badge type="info">Transfer In</x-badge>
+                                        <x-badge type="info">{{ __('inventory.transfers_in') }}</x-badge>
                                         @break
                                     @case('adjustment_add')
-                                        <x-badge type="success">Adjustment (+)</x-badge>
+                                        <x-badge type="success">{{ __('inventory.adjustment_add') }} (+)</x-badge>
                                         @break
                                     @case('adjustment_sub')
-                                        <x-badge type="warning">Adjustment (-)</x-badge>
+                                        <x-badge type="warning">{{ __('inventory.adjustment_subtract') }} (-)</x-badge>
                                         @break
                                     @case('waste')
-                                        <x-badge type="danger">Waste</x-badge>
+                                        <x-badge type="danger">{{ __('inventory.waste') }}</x-badge>
                                         @break
                                     @case('production')
                                         <x-badge type="secondary">Production</x-badge>
@@ -218,8 +218,8 @@
                 </div>
             @else
                 <x-empty-state
-                    title="No movements found"
-                    description="No stock movements found for the selected filters."
+                    title="{{ __('inventory.no_movements_found') }}"
+                    description="{{ __('inventory.no_movements_description') }}"
                     icon="arrows-right-left"
                 />
             @endif

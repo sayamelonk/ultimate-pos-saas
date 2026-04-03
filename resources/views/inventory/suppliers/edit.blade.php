@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit Supplier - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.edit_supplier') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit Supplier')
+    @section('page-title', __('inventory.edit_supplier'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.suppliers.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Supplier</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.edit_supplier') }}</h2>
                 <p class="text-muted mt-1">{{ $supplier->name }}</p>
             </div>
         </div>
@@ -24,16 +24,16 @@
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         name="code"
-                        label="Supplier Code"
-                        placeholder="e.g., SUP001"
+                        :label="__('inventory.supplier_code')"
+                        :placeholder="__('inventory.supplier_code_placeholder')"
                         :value="$supplier->code"
                         required
                     />
 
                     <x-input
                         name="name"
-                        label="Supplier Name"
-                        placeholder="e.g., Fresh Foods Co."
+                        :label="__('inventory.supplier_name')"
+                        :placeholder="__('inventory.supplier_name_placeholder')"
                         :value="$supplier->name"
                         required
                     />
@@ -42,15 +42,15 @@
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         name="contact_person"
-                        label="Contact Person"
-                        placeholder="e.g., John Doe"
+                        :label="__('inventory.contact_person')"
+                        :placeholder="__('inventory.contact_person_placeholder')"
                         :value="$supplier->contact_person"
                     />
 
                     <x-input
                         type="email"
                         name="email"
-                        label="Email"
+                        :label="__('inventory.email')"
                         placeholder="e.g., supplier@email.com"
                         :value="$supplier->email"
                     />
@@ -60,14 +60,14 @@
                     <x-input
                         type="tel"
                         name="phone"
-                        label="Phone Number"
+                        :label="__('inventory.phone')"
                         placeholder="e.g., +62 812 3456 7890"
                         :value="$supplier->phone"
                     />
 
                     <x-input
                         name="city"
-                        label="City"
+                        :label="__('inventory.city')"
                         placeholder="e.g., Jakarta"
                         :value="$supplier->city"
                     />
@@ -75,8 +75,8 @@
 
                 <x-textarea
                     name="address"
-                    label="Address"
-                    placeholder="Enter full address"
+                    :label="__('inventory.address')"
+                    :placeholder="__('inventory.address')"
                     :value="$supplier->address"
                     rows="3"
                 />
@@ -84,7 +84,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         name="tax_number"
-                        label="Tax Number (NPWP)"
+                        :label="__('inventory.tax_number')"
                         placeholder="e.g., 01.234.567.8-901.000"
                         :value="$supplier->tax_number"
                     />
@@ -92,7 +92,7 @@
                     <x-input
                         type="number"
                         name="payment_terms"
-                        label="Payment Terms (Days)"
+                        :label="__('inventory.payment_terms_days')"
                         placeholder="e.g., 30"
                         :value="$supplier->payment_terms"
                         min="0"
@@ -101,25 +101,25 @@
 
                 <x-textarea
                     name="notes"
-                    label="Notes"
-                    placeholder="Additional notes about this supplier"
+                    :label="__('inventory.notes')"
+                    :placeholder="__('inventory.notes')"
                     :value="$supplier->notes"
                     rows="2"
                 />
 
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive suppliers won't appear in selections"
+                    :label="__('inventory.active')"
+                    :hint="__('inventory.inactive_hint')"
                     :checked="$supplier->is_active"
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('inventory.suppliers.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('inventory.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Update Supplier
+                        {{ __('inventory.update_supplier') }}
                     </x-button>
                 </div>
             </form>

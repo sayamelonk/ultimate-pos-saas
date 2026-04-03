@@ -1,22 +1,22 @@
 <x-app-layout>
     <x-slot name="title">{{ $variantGroup->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Variant Group Details')
+    @section('page-title', __('products.variant_group_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <x-button href="{{ route('menu.variant-groups.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                    Back
+                    {{ __('products.back') }}
                 </x-button>
                 <div>
                     <h2 class="text-2xl font-bold text-text">{{ $variantGroup->name }}</h2>
-                    <p class="text-muted mt-1">Variant Group Details</p>
+                    <p class="text-muted mt-1">{{ __('products.variant_group_details') }}</p>
                 </div>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('menu.variant-groups.edit', $variantGroup) }}" icon="pencil">
-                    Edit
+                    {{ __('products.edit') }}
                 </x-button>
             </div>
         </div>
@@ -25,43 +25,43 @@
     <div class="grid grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
             <!-- Group Information -->
-            <x-card title="Group Information">
+            <x-card title="{{ __('products.group_information') }}">
                 <dl class="grid grid-cols-2 gap-4">
                     <div>
-                        <dt class="text-sm text-muted">Name</dt>
+                        <dt class="text-sm text-muted">{{ __('products.name') }}</dt>
                         <dd class="mt-1 font-medium">{{ $variantGroup->name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Display Type</dt>
+                        <dt class="text-sm text-muted">{{ __('products.display_type') }}</dt>
                         <dd class="mt-1">
                             @if($variantGroup->display_type === 'button')
-                                <x-badge type="secondary">Button</x-badge>
+                                <x-badge type="secondary">{{ __('products.display_button') }}</x-badge>
                             @elseif($variantGroup->display_type === 'dropdown')
-                                <x-badge type="info">Dropdown</x-badge>
+                                <x-badge type="info">{{ __('products.display_dropdown') }}</x-badge>
                             @elseif($variantGroup->display_type === 'color')
-                                <x-badge type="warning">Color Swatch</x-badge>
+                                <x-badge type="warning">{{ __('products.display_color') }}</x-badge>
                             @else
-                                <x-badge type="success">Image</x-badge>
+                                <x-badge type="success">{{ __('products.display_image') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Status</dt>
+                        <dt class="text-sm text-muted">{{ __('products.status') }}</dt>
                         <dd class="mt-1">
                             @if($variantGroup->is_active)
-                                <x-badge type="success">Active</x-badge>
+                                <x-badge type="success">{{ __('products.active') }}</x-badge>
                             @else
-                                <x-badge type="danger">Inactive</x-badge>
+                                <x-badge type="danger">{{ __('products.inactive') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Sort Order</dt>
+                        <dt class="text-sm text-muted">{{ __('products.sort_order') }}</dt>
                         <dd class="mt-1 font-medium">{{ $variantGroup->sort_order }}</dd>
                     </div>
                     @if($variantGroup->description)
                         <div class="col-span-2">
-                            <dt class="text-sm text-muted">Description</dt>
+                            <dt class="text-sm text-muted">{{ __('products.description') }}</dt>
                             <dd class="mt-1">{{ $variantGroup->description }}</dd>
                         </div>
                     @endif
@@ -69,14 +69,14 @@
             </x-card>
 
             <!-- Options -->
-            <x-card title="Variant Options">
+            <x-card title="{{ __('products.variant_options') }}">
                 @if($variantGroup->options->count() > 0)
                     <x-table>
                         <x-slot name="head">
-                            <x-th>Option</x-th>
-                            <x-th align="right">Price Adjustment</x-th>
-                            <x-th align="center">Sort</x-th>
-                            <x-th align="center">Status</x-th>
+                            <x-th>{{ __('products.option') }}</x-th>
+                            <x-th align="right">{{ __('products.price_adjustment') }}</x-th>
+                            <x-th align="center">{{ __('products.sort') }}</x-th>
+                            <x-th align="center">{{ __('products.status') }}</x-th>
                         </x-slot>
 
                         @foreach($variantGroup->options->sortBy('sort_order') as $option)
@@ -101,9 +101,9 @@
                                 <x-td align="center">{{ $option->sort_order }}</x-td>
                                 <x-td align="center">
                                     @if($option->is_active)
-                                        <x-badge type="success" size="sm">Active</x-badge>
+                                        <x-badge type="success" size="sm">{{ __('products.active') }}</x-badge>
                                     @else
-                                        <x-badge type="danger" size="sm">Inactive</x-badge>
+                                        <x-badge type="danger" size="sm">{{ __('products.inactive') }}</x-badge>
                                     @endif
                                 </x-td>
                             </tr>
@@ -111,8 +111,8 @@
                     </x-table>
                 @else
                     <x-empty-state
-                        title="No options"
-                        description="Add options to this variant group."
+                        title="{{ __('products.no_options_empty') }}"
+                        description="{{ __('products.add_options_to_group') }}"
                         icon="squares-2x2"
                         size="sm"
                     />
@@ -121,7 +121,7 @@
 
             <!-- Products Using This Group -->
             @if($variantGroup->products->count() > 0)
-                <x-card title="Products Using This Group">
+                <x-card title="{{ __('products.products_using_group') }}">
                     <div class="grid grid-cols-2 gap-3">
                         @foreach($variantGroup->products as $product)
                             <a href="{{ route('menu.products.show', $product) }}" class="flex items-center gap-3 p-3 bg-secondary-50 rounded-lg hover:bg-secondary-100 transition-colors">
@@ -146,9 +146,9 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Preview -->
-            <x-card title="Preview">
+            <x-card title="{{ __('products.preview') }}">
                 <div class="space-y-3">
-                    <p class="text-sm text-muted mb-4">How options appear in POS:</p>
+                    <p class="text-sm text-muted mb-4">{{ __('products.how_appears_pos') }}</p>
 
                     @if($variantGroup->display_type === 'button')
                         <div class="flex flex-wrap gap-2">
@@ -198,32 +198,32 @@
             </x-card>
 
             <!-- Statistics -->
-            <x-card title="Statistics">
+            <x-card title="{{ __('products.statistics') }}">
                 <dl class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Total Options</dt>
+                        <dt class="text-muted">{{ __('products.total_options') }}</dt>
                         <dd class="font-bold text-lg">{{ $variantGroup->options->count() }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Active Options</dt>
+                        <dt class="text-muted">{{ __('products.active_options') }}</dt>
                         <dd class="font-bold text-lg">{{ $variantGroup->activeOptions->count() }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Products Using</dt>
+                        <dt class="text-muted">{{ __('products.products_using') }}</dt>
                         <dd class="font-bold text-lg">{{ $variantGroup->products->count() }}</dd>
                     </div>
                 </dl>
             </x-card>
 
             <!-- Metadata -->
-            <x-card title="Information">
+            <x-card title="{{ __('products.information') }}">
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between">
-                        <dt class="text-muted">Created</dt>
+                        <dt class="text-muted">{{ __('products.created') }}</dt>
                         <dd>{{ $variantGroup->created_at->format('d M Y H:i') }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Updated</dt>
+                        <dt class="text-muted">{{ __('products.updated') }}</dt>
                         <dd>{{ $variantGroup->updated_at->format('d M Y H:i') }}</dd>
                     </div>
                 </dl>

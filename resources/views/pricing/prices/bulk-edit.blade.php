@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">Bulk Edit Prices - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('pricing.bulk_edit_prices') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Bulk Edit Prices')
+    @section('page-title', __('pricing.bulk_edit_prices'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
@@ -9,8 +9,8 @@
                 <x-icon name="arrow-left" class="w-4 h-4" />
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Bulk Edit Prices</h2>
-                <p class="text-muted mt-1">Update multiple item prices at once</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('pricing.bulk_edit_prices') }}</h2>
+                <p class="text-muted mt-1">{{ __('pricing.update_multiple_item_prices') }}</p>
             </div>
         </div>
     </x-slot>
@@ -21,7 +21,7 @@
         <x-card>
             <div class="mb-6 flex items-end gap-4">
                 <div>
-                    <x-select label="Outlet" name="outlet_id" required>
+                    <x-select :label="__('pricing.outlet')" name="outlet_id" required>
                         @foreach($outlets as $outlet)
                             <option value="{{ $outlet->id }}" @selected($selectedOutletId === $outlet->id)>
                                 {{ $outlet->name }}
@@ -29,16 +29,16 @@
                         @endforeach
                     </x-select>
                 </div>
-                <x-button type="submit">Save All Prices</x-button>
+                <x-button type="submit">{{ __('pricing.save_all_prices') }}</x-button>
             </div>
 
             <x-table>
                 <x-slot name="head">
-                    <x-th>Item</x-th>
-                    <x-th>SKU</x-th>
-                    <x-th align="right">Cost Price</x-th>
-                    <x-th align="right">Selling Price</x-th>
-                    <x-th align="right">Member Price</x-th>
+                    <x-th>{{ __('pricing.item') }}</x-th>
+                    <x-th>{{ __('pricing.sku') }}</x-th>
+                    <x-th align="right">{{ __('pricing.cost_price') }}</x-th>
+                    <x-th align="right">{{ __('pricing.selling_price') }}</x-th>
+                    <x-th align="right">{{ __('pricing.member_price') }}</x-th>
                 </x-slot>
 
                 @foreach($items as $item)
@@ -70,7 +70,7 @@
                                 name="prices[{{ $item->id }}][member_price]"
                                 value="{{ $memberPrices[$item->id] ?? '' }}"
                                 class="w-32 px-3 py-1.5 text-right border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                placeholder="Optional"
+                                :placeholder="__('pricing.optional')"
                             />
                         </x-td>
                     </tr>
@@ -78,7 +78,7 @@
             </x-table>
 
             <div class="mt-6 flex justify-end">
-                <x-button type="submit">Save All Prices</x-button>
+                <x-button type="submit">{{ __('pricing.save_all_prices') }}</x-button>
             </div>
         </x-card>
     </form>

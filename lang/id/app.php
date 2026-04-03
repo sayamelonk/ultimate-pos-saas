@@ -39,6 +39,9 @@ return [
     'send' => 'Kirim',
     'receive' => 'Terima',
     'complete' => 'Selesaikan',
+    'my_profile' => 'Profil Saya',
+    'logout' => 'Keluar',
+    'no_outlet' => 'Tidak Ada Outlet',
 
     // Common labels
     'name' => 'Nama',
@@ -157,4 +160,20 @@ return [
     'language_changed' => 'Bahasa berhasil diubah.',
     'invalid_language' => 'Bahasa yang dipilih tidak valid.',
     'select_language' => 'Pilih Bahasa',
+
+    // Additional labels
+    'total_records' => 'Total Catatan',
+    'total_value_lost' => 'Total Nilai Hilang',
+    'total_qty_wasted' => 'Total Jml Terbuang',
+    'top_reason' => 'Alasan Utama',
+    'value_impact' => 'Dampak Nilai',
+    'audit_information' => 'Informasi Audit',
+    'last_updated' => 'Terakhir Diperbarui',
+    'records' => 'catatan',
+    'waste_by_reason' => 'Waste Berdasarkan Alasan',
+    'avg_daily_loss' => 'Rata-rata Kerugian Harian',
+    'items_affected' => 'Item Terdampak',
+    'daily_waste_trend' => 'Tren Waste Harian',
+    'top_wasted_items' => 'Item Terbuang Terbanyak',
+    'optional' => 'Opsional',
 ];

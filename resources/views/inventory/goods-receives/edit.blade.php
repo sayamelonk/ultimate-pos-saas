@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit Goods Receive - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.edit_gr') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit GR')
+    @section('page-title', __('inventory.edit_gr'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.goods-receives.show', $goodsReceive) }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Goods Receive</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.edit_gr') }}</h2>
                 <p class="text-muted mt-1">{{ $goodsReceive->gr_number }}</p>
             </div>
         </div>
@@ -20,31 +20,31 @@
         @method('PUT')
 
         <div class="max-w-4xl space-y-6">
-            <x-card title="Purchase Order">
+            <x-card :title="__('inventory.purchase_order')">
                 <dl class="grid grid-cols-2 gap-4">
                     <div>
-                        <dt class="text-sm text-muted">PO Number</dt>
+                        <dt class="text-sm text-muted">{{ __('inventory.po_number') }}</dt>
                         <dd class="mt-1 font-medium">{{ $goodsReceive->purchaseOrder->po_number }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Supplier</dt>
+                        <dt class="text-sm text-muted">{{ __('inventory.supplier') }}</dt>
                         <dd class="mt-1">{{ $goodsReceive->purchaseOrder->supplier->name }}</dd>
                     </div>
                 </dl>
             </x-card>
 
-            <x-card title="Receive Details">
+            <x-card :title="__('inventory.receive_information')">
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         type="date"
                         name="receive_date"
-                        label="Receive Date"
+                        :label="__('inventory.receive_date')"
                         :value="old('receive_date', $goodsReceive->receive_date->format('Y-m-d'))"
                         required
                     />
                     <x-input
                         name="invoice_number"
-                        label="Supplier Invoice Number"
+                        :label="__('inventory.invoice_number')"
                         placeholder="e.g., INV-2024-001"
                         :value="old('invoice_number', $goodsReceive->invoice_number)"
                     />
@@ -52,8 +52,8 @@
 
                 <x-textarea
                     name="notes"
-                    label="Notes"
-                    placeholder="Additional notes..."
+                    :label="__('inventory.notes')"
+                    :placeholder="__('inventory.optional_notes')"
                     :value="old('notes', $goodsReceive->notes)"
                     rows="2"
                     class="mt-4"
@@ -62,21 +62,21 @@
 
             <x-card>
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-lg">Items</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.gr_items_title') }}</h3>
                     <div class="flex items-center gap-2 text-sm text-muted">
                         <span class="inline-flex items-center gap-1">
                             <span class="w-2 h-2 rounded-full bg-primary"></span>
-                            Batch Tracked
+                            {{ __('inventory.batch_tracking') }}
                         </span>
                     </div>
                 </div>
 
                 <x-table>
                     <x-slot name="head">
-                        <x-th>Item</x-th>
-                        <x-th align="right">Ordered</x-th>
-                        <x-th align="right">Qty to Receive</x-th>
-                        <x-th>Batch Info</x-th>
+                        <x-th>{{ __('inventory.item') }}</x-th>
+                        <x-th align="right">{{ __('inventory.qty_ordered') }}</x-th>
+                        <x-th align="right">{{ __('inventory.receiving') }}</x-th>
+                        <x-th>{{ __('inventory.batch_number') }}</x-th>
                     </x-slot>
 
                     @foreach($goodsReceive->items as $index => $item)
@@ -117,7 +117,7 @@
                                         type="text"
                                         name="items[{{ $index }}][batch_number]"
                                         value="{{ old("items.{$index}.batch_number", $item->batch_number) }}"
-                                        placeholder="{{ $trackBatches ? 'Batch No.' : 'Optional' }}"
+                                        :placeholder="$trackBatches ? __('inventory.batch_number') : __('inventory.optional_notes')"
                                         class="w-28 px-2 py-1 border border-border rounded text-sm focus:ring-1 focus:ring-primary focus:border-primary {{ $trackBatches ? 'border-primary/50' : '' }}"
                                         {{ $trackBatches ? 'required' : '' }}
                                     >
@@ -126,7 +126,7 @@
                                         name="items[{{ $index }}][expiry_date]"
                                         value="{{ old("items.{$index}.expiry_date", $item->expiry_date?->format('Y-m-d')) }}"
                                         class="w-36 px-2 py-1 border border-border rounded text-sm focus:ring-1 focus:ring-primary focus:border-primary {{ $trackBatches ? 'border-primary/50' : '' }}"
-                                        title="Expiry Date"
+                                        :title="__('inventory.expiry_date')"
                                     >
                                 </div>
                             </x-td>
@@ -137,17 +137,17 @@
                 <div class="mt-4 p-3 bg-info/10 border border-info/20 rounded-lg">
                     <p class="text-sm text-info-700">
                         <x-icon name="information-circle" class="w-4 h-4 inline mr-1" />
-                        Items with <span class="w-2 h-2 rounded-full bg-primary inline-block"></span> indicator require batch tracking. Batch number will be auto-generated if left empty.
+                        {{ __('inventory.batch_number_auto') }}
                     </p>
                 </div>
             </x-card>
 
             <div class="flex items-center justify-end gap-3">
                 <x-button href="{{ route('inventory.goods-receives.show', $goodsReceive) }}" variant="outline-secondary">
-                    Cancel
+                    {{ __('inventory.cancel') }}
                 </x-button>
                 <x-button type="submit">
-                    Update Goods Receive
+                    {{ __('inventory.update_gr') }}
                 </x-button>
             </div>
         </div>

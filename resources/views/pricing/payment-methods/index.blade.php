@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Payment Methods - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('pricing.payment_methods') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Payment Methods')
+    @section('page-title', __('pricing.payment_methods'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Payment Methods</h2>
-                <p class="text-muted mt-1">Manage accepted payment methods</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('pricing.payment_methods') }}</h2>
+                <p class="text-muted mt-1">{{ __('pricing.manage_accepted_payment_methods') }}</p>
             </div>
             <x-button href="{{ route('pricing.payment-methods.create') }}" icon="plus">
-                Add Payment Method
+                {{ __('pricing.add_payment_method') }}
             </x-button>
         </div>
     </x-slot>
@@ -23,12 +23,12 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search payment methods..."
+                        placeholder="{{ __('pricing.search_payment_methods') }}"
                         :value="request('search')"
                     />
                 </div>
                 <x-select name="type" class="w-40">
-                    <option value="">All Types</option>
+                    <option value="">{{ __('pricing.all_types') }}</option>
                     @foreach($types as $value => $label)
                         <option value="{{ $value }}" @selected(request('type') === $value)>
                             {{ $label }}
@@ -36,24 +36,24 @@
                     @endforeach
                 </x-select>
                 <x-select name="status" class="w-36">
-                    <option value="">All Status</option>
-                    <option value="active" @selected(request('status') === 'active')>Active</option>
-                    <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                    <option value="">{{ __('pricing.all_status') }}</option>
+                    <option value="active" @selected(request('status') === 'active')>{{ __('pricing.active') }}</option>
+                    <option value="inactive" @selected(request('status') === 'inactive')>{{ __('pricing.inactive') }}</option>
                 </x-select>
-                <x-button type="submit" variant="secondary">Filter</x-button>
+                <x-button type="submit" variant="secondary">{{ __('pricing.filter') }}</x-button>
             </form>
         </div>
 
         @if($paymentMethods->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Payment Method</x-th>
-                    <x-th>Code</x-th>
-                    <x-th>Type</x-th>
-                    <x-th align="right">Charge %</x-th>
-                    <x-th align="right">Fixed Fee</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('pricing.payment_method') }}</x-th>
+                    <x-th>{{ __('pricing.code') }}</x-th>
+                    <x-th>{{ __('pricing.type') }}</x-th>
+                    <x-th align="right">{{ __('pricing.charge_percentage') }}</x-th>
+                    <x-th align="right">{{ __('pricing.fixed_fee') }}</x-th>
+                    <x-th align="center">{{ __('pricing.status') }}</x-th>
+                    <x-th align="right">{{ __('pricing.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($paymentMethods as $method)
@@ -81,9 +81,9 @@
                         <x-td align="right">Rp {{ number_format($method->charge_fixed, 0, ',', '.') }}</x-td>
                         <x-td align="center">
                             @if($method->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('pricing.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('pricing.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -97,21 +97,21 @@
 
                                     <x-dropdown-item href="{{ route('pricing.payment-methods.edit', $method) }}">
                                         <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                        {{ __('pricing.edit') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item
                                         type="button"
                                         danger
                                         @click="$dispatch('confirm', {
-                                            title: 'Delete Payment Method',
-                                            message: 'Are you sure you want to delete {{ $method->name }}? This action cannot be undone.',
-                                            confirmText: 'Delete',
+                                            title: '{{ __('pricing.delete_payment_method') }}',
+                                            message: '{{ __('pricing.delete_payment_method_confirmation', ['name' => $method->name]) }}',
+                                            confirmText: '{{ __('pricing.delete') }}',
                                             variant: 'danger',
                                             onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
                                         })"
                                     >
                                         <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
+                                        {{ __('pricing.delete') }}
                                     </x-dropdown-item>
                                 </x-dropdown>
                                 <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('pricing.payment-methods.destroy', $method) }}" method="POST" class="hidden">
@@ -129,12 +129,12 @@
             </div>
         @else
             <x-empty-state
-                title="No payment methods found"
-                description="Add payment methods to accept payments."
+                title="{{ __('pricing.no_payment_methods_found') }}"
+                description="{{ __('pricing.add_payment_methods_to_accept_payments') }}"
                 icon="credit-card"
             >
                 <x-button href="{{ route('pricing.payment-methods.create') }}" icon="plus">
-                    Add Payment Method
+                    {{ __('pricing.add_payment_method') }}
                 </x-button>
             </x-empty-state>
         @endif

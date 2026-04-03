@@ -1,23 +1,23 @@
 <x-app-layout>
     <x-slot name="title">Stock Batches - Ultimate POS</x-slot>
 
-    @section('page-title', 'Stock Batches')
+    @section('page-title', __('inventory.batches'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Stock Batches</h2>
-                <p class="text-muted mt-1">Track batch numbers and expiry dates</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.batches') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.manage_batches') }}</p>
             </div>
             <div class="flex items-center gap-2">
                 <x-button href="{{ route('inventory.batches.settings') }}" variant="secondary" icon="cog-6-tooth">
-                    Settings
+                    {{ __('inventory.settings') }}
                 </x-button>
                 <x-button href="{{ route('inventory.batches.expiry-report') }}" variant="warning" icon="exclamation-triangle">
-                    Expiry Report
+                    {{ __('inventory.expiry_report') }}
                 </x-button>
                 <x-button href="{{ route('inventory.batches.create') }}" icon="plus">
-                    Add Batch
+                    {{ __('inventory.add_batch') }}
                 </x-button>
             </div>
         </div>
@@ -26,24 +26,24 @@
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <x-stat-card
-            title="Active Batches"
+            :title="__('inventory.active') . ' ' . __('inventory.batches')"
             :value="$stats['total_batches']"
             icon="cube"
         />
         <x-stat-card
-            title="Expiring Soon"
+            :title="__('inventory.expiring_soon')"
             :value="$stats['expiring_soon']"
             icon="clock"
             :color="$stats['expiring_soon'] > 0 ? 'warning' : 'secondary'"
         />
         <x-stat-card
-            title="Critical ({{ $settings->expiry_critical_days }} days)"
+            :title="__('inventory.expiring_batches') . ' (' . $settings->expiry_critical_days . ' ' . __('inventory.days_until_expiry') . ')'"
             :value="$stats['critical']"
             icon="exclamation-triangle"
             :color="$stats['critical'] > 0 ? 'danger' : 'secondary'"
         />
         <x-stat-card
-            title="Already Expired"
+            :title="__('inventory.expired')"
             :value="$stats['expired']"
             icon="x-circle"
             :color="$stats['expired'] > 0 ? 'danger' : 'secondary'"
@@ -55,18 +55,18 @@
         <form method="GET" action="{{ route('inventory.batches.index') }}">
             <div class="flex flex-wrap items-end gap-3">
                 <div class="flex-1 min-w-[200px] max-w-xs">
-                    <label class="block text-xs font-medium text-muted mb-1">Search</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('inventory.search') }}</label>
                     <x-input
                         name="search"
-                        placeholder="Batch number, item name..."
+                        :placeholder="__('inventory.search_batches')"
                         :value="request('search')"
                     />
                 </div>
 
                 <div class="w-40">
-                    <label class="block text-xs font-medium text-muted mb-1">Outlet</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('inventory.outlet') }}</label>
                     <x-select name="outlet_id">
-                        <option value="">All Outlets</option>
+                        <option value="">{{ __('inventory.all_outlets') }}</option>
                         @foreach($outlets as $outlet)
                             <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                                 {{ $outlet->name }}
@@ -76,9 +76,9 @@
                 </div>
 
                 <div class="w-44">
-                    <label class="block text-xs font-medium text-muted mb-1">Item</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('inventory.item') }}</label>
                     <x-select name="item_id">
-                        <option value="">All Items</option>
+                        <option value="">{{ __('inventory.all_items') }}</option>
                         @foreach($items as $item)
                             <option value="{{ $item->id }}" @selected(request('item_id') == $item->id)>
                                 {{ $item->name }}
@@ -88,34 +88,34 @@
                 </div>
 
                 <div class="w-36">
-                    <label class="block text-xs font-medium text-muted mb-1">Status</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('inventory.status') }}</label>
                     <x-select name="status">
-                        <option value="">All Status</option>
-                        <option value="active" @selected(request('status') === 'active')>Active</option>
-                        <option value="depleted" @selected(request('status') === 'depleted')>Depleted</option>
-                        <option value="expired" @selected(request('status') === 'expired')>Expired</option>
-                        <option value="disposed" @selected(request('status') === 'disposed')>Disposed</option>
+                        <option value="">{{ __('inventory.all_status') }}</option>
+                        <option value="active" @selected(request('status') === 'active')>{{ __('inventory.active') }}</option>
+                        <option value="depleted" @selected(request('status') === 'depleted')>{{ ucfirst('depleted') }}</option>
+                        <option value="expired" @selected(request('status') === 'expired')>{{ __('inventory.expired') }}</option>
+                        <option value="disposed" @selected(request('status') === 'disposed')>{{ ucfirst('disposed') }}</option>
                     </x-select>
                 </div>
 
                 <div class="w-40">
-                    <label class="block text-xs font-medium text-muted mb-1">Expiry</label>
+                    <label class="block text-xs font-medium text-muted mb-1">{{ __('inventory.expiry_status') }}</label>
                     <x-select name="expiry_filter">
-                        <option value="">All</option>
-                        <option value="expired" @selected(request('expiry_filter') === 'expired')>Expired</option>
-                        <option value="critical" @selected(request('expiry_filter') === 'critical')>Critical</option>
-                        <option value="warning" @selected(request('expiry_filter') === 'warning')>Warning</option>
-                        <option value="no_expiry" @selected(request('expiry_filter') === 'no_expiry')>No Expiry</option>
+                        <option value="">{{ __('inventory.all_expiry') }}</option>
+                        <option value="expired" @selected(request('expiry_filter') === 'expired')>{{ __('inventory.expired') }}</option>
+                        <option value="critical" @selected(request('expiry_filter') === 'critical')>{{ ucfirst('critical') }}</option>
+                        <option value="warning" @selected(request('expiry_filter') === 'warning')>{{ ucfirst('warning') }}</option>
+                        <option value="no_expiry" @selected(request('expiry_filter') === 'no_expiry')>{{ __('inventory.none') }}</option>
                     </x-select>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <x-button type="submit" variant="primary" icon="search">
-                        Filter
+                        {{ __('inventory.filter') }}
                     </x-button>
                     @if(request()->hasAny(['search', 'outlet_id', 'item_id', 'status', 'expiry_filter']))
                         <x-button href="{{ route('inventory.batches.index') }}" variant="ghost">
-                            Clear
+                            {{ ucfirst('clear') }}
                         </x-button>
                     @endif
                 </div>
@@ -129,13 +129,13 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot name="head">
-                        <x-th>Batch / Item</x-th>
-                        <x-th>Outlet</x-th>
-                        <x-th align="center">Expiry Date</x-th>
-                        <x-th align="right">Quantity</x-th>
-                        <x-th align="right">Unit Cost</x-th>
-                        <x-th align="center">Status</x-th>
-                        <x-th align="center">Actions</x-th>
+                        <x-th>{{ __('inventory.batch') }} / {{ __('inventory.item') }}</x-th>
+                        <x-th>{{ __('inventory.outlet') }}</x-th>
+                        <x-th align="center">{{ __('inventory.expiry_date') }}</x-th>
+                        <x-th align="right">{{ __('inventory.quantity') }}</x-th>
+                        <x-th align="right">{{ __('inventory.unit_cost') }}</x-th>
+                        <x-th align="center">{{ __('inventory.status') }}</x-th>
+                        <x-th align="center">{{ __('inventory.actions') }}</x-th>
                     </x-slot>
 
                     @foreach($batches as $batch)
@@ -147,7 +147,7 @@
                                     </a>
                                     <p class="text-sm text-muted">{{ $batch->inventoryItem->name }}</p>
                                     @if($batch->supplier_batch_number)
-                                        <p class="text-xs text-muted">Supplier: {{ $batch->supplier_batch_number }}</p>
+                                        <p class="text-xs text-muted">{{ __('inventory.supplier') }}: {{ $batch->supplier_batch_number }}</p>
                                     @endif
                                 </div>
                             </x-td>
@@ -164,17 +164,17 @@
                                         @if($days !== null)
                                             <x-badge type="{{ $batch->getExpiryBadgeType() }}">
                                                 @if($days < 0)
-                                                    Expired {{ abs($days) }} days ago
+                                                    {{ __('inventory.expired') }} {{ abs($days) }} {{ __('inventory.days_until_expiry') }}
                                                 @elseif($days === 0)
-                                                    Expires today
+                                                    {{ __('inventory.expired') }} {{ __('inventory.date') }}
                                                 @else
-                                                    {{ $days }} days left
+                                                    {{ $days }} {{ __('inventory.days_until_expiry') }}
                                                 @endif
                                             </x-badge>
                                         @endif
                                     </div>
                                 @else
-                                    <span class="text-muted">No expiry</span>
+                                    <span class="text-muted">{{ __('inventory.none') }}</span>
                                 @endif
                             </x-td>
                             <x-td align="right">
@@ -204,10 +204,10 @@
                                     <x-button href="{{ route('inventory.batches.show', $batch) }}" size="sm" variant="ghost" icon="eye" />
                                     @if($batch->status === 'active')
                                         <form action="{{ route('inventory.batches.mark-expired', $batch) }}" method="POST" class="inline"
-                                              onsubmit="return confirm('Mark this batch as expired?')">
+                                              onsubmit="return confirm('{{ __('inventory.confirm_delete_batch') }}')">
                                             @csrf
                                             @method('PATCH')
-                                            <x-button type="submit" size="sm" variant="danger" icon="x-circle" title="Mark Expired" />
+                                            <x-button type="submit" size="sm" variant="danger" icon="x-circle" :title="__('inventory.expired')" />
                                         </form>
                                     @endif
                                 </div>
@@ -222,12 +222,12 @@
             </div>
         @else
             <x-empty-state
-                title="No batches found"
-                description="No stock batches match your filters."
+                :title="__('inventory.no_batches_found')"
+                :description="__('inventory.batches_description')"
                 icon="cube"
             >
                 <x-button href="{{ route('inventory.batches.create') }}" icon="plus">
-                    Add First Batch
+                    {{ __('inventory.add_batch') }}
                 </x-button>
             </x-empty-state>
         @endif

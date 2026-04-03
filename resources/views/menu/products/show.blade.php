@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="title">{{ $product->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Product Details')
+    @section('page-title', __('products.product_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <x-button href="{{ route('menu.products.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                    Back
+                    {{ __('products.back') }}
                 </x-button>
                 <div>
                     <h2 class="text-2xl font-bold text-text">{{ $product->name }}</h2>
@@ -16,7 +16,7 @@
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('menu.products.edit', $product) }}" icon="pencil">
-                    Edit
+                    {{ __('products.edit') }}
                 </x-button>
             </div>
         </div>
@@ -25,20 +25,20 @@
     <div class="grid grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
             <!-- Basic Information -->
-            <x-card title="Product Information">
+            <x-card title="{{ __('products.product_information') }}">
                 <dl class="grid grid-cols-2 gap-4">
                     <div>
-                        <dt class="text-sm text-muted">Name</dt>
+                        <dt class="text-sm text-muted">{{ __('products.name') }}</dt>
                         <dd class="mt-1 font-medium">{{ $product->name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">SKU</dt>
+                        <dt class="text-sm text-muted">{{ __('products.sku') }}</dt>
                         <dd class="mt-1">
                             <code class="px-2 py-1 bg-secondary-100 rounded text-sm">{{ $product->sku }}</code>
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Category</dt>
+                        <dt class="text-sm text-muted">{{ __('products.category') }}</dt>
                         <dd class="mt-1">
                             @if($product->category)
                                 <span class="inline-flex items-center gap-2">
@@ -46,45 +46,45 @@
                                     {{ $product->category->full_path }}
                                 </span>
                             @else
-                                <span class="text-muted">Uncategorized</span>
+                                <span class="text-muted">{{ __('products.uncategorized') }}</span>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Type</dt>
+                        <dt class="text-sm text-muted">{{ __('products.type') }}</dt>
                         <dd class="mt-1">
                             @if($product->product_type === 'single')
-                                <x-badge type="secondary">Single Product</x-badge>
+                                <x-badge type="secondary">{{ __('products.single_product') }}</x-badge>
                             @elseif($product->product_type === 'variant')
-                                <x-badge type="info">Variant Product</x-badge>
+                                <x-badge type="info">{{ __('products.variant_product') }}</x-badge>
                             @else
-                                <x-badge type="warning">Combo Product</x-badge>
+                                <x-badge type="warning">{{ __('products.combo_product') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Status</dt>
+                        <dt class="text-sm text-muted">{{ __('products.status') }}</dt>
                         <dd class="mt-1">
                             @if($product->is_active)
-                                <x-badge type="success">Active</x-badge>
+                                <x-badge type="success">{{ __('products.active') }}</x-badge>
                             @else
-                                <x-badge type="danger">Inactive</x-badge>
+                                <x-badge type="danger">{{ __('products.inactive') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Featured</dt>
+                        <dt class="text-sm text-muted">{{ __('products.is_featured') }}</dt>
                         <dd class="mt-1">
                             @if($product->is_featured)
-                                <x-badge type="warning">Yes</x-badge>
+                                <x-badge type="warning">{{ __('products.yes') }}</x-badge>
                             @else
-                                <x-badge type="secondary">No</x-badge>
+                                <x-badge type="secondary">{{ __('products.no') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     @if($product->description)
                         <div class="col-span-2">
-                            <dt class="text-sm text-muted">Description</dt>
+                            <dt class="text-sm text-muted">{{ __('products.description') }}</dt>
                             <dd class="mt-1">{{ $product->description }}</dd>
                         </div>
                     @endif
@@ -92,18 +92,18 @@
             </x-card>
 
             <!-- Pricing -->
-            <x-card title="Pricing">
+            <x-card title="{{ __('products.pricing') }}">
                 <div class="grid grid-cols-3 gap-6">
                     <div class="text-center p-4 bg-secondary-50 rounded-lg">
-                        <p class="text-sm text-muted mb-1">Base Price</p>
+                        <p class="text-sm text-muted mb-1">{{ __('products.base_price') }}</p>
                         <p class="text-2xl font-bold text-accent">Rp {{ number_format($product->base_price, 0, ',', '.') }}</p>
                     </div>
                     <div class="text-center p-4 bg-secondary-50 rounded-lg">
-                        <p class="text-sm text-muted mb-1">Cost Price</p>
+                        <p class="text-sm text-muted mb-1">{{ __('products.cost_price') }}</p>
                         <p class="text-2xl font-bold">Rp {{ number_format($product->cost_price ?? 0, 0, ',', '.') }}</p>
                     </div>
                     <div class="text-center p-4 bg-secondary-50 rounded-lg">
-                        <p class="text-sm text-muted mb-1">Profit Margin</p>
+                        <p class="text-sm text-muted mb-1">{{ __('products.profit_margin') }}</p>
                         @php
                             $margin = $product->base_price > 0 && $product->cost_price > 0
                                 ? (($product->base_price - $product->cost_price) / $product->base_price) * 100
@@ -117,7 +117,7 @@
                 @if($product->tax_rate > 0)
                     <div class="mt-4 pt-4 border-t border-border">
                         <div class="flex items-center justify-between">
-                            <span class="text-muted">Tax Rate</span>
+                            <span class="text-muted">{{ __('products.tax_rate') }}</span>
                             <span class="font-medium">{{ $product->tax_rate }}%</span>
                         </div>
                     </div>
@@ -126,13 +126,13 @@
 
             <!-- Variants (if variant product) -->
             @if($product->product_type === 'variant' && $product->variants->count() > 0)
-                <x-card title="Product Variants">
+                <x-card title="{{ __('products.product_variants') }}">
                     <x-table>
                         <x-slot name="head">
-                            <x-th>Variant</x-th>
-                            <x-th>SKU</x-th>
-                            <x-th align="right">Price</x-th>
-                            <x-th align="center">Status</x-th>
+                            <x-th>{{ __('products.variant') }}</x-th>
+                            <x-th>{{ __('products.sku') }}</x-th>
+                            <x-th align="right">{{ __('products.price') }}</x-th>
+                            <x-th align="center">{{ __('products.status') }}</x-th>
                         </x-slot>
 
                         @foreach($product->variants as $variant)
@@ -148,9 +148,9 @@
                                 </x-td>
                                 <x-td align="center">
                                     @if($variant->is_active)
-                                        <x-badge type="success" size="sm">Active</x-badge>
+                                        <x-badge type="success" size="sm">{{ __('products.active') }}</x-badge>
                                     @else
-                                        <x-badge type="danger" size="sm">Inactive</x-badge>
+                                        <x-badge type="danger" size="sm">{{ __('products.inactive') }}</x-badge>
                                     @endif
                                 </x-td>
                             </tr>
@@ -161,7 +161,7 @@
 
             <!-- Variant Groups (if variant product) -->
             @if($product->product_type === 'variant' && $product->variantGroups->count() > 0)
-                <x-card title="Variant Groups">
+                <x-card title="{{ __('products.variant_groups') }}">
                     <div class="space-y-4">
                         @foreach($product->variantGroups as $group)
                             <div class="p-4 bg-secondary-50 rounded-lg">
@@ -186,14 +186,14 @@
 
             <!-- Modifier Groups -->
             @if($product->modifierGroups->count() > 0)
-                <x-card title="Modifier Groups">
+                <x-card title="{{ __('products.modifier_groups') }}">
                     <div class="space-y-4">
                         @foreach($product->modifierGroups as $group)
                             <div class="p-4 bg-secondary-50 rounded-lg">
                                 <div class="flex items-center justify-between mb-2">
                                     <h4 class="font-medium">{{ $group->name }}</h4>
                                     <x-badge type="{{ $group->selection_type === 'single' ? 'secondary' : 'info' }}" size="sm">
-                                        {{ $group->selection_type === 'single' ? 'Single Select' : 'Multi Select' }}
+                                        {{ $group->selection_type === 'single' ? __('products.single_select') : __('products.multi_select') }}
                                     </x-badge>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
@@ -214,14 +214,14 @@
 
             <!-- Inventory Link -->
             @if($product->inventoryItem)
-                <x-card title="Linked Inventory Item">
+                <x-card title="{{ __('products.linked_inventory_item') }}">
                     <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
                         <div>
-                            <dt class="text-sm text-muted">Inventory Item</dt>
+                            <dt class="text-sm text-muted">{{ __('products.inventory_item') }}</dt>
                             <dd class="font-medium">{{ $product->inventoryItem->name }}</dd>
                         </div>
                         <x-button href="{{ route('inventory.items.show', $product->inventoryItem) }}" variant="outline-secondary" size="sm">
-                            View Item
+                            {{ __('products.view_item') }}
                         </x-button>
                     </div>
                 </x-card>
@@ -231,14 +231,14 @@
             <x-card>
                 <x-slot name="title">
                     <div class="flex items-center justify-between">
-                        <span>Recipe & Ingredients</span>
+                        <span>{{ __('products.recipe_and_ingredients') }}</span>
                         @if($product->recipe)
                             <div class="flex gap-2">
                                 <x-button href="{{ route('inventory.recipes.edit', $product->recipe) }}" variant="outline-secondary" size="sm" icon="pencil">
-                                    Edit Recipe
+                                    {{ __('products.edit_recipe') }}
                                 </x-button>
                                 <x-button href="{{ route('inventory.recipes.show', $product->recipe) }}" variant="outline-secondary" size="sm" icon="eye">
-                                    View Full
+                                    {{ __('products.view_full') }}
                                 </x-button>
                             </div>
                         @endif
@@ -252,9 +252,9 @@
                             <div>
                                 <p class="font-medium text-accent">{{ $product->recipe->name }}</p>
                                 <p class="text-sm text-muted">
-                                    Yield: {{ $product->recipe->yield_qty }} {{ $product->recipe->yieldUnit->name ?? 'unit' }}
+                                    {{ __('products.yield') }}: {{ $product->recipe->yield_qty }} {{ $product->recipe->yieldUnit->name ?? 'unit' }}
                                     @if($product->recipe->estimated_cost)
-                                        • Cost: Rp {{ number_format($product->recipe->estimated_cost, 0, ',', '.') }}
+                                        • {{ __('products.cost') }}: Rp {{ number_format($product->recipe->estimated_cost, 0, ',', '.') }}
                                     @endif
                                 </p>
                             </div>
@@ -265,10 +265,10 @@
                     @if($product->recipe->items->count() > 0)
                         <x-table>
                             <x-slot name="head">
-                                <x-th>Ingredient</x-th>
-                                <x-th align="right">Qty</x-th>
-                                <x-th align="right">Unit Cost</x-th>
-                                <x-th align="right">Total</x-th>
+                                <x-th>{{ __('products.ingredient') }}</x-th>
+                                <x-th align="right">{{ __('products.quantity') }}</x-th>
+                                <x-th align="right">{{ __('products.unit_cost') }}</x-th>
+                                <x-th align="right">{{ __('products.total') }}</x-th>
                             </x-slot>
 
                             @php $totalCost = 0; @endphp
@@ -284,7 +284,7 @@
                                         <div>
                                             <p class="font-medium">{{ $item->inventoryItem->name ?? 'Unknown' }}</p>
                                             @if($item->waste_percentage > 0)
-                                                <p class="text-xs text-muted">+{{ $item->waste_percentage }}% waste</p>
+                                                <p class="text-xs text-muted">+{{ $item->waste_percentage }}% {{ __('products.waste') }}</p>
                                             @endif
                                         </div>
                                     </x-td>
@@ -300,7 +300,7 @@
                                 </tr>
                             @endforeach
                             <tr class="border-t-2 border-border bg-secondary-50">
-                                <x-td colspan="3" class="text-right font-medium">Total Ingredient Cost</x-td>
+                                <x-td colspan="3" class="text-right font-medium">{{ __('products.total_ingredient_cost') }}</x-td>
                                 <x-td align="right">
                                     <span class="font-bold text-accent">Rp {{ number_format($totalCost, 0, ',', '.') }}</span>
                                 </x-td>
@@ -309,11 +309,11 @@
                     @else
                         <x-empty-state
                             icon="beaker"
-                            title="No Ingredients"
-                            description="This recipe has no ingredients yet."
+                            title="{{ __('products.no_ingredients') }}"
+                            description="{{ __('products.no_ingredients_desc') }}"
                         >
                             <x-button href="{{ route('inventory.recipes.edit', $product->recipe) }}" icon="plus" size="sm">
-                                Add Ingredients
+                                {{ __('products.add_ingredients') }}
                             </x-button>
                         </x-empty-state>
                     @endif
@@ -321,27 +321,27 @@
                     <!-- No Recipe - Show options to link or create -->
                     <x-empty-state
                         icon="beaker"
-                        title="No Recipe Linked"
-                        description="Link an existing recipe or create a new one to track ingredients and costs."
+                        title="{{ __('products.no_recipe_linked') }}"
+                        description="{{ __('products.no_recipe_linked_desc') }}"
                     >
                         <div class="flex flex-col gap-3">
                             @if($availableRecipes->count() > 0)
                                 <form action="{{ route('menu.products.link-recipe', $product) }}" method="POST" class="flex gap-2">
                                     @csrf
                                     <select name="recipe_id" class="form-select rounded-lg border-border text-sm flex-1">
-                                        <option value="">Select existing recipe...</option>
+                                        <option value="">{{ __('products.select_existing_recipe') }}</option>
                                         @foreach($availableRecipes as $recipe)
                                             <option value="{{ $recipe->id }}">{{ $recipe->name }}</option>
                                         @endforeach
                                     </select>
                                     <x-button type="submit" variant="outline-secondary" size="sm" icon="link">
-                                        Link
+                                        {{ __('products.link') }}
                                     </x-button>
                                 </form>
                                 <div class="text-center text-muted text-sm">or</div>
                             @endif
                             <x-button href="{{ route('inventory.recipes.create', ['product_id' => $product->id]) }}" icon="plus">
-                                Create New Recipe
+                                {{ __('products.create_new_recipe') }}
                             </x-button>
                         </div>
                     </x-empty-state>
@@ -352,7 +352,7 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Product Image -->
-            <x-card title="Product Image">
+            <x-card title="{{ __('products.product_image') }}">
                 <div class="aspect-square bg-secondary-100 rounded-lg flex items-center justify-center overflow-hidden">
                     @if($product->image_url)
                         <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
@@ -363,25 +363,25 @@
             </x-card>
 
             <!-- Quick Stats -->
-            <x-card title="Statistics">
+            <x-card title="{{ __('products.statistics') }}">
                 <dl class="space-y-4">
                     @if($product->product_type === 'variant')
                         <div class="flex items-center justify-between">
-                            <dt class="text-muted">Variants</dt>
+                            <dt class="text-muted">{{ __('products.variants') }}</dt>
                             <dd class="font-bold text-lg">{{ $product->variants->count() }}</dd>
                         </div>
                     @endif
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Modifier Groups</dt>
+                        <dt class="text-muted">{{ __('products.modifier_groups') }}</dt>
                         <dd class="font-bold text-lg">{{ $product->modifierGroups->count() }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Track Stock</dt>
+                        <dt class="text-muted">{{ __('products.track_stock') }}</dt>
                         <dd>
                             @if($product->track_stock)
-                                <x-badge type="success" size="sm">Yes</x-badge>
+                                <x-badge type="success" size="sm">{{ __('products.yes') }}</x-badge>
                             @else
-                                <x-badge type="secondary" size="sm">No</x-badge>
+                                <x-badge type="secondary" size="sm">{{ __('products.no') }}</x-badge>
                             @endif
                         </dd>
                     </div>
@@ -390,15 +390,15 @@
 
             <!-- Outlet Availability -->
             @if($product->productOutlets->count() > 0)
-                <x-card title="Outlet Availability">
+                <x-card title="{{ __('products.outlet_availability') }}">
                     <div class="space-y-2">
                         @foreach($product->productOutlets as $productOutlet)
                             <div class="flex items-center justify-between p-2 bg-secondary-50 rounded">
                                 <span class="text-sm">{{ $productOutlet->outlet->name ?? 'Unknown Outlet' }}</span>
                                 @if($productOutlet->is_available)
-                                    <x-badge type="success" size="sm">Available</x-badge>
+                                    <x-badge type="success" size="sm">{{ __('products.available') }}</x-badge>
                                 @else
-                                    <x-badge type="danger" size="sm">Unavailable</x-badge>
+                                    <x-badge type="danger" size="sm">{{ __('products.unavailable') }}</x-badge>
                                 @endif
                             </div>
                         @endforeach
@@ -407,18 +407,18 @@
             @endif
 
             <!-- Metadata -->
-            <x-card title="Information">
+            <x-card title="{{ __('products.information') }}">
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between">
-                        <dt class="text-muted">Sort Order</dt>
+                        <dt class="text-muted">{{ __('products.sort_order') }}</dt>
                         <dd>{{ $product->sort_order }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Created</dt>
+                        <dt class="text-muted">{{ __('products.created') }}</dt>
                         <dd>{{ $product->created_at->format('d M Y H:i') }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Updated</dt>
+                        <dt class="text-muted">{{ __('products.updated') }}</dt>
                         <dd>{{ $product->updated_at->format('d M Y H:i') }}</dd>
                     </div>
                 </dl>
@@ -427,12 +427,12 @@
             <!-- Actions -->
             <div class="flex flex-col gap-3">
                 <x-button href="{{ route('menu.products.edit', $product) }}" icon="pencil" class="w-full">
-                    Edit Product
+                    {{ __('products.edit_product') }}
                 </x-button>
                 <form action="{{ route('menu.products.duplicate', $product) }}" method="POST">
                     @csrf
                     <x-button type="submit" variant="outline-secondary" icon="document-duplicate" class="w-full">
-                        Duplicate Product
+                        {{ __('products.duplicate_product') }}
                     </x-button>
                 </form>
             </div>

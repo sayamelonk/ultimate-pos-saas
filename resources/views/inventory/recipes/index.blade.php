@@ -1,20 +1,20 @@
 <x-app-layout>
-    <x-slot name="title">Recipes - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.recipes') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Recipes')
+    @section('page-title', __('inventory.recipes'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Recipes</h2>
-                <p class="text-muted mt-1">Manage product recipes and ingredients</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.recipes') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.manage_recipes') }}</p>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('inventory.recipes.cost-analysis') }}" variant="outline-secondary" icon="chart-bar">
-                    Cost Analysis
+                    {{ __('inventory.cost_analysis') }}
                 </x-button>
                 <x-button href="{{ route('inventory.recipes.create') }}" icon="plus">
-                    New Recipe
+                    {{ __('inventory.create_recipe') }}
                 </x-button>
             </div>
         </div>
@@ -28,12 +28,12 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search recipe name..."
+                        :placeholder="__('inventory.search_recipes')"
                         :value="request('search')"
                     />
                 </div>
                 <x-select name="category_id" class="w-48">
-                    <option value="">All Categories</option>
+                    <option value="">{{ __('inventory.all_categories') }}</option>
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}" @selected(request('category_id') == $category->id)>
                             {{ $category->name }}
@@ -41,16 +41,16 @@
                     @endforeach
                 </x-select>
                 <x-select name="status" class="w-36">
-                    <option value="">All Status</option>
-                    <option value="active" @selected(request('status') === 'active')>Active</option>
-                    <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                    <option value="">{{ __('inventory.all_status') }}</option>
+                    <option value="active" @selected(request('status') === 'active')>{{ __('inventory.active') }}</option>
+                    <option value="inactive" @selected(request('status') === 'inactive')>{{ __('inventory.inactive') }}</option>
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Filter
+                    {{ __('inventory.filter') }}
                 </x-button>
                 @if(request()->hasAny(['search', 'category_id', 'status']))
                     <x-button href="{{ route('inventory.recipes.index') }}" variant="ghost">
-                        Clear
+                        {{ __('inventory.cancel') }}
                     </x-button>
                 @endif
             </form>
@@ -60,13 +60,13 @@
         @if($recipes->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Recipe Name</x-th>
-                    <x-th>Category</x-th>
-                    <x-th align="right">Ingredients</x-th>
-                    <x-th align="right">Yield</x-th>
-                    <x-th align="right">Cost</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('inventory.recipe_name') }}</x-th>
+                    <x-th>{{ __('inventory.category') }}</x-th>
+                    <x-th align="right">{{ __('inventory.ingredients') }}</x-th>
+                    <x-th align="right">{{ __('inventory.yield') }}</x-th>
+                    <x-th align="right">{{ __('inventory.total_cost') }}</x-th>
+                    <x-th align="center">{{ __('inventory.status') }}</x-th>
+                    <x-th align="right">{{ __('inventory.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($recipes as $recipe)
@@ -76,7 +76,7 @@
                                 {{ $recipe->name }}
                             </a>
                             @if($recipe->product)
-                                <p class="text-xs text-muted">Linked to: {{ $recipe->product->name }}</p>
+                                <p class="text-xs text-muted">{{ __('inventory.linked_product') }}: {{ $recipe->product->name }}</p>
                             @endif
                         </x-td>
                         <x-td>{{ $recipe->product->category->name ?? '-' }}</x-td>
@@ -95,9 +95,9 @@
                         </x-td>
                         <x-td align="center">
                             @if($recipe->is_active)
-                                <x-badge type="success">Active</x-badge>
+                                <x-badge type="success">{{ __('inventory.active') }}</x-badge>
                             @else
-                                <x-badge type="secondary">Inactive</x-badge>
+                                <x-badge type="secondary">{{ __('inventory.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -111,39 +111,39 @@
 
                                     <x-dropdown-item href="{{ route('inventory.recipes.show', $recipe) }}">
                                         <x-icon name="eye" class="w-4 h-4" />
-                                        View Details
+                                        {{ __('inventory.view_details') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item href="{{ route('inventory.recipes.edit', $recipe) }}">
                                         <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                        {{ __('inventory.edit') }}
                                     </x-dropdown-item>
                                     <form action="{{ route('inventory.recipes.duplicate', $recipe) }}" method="POST" class="w-full">
                                         @csrf
                                         <x-dropdown-item type="button">
                                             <x-icon name="document-duplicate" class="w-4 h-4" />
-                                            Duplicate
+                                            {{ __('inventory.duplicate_recipe') }}
                                         </x-dropdown-item>
                                     </form>
                                     <form action="{{ route('inventory.recipes.recalculate', $recipe) }}" method="POST" class="w-full">
                                         @csrf
                                         <x-dropdown-item type="button">
                                             <x-icon name="calculator" class="w-4 h-4" />
-                                            Recalculate Cost
+                                            {{ __('inventory.recalculate_cost') }}
                                         </x-dropdown-item>
                                     </form>
                                     <x-dropdown-item
                                         type="button"
                                         danger
                                         @click="$dispatch('confirm', {
-                                            title: 'Delete Recipe',
-                                            message: 'Are you sure you want to delete {{ $recipe->name }}? This action cannot be undone.',
-                                            confirmText: 'Delete',
+                                            title: '{{ __('inventory.delete_recipe') }}',
+                                            message: '{{ __('inventory.confirm_delete_recipe', ['name' => $recipe->name]) }}',
+                                            confirmText: '{{ __('inventory.delete') }}',
                                             variant: 'danger',
                                             onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
                                         })"
                                     >
                                         <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
+                                        {{ __('inventory.delete') }}
                                     </x-dropdown-item>
                                 </x-dropdown>
                                 <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('inventory.recipes.destroy', $recipe) }}" method="POST" class="hidden">
@@ -161,12 +161,12 @@
             </div>
         @else
             <x-empty-state
-                title="No recipes found"
-                description="Recipes help you track ingredient costs and manage production."
+                :title="__('inventory.no_recipes_found')"
+                :description="__('inventory.no_recipes_description')"
                 icon="beaker"
             >
                 <x-button href="{{ route('inventory.recipes.create') }}" icon="plus">
-                    New Recipe
+                    {{ __('inventory.create_recipe') }}
                 </x-button>
             </x-empty-state>
         @endif

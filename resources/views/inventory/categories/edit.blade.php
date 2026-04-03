@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit Category - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.edit_category') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit Category')
+    @section('page-title', __('inventory.edit_category'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.categories.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Category</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.edit_category') }}</h2>
                 <p class="text-muted mt-1">{{ $category->name }}</p>
             </div>
         </div>
@@ -24,16 +24,16 @@
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         name="code"
-                        label="Category Code"
-                        placeholder="e.g., RAW-MEAT"
+                        label="{{ __('inventory.category_code') }}"
+                        placeholder="{{ __('inventory.category_code_placeholder') }}"
                         :value="$category->code"
                         required
                     />
 
                     <x-input
                         name="name"
-                        label="Category Name"
-                        placeholder="e.g., Raw Meat"
+                        label="{{ __('inventory.category_name') }}"
+                        placeholder="{{ __('inventory.category_name_placeholder') }}"
                         :value="$category->name"
                         required
                     />
@@ -41,10 +41,9 @@
 
                 <x-select
                     name="parent_id"
-                    label="Parent Category"
-                    hint="Leave empty for root category"
+                    label="{{ __('inventory.parent_category') }}"
                 >
-                    <option value="">None (Root Category)</option>
+                    <option value="">{{ __('inventory.root_category') }}</option>
                     @foreach($parentCategories as $parent)
                         <option value="{{ $parent->id }}" @selected(old('parent_id', $category->parent_id) == $parent->id)>
                             {{ $parent->name }}
@@ -54,25 +53,24 @@
 
                 <x-textarea
                     name="description"
-                    label="Description"
-                    placeholder="Brief description of this category"
+                    label="{{ __('inventory.description') }}"
+                    placeholder="{{ __('inventory.description_placeholder') }}"
                     :value="$category->description"
                     rows="3"
                 />
 
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive categories won't appear in selections"
+                    label="{{ __('inventory.active') }}"
                     :checked="$category->is_active"
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('inventory.categories.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('inventory.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Update Category
+                        {{ __('inventory.update') }} {{ __('inventory.category') }}
                     </x-button>
                 </div>
             </form>

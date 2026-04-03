@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Expiring Items - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.expiring_items') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Expiring Items')
+    @section('page-title', __('inventory.expiring_items'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.stocks.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Expiring Items</h2>
-                <p class="text-muted mt-1">Items expiring within 30 days</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.expiring_items') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.expiring_soon') }}</p>
             </div>
         </div>
     </x-slot>
@@ -19,12 +19,12 @@
         @if($expiringBatches->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Item</x-th>
-                    <x-th>Batch</x-th>
-                    <x-th>Outlet</x-th>
-                    <x-th align="right">Remaining Qty</x-th>
-                    <x-th>Expiry Date</x-th>
-                    <x-th align="right">Value</x-th>
+                    <x-th>{{ __('inventory.item') }}</x-th>
+                    <x-th>{{ __('inventory.batch') }}</x-th>
+                    <x-th>{{ __('inventory.outlet') }}</x-th>
+                    <x-th align="right">{{ __('inventory.remaining_quantity') }}</x-th>
+                    <x-th>{{ __('inventory.expiry_date') }}</x-th>
+                    <x-th align="right">{{ __('inventory.value') }}</x-th>
                 </x-slot>
 
                 @foreach($expiringBatches as $batch)
@@ -47,11 +47,11 @@
                         <x-td align="right">{{ number_format($batch->current_quantity, 2) }} {{ $batch->inventoryItem->unit->abbreviation ?? '' }}</x-td>
                         <x-td>
                             @if($batch->expiry_date->isPast())
-                                <x-badge type="danger">{{ $batch->expiry_date->format('M d, Y') }} - Expired</x-badge>
+                                <x-badge type="danger">{{ $batch->expiry_date->format('M d, Y') }} - {{ __('inventory.expired') }}</x-badge>
                             @elseif($batch->expiry_date->diffInDays(now()) <= 7)
-                                <x-badge type="danger">{{ $batch->expiry_date->format('M d, Y') }} ({{ $batch->expiry_date->diffInDays(now()) }} days)</x-badge>
+                                <x-badge type="danger">{{ $batch->expiry_date->format('M d, Y') }} ({{ $batch->expiry_date->diffInDays(now()) }} {{ __('inventory.days_until_expiry') }})</x-badge>
                             @else
-                                <x-badge type="warning">{{ $batch->expiry_date->format('M d, Y') }} ({{ $batch->expiry_date->diffInDays(now()) }} days)</x-badge>
+                                <x-badge type="warning">{{ $batch->expiry_date->format('M d, Y') }} ({{ $batch->expiry_date->diffInDays(now()) }} {{ __('inventory.days_until_expiry') }})</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">Rp {{ number_format($batch->current_quantity * $batch->unit_cost, 0, ',', '.') }}</x-td>
@@ -60,8 +60,8 @@
             </x-table>
         @else
             <x-empty-state
-                title="No expiring items"
-                description="No batches are expiring within the next 30 days."
+                :title="__('inventory.no_items_found')"
+                :description="__('inventory.no_stock_description')"
                 icon="check-circle"
             />
         @endif

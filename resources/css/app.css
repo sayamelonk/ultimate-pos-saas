@@ -10,44 +10,49 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Primary Colors - Deep Navy Blue (Elegant & Professional) */
-    --color-primary-50: #E8EDF4;
-    --color-primary-100: #D1DBE9;
-    --color-primary-200: #A3B7D3;
-    --color-primary-300: #7593BD;
-    --color-primary-400: #476FA7;
-    --color-primary-500: #1E3A5F;
-    --color-primary-600: #182E4C;
-    --color-primary-700: #122339;
-    --color-primary-800: #0C1726;
-    --color-primary-900: #060C13;
-    --color-primary: #1E3A5F;
+    /* ============================================
+       OPTION C: PREMIUM F&B DESIGN SYSTEM
+       Purple + Amber - Sophisticated & Distinctive
+       ============================================ */
 
-    /* Secondary Colors - Slate Gray */
-    --color-secondary-50: #F8FAFC;
-    --color-secondary-100: #F1F5F9;
-    --color-secondary-200: #E2E8F0;
-    --color-secondary-300: #CBD5E1;
-    --color-secondary-400: #94A3B8;
-    --color-secondary-500: #64748B;
-    --color-secondary-600: #475569;
-    --color-secondary-700: #334155;
-    --color-secondary-800: #1E293B;
-    --color-secondary-900: #0F172A;
-    --color-secondary: #64748B;
+    /* Primary Colors - Royal Purple (Premium & Distinctive) */
+    --color-primary-50: #FAF5FF;
+    --color-primary-100: #F3E8FF;
+    --color-primary-200: #E9D5FF;
+    --color-primary-300: #D8B4FE;
+    --color-primary-400: #C084FC;
+    --color-primary-500: #A855F7;
+    --color-primary-600: #9333EA;
+    --color-primary-700: #7C3AED;
+    --color-primary-800: #6B21A8;
+    --color-primary-900: #581C87;
+    --color-primary: #7C3AED;
 
-    /* Accent Colors - Sky Blue */
-    --color-accent-50: #F0F9FF;
-    --color-accent-100: #E0F2FE;
-    --color-accent-200: #BAE6FD;
-    --color-accent-300: #7DD3FC;
-    --color-accent-400: #38BDF8;
-    --color-accent-500: #0EA5E9;
-    --color-accent-600: #0284C7;
-    --color-accent-700: #0369A1;
-    --color-accent-800: #075985;
-    --color-accent-900: #0C4A6E;
-    --color-accent: #0EA5E9;
+    /* Secondary Colors - Charcoal (Elegant Dark) */
+    --color-secondary-50: #F9FAFB;
+    --color-secondary-100: #F3F4F6;
+    --color-secondary-200: #E5E7EB;
+    --color-secondary-300: #D1D5DB;
+    --color-secondary-400: #9CA3AF;
+    --color-secondary-500: #6B7280;
+    --color-secondary-600: #4B5563;
+    --color-secondary-700: #374151;
+    --color-secondary-800: #1F2937;
+    --color-secondary-900: #111827;
+    --color-secondary: #1F2937;
+
+    /* Accent Colors - Amber (Warm & Appetizing) */
+    --color-accent-50: #FFFBEB;
+    --color-accent-100: #FEF3C7;
+    --color-accent-200: #FDE68A;
+    --color-accent-300: #FCD34D;
+    --color-accent-400: #FBBF24;
+    --color-accent-500: #F59E0B;
+    --color-accent-600: #D97706;
+    --color-accent-700: #B45309;
+    --color-accent-800: #92400E;
+    --color-accent-900: #78350F;
+    --color-accent: #F59E0B;
 
     /* Status Colors */
     --color-success-50: #ECFDF5;
@@ -86,40 +91,40 @@
     --color-danger-900: #7F1D1D;
     --color-danger: #EF4444;
 
-    --color-info-50: #EFF6FF;
-    --color-info-100: #DBEAFE;
-    --color-info-200: #BFDBFE;
-    --color-info-300: #93C5FD;
-    --color-info-400: #60A5FA;
-    --color-info-500: #3B82F6;
-    --color-info-600: #2563EB;
-    --color-info-700: #1D4ED8;
-    --color-info-800: #1E40AF;
-    --color-info-900: #1E3A8A;
-    --color-info: #3B82F6;
+    --color-info-50: #FAF5FF;
+    --color-info-100: #F3E8FF;
+    --color-info-200: #E9D5FF;
+    --color-info-300: #D8B4FE;
+    --color-info-400: #C084FC;
+    --color-info-500: #A855F7;
+    --color-info-600: #9333EA;
+    --color-info-700: #7C3AED;
+    --color-info-800: #6B21A8;
+    --color-info-900: #581C87;
+    --color-info: #A855F7;
 
     /* Neutral/Surface Colors */
     --color-surface: #FFFFFF;
-    --color-background: #F8FAFC;
-    --color-border: #E2E8F0;
-    --color-muted: #94A3B8;
-    --color-text: #1E293B;
-    --color-text-light: #64748B;
+    --color-background: #FAF5FF;
+    --color-border: #E9D5FF;
+    --color-muted: #9CA3AF;
+    --color-text: #111827;
+    --color-text-light: #6B7280;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    /* Shadows - Slightly purple tinted */
+    --shadow-sm: 0 1px 2px 0 rgb(124 58 237 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(124 58 237 / 0.1), 0 1px 2px -1px rgb(124 58 237 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(124 58 237 / 0.1), 0 2px 4px -2px rgb(124 58 237 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(124 58 237 / 0.1), 0 4px 6px -4px rgb(124 58 237 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(124 58 237 / 0.1), 0 8px 10px -6px rgb(124 58 237 / 0.1);
 
-    /* Border Radius */
-    --radius-sm: 0.25rem;
-    --radius: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
-    --radius-2xl: 1.5rem;
+    /* Border Radius - Slightly more rounded for premium feel */
+    --radius-sm: 0.375rem;
+    --radius: 0.5rem;
+    --radius-md: 0.625rem;
+    --radius-lg: 0.875rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.75rem;
     --radius-full: 9999px;
 }
 
@@ -138,8 +143,54 @@
         @apply bg-background text-text font-sans;
     }
 
-    /* Focus styles for accessibility */
+    /* Focus styles for accessibility - Purple accent */
     *:focus-visible {
-        @apply outline-2 outline-offset-2 outline-accent-500;
+        @apply outline-2 outline-offset-2 outline-primary-500;
+    }
+}
+
+/* Premium gradient utilities */
+@layer utilities {
+    .gradient-premium {
+        background: linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #C084FC 100%);
+    }
+
+    .gradient-premium-dark {
+        background: linear-gradient(135deg, #1F2937 0%, #374151 50%, #7C3AED 100%);
+    }
+
+    .gradient-accent {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+    }
+
+    .gradient-hero {
+        background: linear-gradient(135deg, #1F2937 0%, #374151 40%, #7C3AED 100%);
+    }
+
+    .text-gradient-premium {
+        background: linear-gradient(135deg, #7C3AED 0%, #F59E0B 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .shadow-premium {
+        box-shadow: 0 10px 40px -10px rgb(124 58 237 / 0.3);
+    }
+
+    .shadow-accent {
+        box-shadow: 0 10px 40px -10px rgb(245 158 11 / 0.3);
+    }
+
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .glass-dark {
+        background: rgba(31, 41, 55, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 }

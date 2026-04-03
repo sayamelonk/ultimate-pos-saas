@@ -1,22 +1,22 @@
 <x-app-layout>
     <x-slot name="title">{{ $modifierGroup->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Modifier Group Details')
+    @section('page-title', __('products.modifier_group_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <x-button href="{{ route('menu.modifier-groups.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                    Back
+                    {{ __('products.back') }}
                 </x-button>
                 <div>
                     <h2 class="text-2xl font-bold text-text">{{ $modifierGroup->name }}</h2>
-                    <p class="text-muted mt-1">Modifier Group Details</p>
+                    <p class="text-muted mt-1">{{ __('products.modifier_group_details') }}</p>
                 </div>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('menu.modifier-groups.edit', $modifierGroup) }}" icon="pencil">
-                    Edit
+                    {{ __('products.edit') }}
                 </x-button>
             </div>
         </div>
@@ -25,49 +25,49 @@
     <div class="grid grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
             <!-- Group Information -->
-            <x-card title="Group Information">
+            <x-card title="{{ __('products.group_information') }}">
                 <dl class="grid grid-cols-2 gap-4">
                     <div>
-                        <dt class="text-sm text-muted">Name</dt>
+                        <dt class="text-sm text-muted">{{ __('products.name') }}</dt>
                         <dd class="mt-1 font-medium">{{ $modifierGroup->name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Selection Type</dt>
+                        <dt class="text-sm text-muted">{{ __('products.selection_type') }}</dt>
                         <dd class="mt-1">
                             @if($modifierGroup->selection_type === 'single')
-                                <x-badge type="secondary">Single Select</x-badge>
+                                <x-badge type="secondary">{{ __('products.single_select') }}</x-badge>
                             @else
-                                <x-badge type="info">Multi Select</x-badge>
+                                <x-badge type="info">{{ __('products.multi_select') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Status</dt>
+                        <dt class="text-sm text-muted">{{ __('products.status') }}</dt>
                         <dd class="mt-1">
                             @if($modifierGroup->is_active)
-                                <x-badge type="success">Active</x-badge>
+                                <x-badge type="success">{{ __('products.active') }}</x-badge>
                             @else
-                                <x-badge type="danger">Inactive</x-badge>
+                                <x-badge type="danger">{{ __('products.inactive') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Sort Order</dt>
+                        <dt class="text-sm text-muted">{{ __('products.sort_order') }}</dt>
                         <dd class="mt-1 font-medium">{{ $modifierGroup->sort_order }}</dd>
                     </div>
                     @if($modifierGroup->selection_type === 'multiple')
                         <div>
-                            <dt class="text-sm text-muted">Min Selections</dt>
+                            <dt class="text-sm text-muted">{{ __('products.min_selections_label') }}</dt>
                             <dd class="mt-1 font-medium">{{ $modifierGroup->min_selections ?? 0 }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm text-muted">Max Selections</dt>
-                            <dd class="mt-1 font-medium">{{ $modifierGroup->max_selections ?? 'Unlimited' }}</dd>
+                            <dt class="text-sm text-muted">{{ __('products.max_selections_label') }}</dt>
+                            <dd class="mt-1 font-medium">{{ $modifierGroup->max_selections ?? __('products.unlimited') }}</dd>
                         </div>
                     @endif
                     @if($modifierGroup->description)
                         <div class="col-span-2">
-                            <dt class="text-sm text-muted">Description</dt>
+                            <dt class="text-sm text-muted">{{ __('products.description') }}</dt>
                             <dd class="mt-1">{{ $modifierGroup->description }}</dd>
                         </div>
                     @endif
@@ -75,14 +75,14 @@
             </x-card>
 
             <!-- Modifiers -->
-            <x-card title="Modifiers">
+            <x-card title="{{ __('products.modifiers') }}">
                 @if($modifierGroup->modifiers->count() > 0)
                     <x-table>
                         <x-slot name="head">
-                            <x-th>Modifier</x-th>
-                            <x-th align="right">Price</x-th>
-                            <x-th>Inventory Link</x-th>
-                            <x-th align="center">Status</x-th>
+                            <x-th>{{ __('products.modifier') }}</x-th>
+                            <x-th align="right">{{ __('products.price') }}</x-th>
+                            <x-th>{{ __('products.inventory_link') }}</x-th>
+                            <x-th align="center">{{ __('products.status') }}</x-th>
                         </x-slot>
 
                         @foreach($modifierGroup->modifiers->sortBy('sort_order') as $modifier)
@@ -94,7 +94,7 @@
                                     @if($modifier->price > 0)
                                         <span class="text-success font-medium">+Rp {{ number_format($modifier->price, 0, ',', '.') }}</span>
                                     @else
-                                        <span class="text-muted">Free</span>
+                                        <span class="text-muted">{{ __('products.free') }}</span>
                                     @endif
                                 </x-td>
                                 <x-td>
@@ -109,9 +109,9 @@
                                 </x-td>
                                 <x-td align="center">
                                     @if($modifier->is_active)
-                                        <x-badge type="success" size="sm">Active</x-badge>
+                                        <x-badge type="success" size="sm">{{ __('products.active') }}</x-badge>
                                     @else
-                                        <x-badge type="danger" size="sm">Inactive</x-badge>
+                                        <x-badge type="danger" size="sm">{{ __('products.inactive') }}</x-badge>
                                     @endif
                                 </x-td>
                             </tr>
@@ -119,8 +119,8 @@
                     </x-table>
                 @else
                     <x-empty-state
-                        title="No modifiers"
-                        description="Add modifiers to this group."
+                        title="{{ __('products.no_modifiers_empty') }}"
+                        description="{{ __('products.add_modifiers_to_group') }}"
                         icon="plus-circle"
                         size="sm"
                     />
@@ -129,7 +129,7 @@
 
             <!-- Products Using This Group -->
             @if($modifierGroup->products->count() > 0)
-                <x-card title="Products Using This Group">
+                <x-card title="{{ __('products.products_using_group') }}">
                     <div class="grid grid-cols-2 gap-3">
                         @foreach($modifierGroup->products as $product)
                             <a href="{{ route('menu.products.show', $product) }}" class="flex items-center gap-3 p-3 bg-secondary-50 rounded-lg hover:bg-secondary-100 transition-colors">
@@ -154,7 +154,7 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Preview -->
-            <x-card title="POS Preview">
+            <x-card title="{{ __('products.pos_preview') }}">
                 <div class="p-4 bg-secondary-50 rounded-lg">
                     <p class="font-medium mb-3">{{ $modifierGroup->name }}</p>
 
@@ -200,39 +200,39 @@
             </x-card>
 
             <!-- Statistics -->
-            <x-card title="Statistics">
+            <x-card title="{{ __('products.statistics') }}">
                 <dl class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Total Modifiers</dt>
+                        <dt class="text-muted">{{ __('products.total_modifiers') }}</dt>
                         <dd class="font-bold text-lg">{{ $modifierGroup->modifiers->count() }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Active Modifiers</dt>
+                        <dt class="text-muted">{{ __('products.active_modifiers') }}</dt>
                         <dd class="font-bold text-lg">{{ $modifierGroup->activeModifiers->count() }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Products Using</dt>
+                        <dt class="text-muted">{{ __('products.products_using') }}</dt>
                         <dd class="font-bold text-lg">{{ $modifierGroup->products->count() }}</dd>
                     </div>
                     @php
                         $avgPrice = $modifierGroup->modifiers->avg('price');
                     @endphp
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Avg. Price</dt>
+                        <dt class="text-muted">{{ __('products.avg_price') }}</dt>
                         <dd class="font-bold">Rp {{ number_format($avgPrice ?? 0, 0, ',', '.') }}</dd>
                     </div>
                 </dl>
             </x-card>
 
             <!-- Metadata -->
-            <x-card title="Information">
+            <x-card title="{{ __('products.information') }}">
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between">
-                        <dt class="text-muted">Created</dt>
+                        <dt class="text-muted">{{ __('products.created') }}</dt>
                         <dd>{{ $modifierGroup->created_at->format('d M Y H:i') }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-muted">Updated</dt>
+                        <dt class="text-muted">{{ __('products.updated') }}</dt>
                         <dd>{{ $modifierGroup->updated_at->format('d M Y H:i') }}</dd>
                     </div>
                 </dl>

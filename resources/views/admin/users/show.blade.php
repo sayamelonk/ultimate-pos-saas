@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="title">{{ $user->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'User Details')
+    @section('page-title', __('admin.user_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <x-button href="{{ route('admin.users.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                    Back
+                    {{ __('app.back') }}
                 </x-button>
                 <div class="flex items-center gap-4">
                     <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center">
@@ -20,7 +20,7 @@
                 </div>
             </div>
             <x-button href="{{ route('admin.users.edit', $user) }}" variant="outline-secondary" icon="pencil">
-                Edit
+                {{ __('app.edit') }}
             </x-button>
         </div>
     </x-slot>
@@ -28,60 +28,60 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Info -->
         <div class="lg:col-span-2 space-y-6">
-            <x-card title="User Information">
+            <x-card title="{{ __('admin.user_information') }}">
                 <dl class="grid grid-cols-2 gap-6">
                     <div>
-                        <dt class="text-sm text-muted">Full Name</dt>
+                        <dt class="text-sm text-muted">{{ __('admin.full_name') }}</dt>
                         <dd class="mt-1 font-medium text-text">{{ $user->name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Email</dt>
+                        <dt class="text-sm text-muted">{{ __('admin.email') }}</dt>
                         <dd class="mt-1 text-text">{{ $user->email }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Phone</dt>
+                        <dt class="text-sm text-muted">{{ __('admin.phone') }}</dt>
                         <dd class="mt-1 text-text">{{ $user->phone ?? '-' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Status</dt>
+                        <dt class="text-sm text-muted">{{ __('app.status') }}</dt>
                         <dd class="mt-1">
                             @if($user->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('app.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('app.inactive') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     @if(auth()->user()->isSuperAdmin())
                         <div>
-                            <dt class="text-sm text-muted">Tenant</dt>
-                            <dd class="mt-1 text-text">{{ $user->tenant?->name ?? 'System' }}</dd>
+                            <dt class="text-sm text-muted">{{ __('admin.tenant') }}</dt>
+                            <dd class="mt-1 text-text">{{ $user->tenant?->name ?? __('admin.system') }}</dd>
                         </div>
                     @endif
                     <div>
-                        <dt class="text-sm text-muted">Last Login</dt>
+                        <dt class="text-sm text-muted">{{ __('admin.last_login') }}</dt>
                         <dd class="mt-1 text-text">
                             @if($user->last_login_at)
                                 {{ $user->last_login_at->format('M d, Y H:i') }}
                                 <span class="text-muted text-sm">({{ $user->last_login_at->diffForHumans() }})</span>
                             @else
-                                Never
+                                {{ __('admin.never') }}
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Created</dt>
+                        <dt class="text-sm text-muted">{{ __('admin.created') }}</dt>
                         <dd class="mt-1 text-text">{{ $user->created_at->format('M d, Y H:i') }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Updated</dt>
+                        <dt class="text-sm text-muted">{{ __('admin.updated') }}</dt>
                         <dd class="mt-1 text-text">{{ $user->updated_at->format('M d, Y H:i') }}</dd>
                     </div>
                 </dl>
             </x-card>
 
             <!-- Outlets -->
-            <x-card title="Assigned Outlets">
+            <x-card title="{{ __('admin.assigned_outlets') }}">
                 @if($user->outlets->count() > 0)
                     <div class="space-y-3">
                         @foreach($user->outlets as $outlet)
@@ -96,13 +96,13 @@
                                     </div>
                                 </div>
                                 @if($outlet->pivot->is_default)
-                                    <x-badge type="primary" size="sm">Default</x-badge>
+                                    <x-badge type="primary" size="sm">{{ __('admin.default') }}</x-badge>
                                 @endif
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-muted text-sm">No outlets assigned.</p>
+                    <p class="text-muted text-sm">{{ __('admin.no_outlets_assigned') }}</p>
                 @endif
             </x-card>
         </div>
@@ -110,7 +110,7 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Roles -->
-            <x-card title="Assigned Roles">
+            <x-card title="{{ __('admin.assigned_roles') }}">
                 @if($user->roles->count() > 0)
                     <div class="space-y-2">
                         @foreach($user->roles as $role)
@@ -123,7 +123,7 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="text-muted text-sm">No roles assigned.</p>
+                    <p class="text-muted text-sm">{{ __('admin.no_roles_assigned') }}</p>
                 @endif
             </x-card>
         </div>

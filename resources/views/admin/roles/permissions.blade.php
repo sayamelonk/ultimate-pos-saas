@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Manage Permissions - {{ $role->name }}</x-slot>
+    <x-slot name="title">{{ __('admin.manage_permissions_title') }} - {{ $role->name }}</x-slot>
 
-    @section('page-title', 'Manage Permissions')
+    @section('page-title', __('admin.manage_permissions_title'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('admin.roles.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('app.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Manage Permissions</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.manage_permissions_title') }}</h2>
                 <p class="text-muted mt-1">{{ $role->name }}</p>
             </div>
         </div>
@@ -25,13 +25,13 @@
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h3 class="text-lg font-semibold text-text capitalize">{{ str_replace('_', ' ', $module) }}</h3>
-                            <p class="text-sm text-muted">{{ $modulePermissions->count() }} permissions</p>
+                            <p class="text-sm text-muted">{{ __('admin.permissions_count_text', ['count' => $modulePermissions->count()]) }}</p>
                         </div>
                         <div x-data="{ allChecked: false }">
                             <button type="button"
                                     @click="allChecked = !allChecked; document.querySelectorAll('[data-module=\'{{ $module }}\']').forEach(el => el.checked = allChecked)"
                                     class="text-sm text-accent hover:text-accent-600 font-medium">
-                                Toggle All
+                                {{ __('admin.toggle_all') }}
                             </button>
                         </div>
                     </div>
@@ -62,15 +62,15 @@
             <div class="flex items-center justify-between max-w-7xl mx-auto">
                 <p class="text-sm text-muted">
                     <span x-data="{ count: {{ count($rolePermissions) }} }"
-                          x-text="document.querySelectorAll('input[name=\'permissions[]\']:checked').length + ' permissions selected'">
+                          x-text="document.querySelectorAll('input[name=\'permissions[]\']:checked').length + ' {{ __('admin.permissions_selected', ['count' => '']) }}'">
                     </span>
                 </p>
                 <div class="flex items-center gap-3">
                     <x-button href="{{ route('admin.roles.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('app.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Save Permissions
+                        {{ __('admin.save_permissions') }}
                     </x-button>
                 </div>
             </div>

@@ -2,11 +2,93 @@
     <x-slot name="title">Dashboard - Ultimate POS</x-slot>
 
     <x-slot name="header">
-        <h2 class="text-2xl font-bold text-text">Dashboard</h2>
-        <p class="text-muted mt-1">Welcome back, {{ auth()->user()->name }}!</p>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-text">Dashboard</h2>
+                <p class="text-muted mt-1">Welcome back, {{ auth()->user()->name }}!</p>
+            </div>
+
+            @if(!auth()->user()->isSuperAdmin())
+            {{-- Date Range Filter --}}
+            <div x-data="{
+                open: false,
+                dateRange: '{{ $dateRange ?? 'today' }}',
+                showCustom: {{ ($dateRange ?? 'today') === 'custom' ? 'true' : 'false' }},
+                startDate: '{{ isset($startDate) ? $startDate->format('Y-m-d') : now()->format('Y-m-d') }}',
+                endDate: '{{ isset($endDate) ? $endDate->format('Y-m-d') : now()->format('Y-m-d') }}',
+                ranges: [
+                    { value: 'today', label: 'Hari Ini' },
+                    { value: 'yesterday', label: 'Kemarin' },
+                    { value: 'this_week', label: 'Minggu Ini' },
+                    { value: 'last_week', label: 'Minggu Lalu' },
+                    { value: 'this_month', label: 'Bulan Ini' },
+                    { value: 'last_month', label: 'Bulan Lalu' },
+                    { value: 'this_year', label: 'Tahun Ini' },
+                    { value: 'custom', label: 'Custom Range' }
+                ],
+                selectRange(range) {
+                    this.dateRange = range;
+                    if (range === 'custom') {
+                        this.showCustom = true;
+                    } else {
+                        this.showCustom = false;
+                        this.applyFilter();
+                    }
+                },
+                applyFilter() {
+                    const params = new URLSearchParams();
+                    params.set('date_range', this.dateRange);
+                    if (this.dateRange === 'custom') {
+                        params.set('start_date', this.startDate);
+                        params.set('end_date', this.endDate);
+                    }
+                    window.location.href = '{{ route('admin.dashboard') }}?' + params.toString();
+                }
+            }" class="relative">
+                <button @click="open = !open" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface border border-border rounded-xl text-sm font-medium text-text hover:bg-secondary-50 transition-colors shadow-sm">
+                    <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span x-text="ranges.find(r => r.value === dateRange)?.label || 'Pilih Periode'">{{ $dateRangeLabel ?? 'Hari Ini' }}</span>
+                    <svg class="w-4 h-4 text-muted transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                {{-- Dropdown Menu --}}
+                <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-64 bg-surface border border-border rounded-xl shadow-lg z-50" style="display: none;">
+                    <div class="p-2">
+                        <template x-for="range in ranges" :key="range.value">
+                            <button @click="selectRange(range.value)" :class="{ 'bg-primary/10 text-primary': dateRange === range.value }" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-secondary-50 transition-colors" x-text="range.label"></button>
+                        </template>
+                    </div>
+
+                    {{-- Custom Date Range --}}
+                    <div x-show="showCustom" class="border-t border-border p-3 space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-muted mb-1">Dari Tanggal</label>
+                            <input type="date" x-model="startDate" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary bg-surface text-text">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-muted mb-1">Sampai Tanggal</label>
+                            <input type="date" x-model="endDate" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary bg-surface text-text">
+                        </div>
+                        <button @click="applyFilter()" class="w-full px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors">
+                            Terapkan
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
     </x-slot>
 
     @section('page-title', 'Dashboard')
+
+    {{-- Trial/Frozen Banner --}}
+    @if(!auth()->user()->isSuperAdmin() && isset($subscription))
+        <x-trial-banner :subscription="$subscription" />
+    @endif
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -116,12 +198,26 @@
                 </div>
             </div>
 
-            <!-- Today's Orders -->
+            <!-- Orders -->
             <div class="bg-surface rounded-xl border border-border p-6 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-muted font-medium">Today's Orders</p>
-                        <p class="text-3xl font-bold text-text mt-2">{{ $stats['today_orders'] ?? 0 }}</p>
+                        <p class="text-sm text-muted font-medium">Orders ({{ $dateRangeLabel ?? 'Hari Ini' }})</p>
+                        <p class="text-3xl font-bold text-text mt-2">{{ $stats['orders'] ?? 0 }}</p>
+                        @if(isset($stats['orders_change']))
+                            <p class="text-sm mt-2 flex items-center gap-1 {{ $stats['orders_change'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                @if($stats['orders_change'] >= 0)
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                                    </svg>
+                                @else
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                                    </svg>
+                                @endif
+                                {{ abs($stats['orders_change']) }}% vs periode sebelumnya
+                            </p>
+                        @endif
                     </div>
                     <div class="w-14 h-14 bg-warning-100 rounded-xl flex items-center justify-center">
                         <svg class="w-7 h-7 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,12 +228,26 @@
                 </div>
             </div>
 
-            <!-- Today's Revenue -->
+            <!-- Revenue -->
             <div class="bg-surface rounded-xl border border-border p-6 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-muted font-medium">Today's Revenue</p>
-                        <p class="text-3xl font-bold text-text mt-2">Rp {{ number_format($stats['today_revenue'] ?? 0) }}</p>
+                        <p class="text-sm text-muted font-medium">Revenue ({{ $dateRangeLabel ?? 'Hari Ini' }})</p>
+                        <p class="text-3xl font-bold text-text mt-2">Rp {{ number_format($stats['revenue'] ?? 0) }}</p>
+                        @if(isset($stats['revenue_change']))
+                            <p class="text-sm mt-2 flex items-center gap-1 {{ $stats['revenue_change'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                @if($stats['revenue_change'] >= 0)
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                                    </svg>
+                                @else
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                                    </svg>
+                                @endif
+                                {{ abs($stats['revenue_change']) }}% vs periode sebelumnya
+                            </p>
+                        @endif
                     </div>
                     <div class="w-14 h-14 bg-success-100 rounded-xl flex items-center justify-center">
                         <svg class="w-7 h-7 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,9 +261,12 @@
     </div>
 
     @if(!auth()->user()->isSuperAdmin())
+        {{-- Only show inventory alerts section if user has any inventory features --}}
+        @if(($hasInventoryBasic ?? false) || ($hasInventoryAdvanced ?? false))
         <!-- Alerts Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Expiring Items Alert -->
+            {{-- Expiring Items Alert - Only show if has inventory_advanced feature --}}
+            @if($hasInventoryAdvanced ?? false)
             <div class="bg-surface rounded-xl border border-border shadow-sm">
                 <div class="flex items-center justify-between p-4 border-b border-border">
                     <div class="flex items-center gap-3">
@@ -209,8 +322,10 @@
                     @endif
                 </div>
             </div>
+            @endif
 
-            <!-- Low Stock Alert -->
+            {{-- Low Stock Alert - Only show if has inventory_basic feature --}}
+            @if($hasInventoryBasic ?? false)
             <div class="bg-surface rounded-xl border border-border shadow-sm">
                 <div class="flex items-center justify-between p-4 border-b border-border">
                     <div class="flex items-center gap-3">
@@ -255,7 +370,9 @@
                     @endif
                 </div>
             </div>
+            @endif
         </div>
+        @endif
     @endif
 
     <!-- Quick Actions -->
@@ -264,18 +381,20 @@
         <div class="bg-surface rounded-xl border border-border p-6 shadow-sm">
             <h3 class="text-lg font-semibold text-text mb-4">Quick Actions</h3>
             <div class="space-y-3">
-                <a href="{{ route('pos.index') }}" class="flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary-600 transition-colors">
+                <a href="{{ route('pos.index') }}" class="flex items-center gap-3 p-3 rounded-xl text-white transition-all hover:opacity-90" style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.4);">
                     <x-icon name="calculator" class="w-5 h-5" />
-                    Open POS
+                    <span class="font-semibold">Open POS</span>
                 </a>
                 <a href="{{ route('menu.products.create') }}" class="flex items-center gap-3 p-3 rounded-lg border border-border text-text hover:bg-secondary-50 transition-colors">
                     <x-icon name="plus" class="w-5 h-5 text-secondary-500" />
                     Add Product
                 </a>
+                @if($hasInventoryBasic ?? false)
                 <a href="{{ route('inventory.reports.stock-valuation') }}" class="flex items-center gap-3 p-3 rounded-lg border border-border text-text hover:bg-secondary-50 transition-colors">
                     <x-icon name="chart-bar" class="w-5 h-5 text-secondary-500" />
                     View Reports
                 </a>
+                @endif
             </div>
         </div>
 

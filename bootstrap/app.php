@@ -1,7 +1,13 @@
 <?php
 
+use App\Http\Middleware\BlockFrozenWrite;
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\CheckSubscriptionFeature;
+use App\Http\Middleware\CheckSubscriptionStatus;
+use App\Http\Middleware\EnsureActiveSubscription;
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTenantScope;
+use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -10,6 +16,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -18,9 +25,18 @@ return Application::configure(basePath: dirname(__DIR__))
             SetLocale::class,
         ]);
 
+        $middleware->api(prepend: [
+            ForceJsonResponse::class,
+        ]);
+
         $middleware->alias([
             'tenant' => EnsureTenantScope::class,
             'permission' => CheckPermission::class,
+            'subscription' => EnsureActiveSubscription::class,
+            'subscription.status' => CheckSubscriptionStatus::class,
+            'feature' => CheckSubscriptionFeature::class,
+            'frozen.block' => BlockFrozenWrite::class,
+            'super-admin' => EnsureSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

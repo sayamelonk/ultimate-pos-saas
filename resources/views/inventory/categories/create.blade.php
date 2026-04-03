@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Create Category - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.create_category') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Create Category')
+    @section('page-title', __('inventory.create_category'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.categories.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Create Category</h2>
-                <p class="text-muted mt-1">Add a new inventory category</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.add_category_title') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.create_new_category') }}</p>
             </div>
         </div>
     </x-slot>
@@ -23,25 +23,24 @@
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         name="code"
-                        label="Category Code"
-                        placeholder="e.g., RAW-MEAT"
+                        label="{{ __('inventory.category_code') }}"
+                        placeholder="{{ __('inventory.category_code_placeholder') }}"
                         required
                     />
 
                     <x-input
                         name="name"
-                        label="Category Name"
-                        placeholder="e.g., Raw Meat"
+                        label="{{ __('inventory.category_name') }}"
+                        placeholder="{{ __('inventory.category_name_placeholder') }}"
                         required
                     />
                 </div>
 
                 <x-select
                     name="parent_id"
-                    label="Parent Category"
-                    hint="Leave empty for root category"
+                    label="{{ __('inventory.parent_category') }}"
                 >
-                    <option value="">None (Root Category)</option>
+                    <option value="">{{ __('inventory.root_category') }}</option>
                     @foreach($parentCategories as $parent)
                         <option value="{{ $parent->id }}" @selected(old('parent_id') == $parent->id)>
                             {{ $parent->name }}
@@ -51,24 +50,23 @@
 
                 <x-textarea
                     name="description"
-                    label="Description"
-                    placeholder="Brief description of this category"
+                    label="{{ __('inventory.description') }}"
+                    placeholder="{{ __('inventory.description_placeholder') }}"
                     rows="3"
                 />
 
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive categories won't appear in selections"
+                    label="{{ __('inventory.active') }}"
                     checked
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('inventory.categories.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('inventory.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Create Category
+                        {{ __('inventory.create_category') }}
                     </x-button>
                 </div>
             </form>

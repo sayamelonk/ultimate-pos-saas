@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Units - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.units') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Units')
+    @section('page-title', __('inventory.units'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Unit Management</h2>
-                <p class="text-muted mt-1">Manage units of measure for inventory</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.units') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.create_new_unit') }}</p>
             </div>
             <x-button href="{{ route('inventory.units.create') }}" icon="plus">
-                Add Unit
+                {{ __('inventory.create_unit') }}
             </x-button>
         </div>
     </x-slot>
@@ -23,21 +23,21 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search units..."
+                        placeholder="{{ __('inventory.search') }}..."
                         :value="request('search')"
                     />
                 </div>
                 <x-select name="type" :value="request('type')" class="w-40">
-                    <option value="">All Types</option>
-                    <option value="base" @selected(request('type') === 'base')>Base Units</option>
-                    <option value="derived" @selected(request('type') === 'derived')>Derived Units</option>
+                    <option value="">{{ __('inventory.all_types') }}</option>
+                    <option value="base" @selected(request('type') === 'base')>{{ __('inventory.base_unit') }}</option>
+                    <option value="derived" @selected(request('type') === 'derived')>{{ __('inventory.unit') }}</option>
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Filter
+                    {{ __('inventory.filter') }}
                 </x-button>
                 @if(request()->hasAny(['search', 'type']))
                     <x-button href="{{ route('inventory.units.index') }}" variant="ghost">
-                        Clear
+                        {{ __('app.clear') }}
                     </x-button>
                 @endif
             </form>
@@ -47,12 +47,12 @@
         @if($units->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Unit Name</x-th>
-                    <x-th>Abbreviation</x-th>
-                    <x-th>Base Unit</x-th>
-                    <x-th align="center">Conversion</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('inventory.unit_name') }}</x-th>
+                    <x-th>{{ __('inventory.abbreviation') }}</x-th>
+                    <x-th>{{ __('inventory.base_unit') }}</x-th>
+                    <x-th align="center">{{ __('inventory.conversion_factor') }}</x-th>
+                    <x-th align="center">{{ __('inventory.status') }}</x-th>
+                    <x-th align="right">{{ __('inventory.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($units as $unit)
@@ -65,9 +65,9 @@
                                 <div>
                                     <p class="font-medium text-text">{{ $unit->name }}</p>
                                     @if($unit->baseUnit)
-                                        <p class="text-xs text-muted">Derived unit</p>
+                                        <p class="text-xs text-muted">{{ __('inventory.unit') }}</p>
                                     @else
-                                        <p class="text-xs text-muted">Base unit</p>
+                                        <p class="text-xs text-muted">{{ __('inventory.base_unit') }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -87,9 +87,9 @@
                         </x-td>
                         <x-td align="center">
                             @if($unit->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('inventory.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('inventory.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -103,25 +103,25 @@
 
                                     <x-dropdown-item href="{{ route('inventory.units.show', $unit) }}">
                                         <x-icon name="eye" class="w-4 h-4" />
-                                        View Details
+                                        {{ __('app.view_details') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item href="{{ route('inventory.units.edit', $unit) }}">
                                         <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                        {{ __('inventory.edit') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item
                                         type="button"
                                         danger
                                         @click="$dispatch('confirm', {
-                                            title: 'Delete Unit',
-                                            message: 'Are you sure you want to delete {{ $unit->name }}? This action cannot be undone.',
-                                            confirmText: 'Delete',
+                                            title: '{{ __('inventory.delete') }} {{ __('inventory.unit') }}',
+                                            message: '{{ __('app.confirm_delete', ['name' => $unit->name]) }}',
+                                            confirmText: '{{ __('inventory.delete') }}',
                                             variant: 'danger',
                                             onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
                                         })"
                                     >
                                         <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
+                                        {{ __('inventory.delete') }}
                                     </x-dropdown-item>
                                 </x-dropdown>
                                 <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('inventory.units.destroy', $unit) }}" method="POST" class="hidden">
@@ -139,12 +139,12 @@
             </div>
         @else
             <x-empty-state
-                title="No units found"
-                description="Get started by creating your first unit of measure."
+                title="{{ __('inventory.no_items_found') }}"
+                description="{{ __('inventory.no_items_using_unit') }}"
                 icon="scale"
             >
                 <x-button href="{{ route('inventory.units.create') }}" icon="plus">
-                    Add Unit
+                    {{ __('inventory.create_unit') }}
                 </x-button>
             </x-empty-state>
         @endif

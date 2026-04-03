@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">Batch Settings - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.batch_settings') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Batch Settings')
+    @section('page-title', __('inventory.batch_settings'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
@@ -9,8 +9,8 @@
                 <x-icon name="arrow-left" class="w-4 h-4" />
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Batch Settings</h2>
-                <p class="text-muted mt-1">Configure batch tracking and expiry alerts</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.batch_settings') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.manage_batch_settings') }}</p>
             </div>
         </div>
     </x-slot>
@@ -26,13 +26,13 @@
                     <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
                         <x-icon name="exclamation-triangle" class="w-5 h-5 text-warning" />
                     </div>
-                    <h3 class="font-semibold text-lg">Expiry Warning Thresholds</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.expiry_alert_days') }}</h3>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-text mb-1">
-                            Warning Days <span class="text-danger">*</span>
+                            {{ __('inventory.expiry_alert_days') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <x-input
@@ -43,9 +43,9 @@
                                 max="365"
                                 required
                             />
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm">days</span>
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm">{{ __('inventory.days_until_expiry') }}</span>
                         </div>
-                        <p class="text-xs text-muted mt-1">Yellow warning before expiry</p>
+                        <p class="text-xs text-muted mt-1">{{ __('inventory.enable_expiry_alerts') }}</p>
                         @error('expiry_warning_days')
                             <p class="text-danger text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -53,7 +53,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-text mb-1">
-                            Critical Days <span class="text-danger">*</span>
+                            {{ __('inventory.expiry_alert_days') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <x-input
@@ -64,9 +64,9 @@
                                 max="90"
                                 required
                             />
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm">days</span>
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm">{{ __('inventory.days_until_expiry') }}</span>
                         </div>
-                        <p class="text-xs text-muted mt-1">Red critical alert before expiry</p>
+                        <p class="text-xs text-muted mt-1">{{ __('inventory.enable_expiry_alerts') }}</p>
                         @error('expiry_critical_days')
                             <p class="text-danger text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -80,7 +80,7 @@
                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <x-icon name="cog-6-tooth" class="w-5 h-5 text-primary" />
                     </div>
-                    <h3 class="font-semibold text-lg">Automatic Actions</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.settings') }}</h3>
                 </div>
 
                 <div class="space-y-4">
@@ -93,8 +93,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Auto-mark as expired</span>
-                            <p class="text-sm text-muted">Automatically mark batches as expired when they pass expiry date</p>
+                            <span class="font-medium text-text">{{ __('inventory.expired') }}</span>
+                            <p class="text-sm text-muted">{{ __('inventory.enable_expiry_alerts') }}</p>
                         </div>
                     </label>
 
@@ -107,8 +107,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Block expired item sales</span>
-                            <p class="text-sm text-muted">Prevent selling items from expired batches</p>
+                            <span class="font-medium text-text">{{ __('inventory.expired_batches') }}</span>
+                            <p class="text-sm text-muted">{{ __('inventory.enable_expiry_alerts') }}</p>
                         </div>
                     </label>
 
@@ -121,8 +121,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Enable FEFO (First Expired First Out)</span>
-                            <p class="text-sm text-muted">Automatically deduct from batches expiring soonest first</p>
+                            <span class="font-medium text-text">{{ __('inventory.fefo_enabled') }}</span>
+                            <p class="text-sm text-muted">{{ __('inventory.fefo_enabled') }}</p>
                         </div>
                     </label>
                 </div>
@@ -134,7 +134,7 @@
                     <div class="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
                         <x-icon name="bell" class="w-5 h-5 text-info" />
                     </div>
-                    <h3 class="font-semibold text-lg">Notifications</h3>
+                    <h3 class="font-semibold text-lg">{{ __('admin.notifications') }}</h3>
                 </div>
 
                 <div class="space-y-4">
@@ -147,8 +147,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Warning notifications</span>
-                            <p class="text-sm text-muted">Show dashboard alerts for items in warning period</p>
+                            <span class="font-medium text-text">{{ __('inventory.enable_expiry_alerts') }}</span>
+                            <p class="text-sm text-muted">{{ __('inventory.enable_expiry_alerts') }}</p>
                         </div>
                     </label>
 
@@ -161,8 +161,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Critical notifications</span>
-                            <p class="text-sm text-muted">Show prominent alerts for items in critical period</p>
+                            <span class="font-medium text-text">{{ __('inventory.enable_expiry_alerts') }}</span>
+                            <p class="text-sm text-muted">{{ __('inventory.enable_expiry_alerts') }}</p>
                         </div>
                     </label>
 
@@ -175,8 +175,8 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Daily expiry report email</span>
-                            <p class="text-sm text-muted">Send daily email summary of expiring items</p>
+                            <span class="font-medium text-text">{{ __('inventory.expiry_report') }}</span>
+                            <p class="text-sm text-muted">{{ __('inventory.expiry_report') }}</p>
                         </div>
                     </label>
                 </div>
@@ -188,7 +188,7 @@
                     <div class="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
                         <x-icon name="hashtag" class="w-5 h-5 text-secondary-600" />
                     </div>
-                    <h3 class="font-semibold text-lg">Batch Number Generation</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.batch_number') }}</h3>
                 </div>
 
                 <div class="space-y-4">
@@ -201,14 +201,14 @@
                             class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                         />
                         <div>
-                            <span class="font-medium text-text">Auto-generate batch numbers</span>
-                            <p class="text-sm text-muted">Automatically generate batch numbers when not provided</p>
+                            <span class="font-medium text-text">{{ __('inventory.batch_number_auto') }}</span>
+                            <p class="text-sm text-muted">{{ __('inventory.batch_number_auto') }}</p>
                         </div>
                     </label>
 
                     <div>
                         <label class="block text-sm font-medium text-text mb-1">
-                            Batch Prefix <span class="text-danger">*</span>
+                            {{ __('inventory.batch_number') }} <span class="text-danger">*</span>
                         </label>
                         <x-input
                             name="batch_prefix"
@@ -218,7 +218,7 @@
                             placeholder="BTH"
                         />
                         <p class="text-xs text-muted mt-1">
-                            Format: {{ $settings->batch_prefix }}-YYYYMMDD-001
+                            {{ $settings->batch_prefix }}-YYYYMMDD-001
                         </p>
                         @error('batch_prefix')
                             <p class="text-danger text-sm mt-1">{{ $message }}</p>
@@ -229,10 +229,10 @@
 
             <div class="flex items-center justify-end gap-3">
                 <x-button href="{{ route('inventory.batches.index') }}" variant="secondary">
-                    Cancel
+                    {{ __('inventory.cancel') }}
                 </x-button>
                 <x-button type="submit" icon="check">
-                    Save Settings
+                    {{ __('inventory.save_settings') }}
                 </x-button>
             </div>
         </form>

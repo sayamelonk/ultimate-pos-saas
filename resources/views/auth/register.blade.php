@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Daftar - Ultimate POS</title>
+    <title>{{ __('auth.register') }} - Ultimate POS</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -32,11 +32,11 @@
                 </div>
 
                 <h1 class="text-4xl xl:text-5xl font-bold leading-tight mb-6">
-                    Kelola Bisnis Anda<br>dengan Lebih Mudah
+                    {{ __('auth.manage_business_easily') }}
                 </h1>
 
                 <p class="text-lg text-primary-100 mb-12 max-w-md">
-                    Sistem Point of Sale modern yang membantu Anda mengelola penjualan, inventori, dan laporan dalam satu platform.
+                    {{ __('auth.manage_business_desc') }}
                 </p>
 
                 <!-- Features -->
@@ -48,8 +48,8 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="font-semibold">Multi-Outlet Support</p>
-                            <p class="text-sm text-primary-200">Kelola banyak cabang dalam satu dashboard</p>
+                            <p class="font-semibold">{{ __('auth.multi_outlet_support') }}</p>
+                            <p class="text-sm text-primary-200">{{ __('auth.multi_outlet_desc') }}</p>
                         </div>
                     </div>
 
@@ -60,8 +60,8 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="font-semibold">Inventori Real-time</p>
-                            <p class="text-sm text-primary-200">Pantau stok dan batch dengan akurat</p>
+                            <p class="font-semibold">{{ __('auth.realtime_inventory') }}</p>
+                            <p class="text-sm text-primary-200">{{ __('auth.realtime_inventory_desc') }}</p>
                         </div>
                     </div>
 
@@ -72,8 +72,8 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="font-semibold">Laporan Lengkap</p>
-                            <p class="text-sm text-primary-200">Analisis penjualan dan food cost</p>
+                            <p class="font-semibold">{{ __('auth.complete_reports') }}</p>
+                            <p class="text-sm text-primary-200">{{ __('auth.complete_reports_desc') }}</p>
                         </div>
                     </div>
                 </div>
@@ -81,15 +81,15 @@
                 <!-- Testimonial -->
                 <div class="mt-12 pt-8 border-t border-white/10">
                     <p class="text-primary-100 italic mb-4">
-                        "Ultimate POS membantu kami meningkatkan efisiensi operasional hingga 40%. Sangat recommended!"
+                        "{{ __('auth.testimonial_text') }}"
                     </p>
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-semibold">
                             AB
                         </div>
                         <div>
-                            <p class="font-medium">Ahmad Budiman</p>
-                            <p class="text-sm text-primary-200">Owner, Warung Sederhana</p>
+                            <p class="font-medium">{{ __('auth.testimonial_author') }}</p>
+                            <p class="text-sm text-primary-200">{{ __('auth.testimonial_role') }}</p>
                         </div>
                     </div>
                 </div>
@@ -114,8 +114,8 @@
                 <div class="w-full max-w-md">
                     <!-- Header -->
                     <div class="mb-8">
-                        <h2 class="text-2xl sm:text-3xl font-bold text-text">Buat Akun Baru</h2>
-                        <p class="text-muted mt-2">Mulai kelola bisnis Anda hari ini</p>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-text">{{ __('auth.register_title') }}</h2>
+                        <p class="text-muted mt-2">{{ __('auth.register_subtitle') }}</p>
                     </div>
 
                     <!-- Form -->
@@ -129,7 +129,7 @@
                                      :class="step >= 1 ? 'bg-primary text-white' : 'bg-secondary-100 text-muted'">
                                     1
                                 </div>
-                                <span class="text-sm font-medium" :class="step >= 1 ? 'text-text' : 'text-muted'">Info Bisnis</span>
+                                <span class="text-sm font-medium" :class="step >= 1 ? 'text-text' : 'text-muted'">{{ __('auth.step_business_info') }}</span>
                             </div>
                             <div class="flex-1 h-0.5 bg-secondary-200">
                                 <div class="h-full bg-primary transition-all duration-300" :style="step >= 2 ? 'width: 100%' : 'width: 0%'"></div>
@@ -139,7 +139,7 @@
                                      :class="step >= 2 ? 'bg-primary text-white' : 'bg-secondary-100 text-muted'">
                                     2
                                 </div>
-                                <span class="text-sm font-medium" :class="step >= 2 ? 'text-text' : 'text-muted'">Keamanan</span>
+                                <span class="text-sm font-medium" :class="step >= 2 ? 'text-text' : 'text-muted'">{{ __('auth.step_security') }}</span>
                             </div>
                         </div>
 
@@ -148,7 +148,7 @@
                             <!-- Business Name -->
                             <div class="mb-4">
                                 <label for="business_name" class="block text-sm font-medium text-text mb-1.5">
-                                    Nama Bisnis <span class="text-danger">*</span>
+                                    {{ __('auth.business_name') }} <span class="text-danger">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -164,7 +164,7 @@
                                            class="w-full pl-11 pr-4 py-3 border border-border rounded-xl bg-surface text-text
                                                   focus:ring-2 focus:ring-primary/20 focus:border-primary
                                                   placeholder:text-muted transition-all @error('business_name') border-danger @enderror"
-                                           placeholder="cth: Warung Makan Bahagia">
+                                           placeholder="{{ __('auth.business_name_placeholder_example') }}">
                                 </div>
                                 @error('business_name')
                                     <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
@@ -174,7 +174,7 @@
                             <!-- Full Name -->
                             <div class="mb-4">
                                 <label for="name" class="block text-sm font-medium text-text mb-1.5">
-                                    Nama Lengkap <span class="text-danger">*</span>
+                                    {{ __('auth.name') }} <span class="text-danger">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -190,7 +190,7 @@
                                            class="w-full pl-11 pr-4 py-3 border border-border rounded-xl bg-surface text-text
                                                   focus:ring-2 focus:ring-primary/20 focus:border-primary
                                                   placeholder:text-muted transition-all @error('name') border-danger @enderror"
-                                           placeholder="Nama lengkap Anda">
+                                           placeholder="{{ __('auth.name_placeholder') }}">
                                 </div>
                                 @error('name')
                                     <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
@@ -200,7 +200,7 @@
                             <!-- Email -->
                             <div class="mb-4">
                                 <label for="email" class="block text-sm font-medium text-text mb-1.5">
-                                    Email <span class="text-danger">*</span>
+                                    {{ __('auth.email') }} <span class="text-danger">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -216,7 +216,7 @@
                                            class="w-full pl-11 pr-4 py-3 border border-border rounded-xl bg-surface text-text
                                                   focus:ring-2 focus:ring-primary/20 focus:border-primary
                                                   placeholder:text-muted transition-all @error('email') border-danger @enderror"
-                                           placeholder="email@example.com">
+                                           placeholder="{{ __('auth.email_placeholder') }}">
                                 </div>
                                 @error('email')
                                     <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
@@ -226,7 +226,7 @@
                             <!-- Phone -->
                             <div class="mb-6">
                                 <label for="phone" class="block text-sm font-medium text-text mb-1.5">
-                                    No. Telepon
+                                    {{ __('auth.phone') }}
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -241,7 +241,7 @@
                                            class="w-full pl-11 pr-4 py-3 border border-border rounded-xl bg-surface text-text
                                                   focus:ring-2 focus:ring-primary/20 focus:border-primary
                                                   placeholder:text-muted transition-all"
-                                           placeholder="08xxxxxxxxxx">
+                                           placeholder="{{ __('auth.phone_placeholder') }}">
                                 </div>
                             </div>
 
@@ -251,7 +251,7 @@
                                     class="w-full py-3 px-4 bg-primary text-white font-medium rounded-xl
                                            hover:bg-primary-600 focus:ring-4 focus:ring-primary/20
                                            transition-all flex items-center justify-center gap-2">
-                                Lanjutkan
+                                {{ __('auth.continue') }}
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                 </svg>
@@ -263,7 +263,7 @@
                             <!-- Password -->
                             <div class="mb-4" x-data="{ show: false }">
                                 <label for="password" class="block text-sm font-medium text-text mb-1.5">
-                                    Password <span class="text-danger">*</span>
+                                    {{ __('auth.password_label') }} <span class="text-danger">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -279,7 +279,7 @@
                                            class="w-full pl-11 pr-12 py-3 border border-border rounded-xl bg-surface text-text
                                                   focus:ring-2 focus:ring-primary/20 focus:border-primary
                                                   placeholder:text-muted transition-all @error('password') border-danger @enderror"
-                                           placeholder="Minimal 8 karakter">
+                                           placeholder="{{ __('auth.password_min_chars') }}">
                                     <button type="button"
                                             @click="show = !show"
                                             class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors">
@@ -295,13 +295,13 @@
                                 @error('password')
                                     <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
                                 @enderror
-                                <p class="mt-1.5 text-xs text-muted">Gunakan kombinasi huruf, angka, dan simbol</p>
+                                <p class="mt-1.5 text-xs text-muted">{{ __('auth.password_hint') }}</p>
                             </div>
 
                             <!-- Confirm Password -->
                             <div class="mb-6" x-data="{ show: false }">
                                 <label for="password_confirmation" class="block text-sm font-medium text-text mb-1.5">
-                                    Konfirmasi Password <span class="text-danger">*</span>
+                                    {{ __('auth.confirm_password') }} <span class="text-danger">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -317,7 +317,7 @@
                                            class="w-full pl-11 pr-12 py-3 border border-border rounded-xl bg-surface text-text
                                                   focus:ring-2 focus:ring-primary/20 focus:border-primary
                                                   placeholder:text-muted transition-all"
-                                           placeholder="Ketik ulang password">
+                                           placeholder="{{ __('auth.retype_password') }}">
                                     <button type="button"
                                             @click="show = !show"
                                             class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors">
@@ -341,10 +341,10 @@
                                            required
                                            class="mt-0.5 w-5 h-5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer">
                                     <span class="text-sm text-muted group-hover:text-text transition-colors">
-                                        Saya setuju dengan
-                                        <a href="#" class="text-primary hover:underline">Syarat & Ketentuan</a>
-                                        dan
-                                        <a href="#" class="text-primary hover:underline">Kebijakan Privasi</a>
+                                        {{ __('auth.terms_agree') }}
+                                        <a href="{{ route('terms') }}" class="text-primary hover:underline">{{ __('auth.terms_and_conditions') }}</a>
+                                        {{ __('auth.and') }}
+                                        <a href="{{ route('privacy') }}" class="text-primary hover:underline">{{ __('auth.privacy_policy') }}</a>
                                     </span>
                                 </label>
                             </div>
@@ -359,7 +359,7 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
                                     </svg>
-                                    Kembali
+                                    {{ __('auth.back') }}
                                 </button>
                                 <button type="submit"
                                         class="flex-[2] py-3 px-4 bg-primary text-white font-medium rounded-xl
@@ -368,7 +368,7 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
-                                    Buat Akun
+                                    {{ __('auth.register_button') }}
                                 </button>
                             </div>
                         </div>
@@ -380,16 +380,16 @@
                             <div class="w-full border-t border-border"></div>
                         </div>
                         <div class="relative flex justify-center text-sm">
-                            <span class="px-4 bg-background text-muted">atau</span>
+                            <span class="px-4 bg-background text-muted">{{ __('auth.or') }}</span>
                         </div>
                     </div>
 
                     <!-- Login Link -->
                     <div class="text-center">
                         <p class="text-muted">
-                            Sudah punya akun?
+                            {{ __('auth.have_account') }}
                             <a href="{{ route('login') }}" class="text-primary hover:text-primary-600 font-semibold transition-colors">
-                                Masuk di sini
+                                {{ __('auth.login_here') }}
                             </a>
                         </p>
                     </div>
@@ -398,7 +398,7 @@
 
             <!-- Footer -->
             <div class="py-4 px-6 text-center text-sm text-muted border-t border-border">
-                &copy; {{ date('Y') }} Ultimate POS. All rights reserved.
+                &copy; {{ date('Y') }} Ultimate POS. {{ __('auth.all_rights_reserved') }}
             </div>
         </div>
     </div>
