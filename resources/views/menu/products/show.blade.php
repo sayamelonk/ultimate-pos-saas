@@ -213,34 +213,140 @@
             @endif
 
             <!-- Inventory Link -->
-            @if($product->inventoryItem || $product->recipe)
-                <x-card title="Inventory & Recipe">
-                    <dl class="space-y-4">
-                        @if($product->inventoryItem)
-                            <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
-                                <div>
-                                    <dt class="text-sm text-muted">Linked Inventory Item</dt>
-                                    <dd class="font-medium">{{ $product->inventoryItem->name }}</dd>
-                                </div>
-                                <x-button href="{{ route('inventory.items.show', $product->inventoryItem) }}" variant="outline-secondary" size="sm">
-                                    View Item
-                                </x-button>
-                            </div>
-                        @endif
-                        @if($product->recipe)
-                            <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
-                                <div>
-                                    <dt class="text-sm text-muted">Linked Recipe</dt>
-                                    <dd class="font-medium">{{ $product->recipe->name }}</dd>
-                                </div>
-                                <x-button href="{{ route('inventory.recipes.show', $product->recipe) }}" variant="outline-secondary" size="sm">
-                                    View Recipe
-                                </x-button>
-                            </div>
-                        @endif
-                    </dl>
+            @if($product->inventoryItem)
+                <x-card title="Linked Inventory Item">
+                    <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
+                        <div>
+                            <dt class="text-sm text-muted">Inventory Item</dt>
+                            <dd class="font-medium">{{ $product->inventoryItem->name }}</dd>
+                        </div>
+                        <x-button href="{{ route('inventory.items.show', $product->inventoryItem) }}" variant="outline-secondary" size="sm">
+                            View Item
+                        </x-button>
+                    </div>
                 </x-card>
             @endif
+
+            <!-- Recipe & Ingredients -->
+            <x-card>
+                <x-slot name="title">
+                    <div class="flex items-center justify-between">
+                        <span>Recipe & Ingredients</span>
+                        @if($product->recipe)
+                            <div class="flex gap-2">
+                                <x-button href="{{ route('inventory.recipes.edit', $product->recipe) }}" variant="outline-secondary" size="sm" icon="pencil">
+                                    Edit Recipe
+                                </x-button>
+                                <x-button href="{{ route('inventory.recipes.show', $product->recipe) }}" variant="outline-secondary" size="sm" icon="eye">
+                                    View Full
+                                </x-button>
+                            </div>
+                        @endif
+                    </div>
+                </x-slot>
+
+                @if($product->recipe)
+                    <!-- Recipe Info -->
+                    <div class="mb-4 p-3 bg-accent/5 border border-accent/20 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-accent">{{ $product->recipe->name }}</p>
+                                <p class="text-sm text-muted">
+                                    Yield: {{ $product->recipe->yield_qty }} {{ $product->recipe->yieldUnit->name ?? 'unit' }}
+                                    @if($product->recipe->estimated_cost)
+                                        • Cost: Rp {{ number_format($product->recipe->estimated_cost, 0, ',', '.') }}
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ingredients Table -->
+                    @if($product->recipe->items->count() > 0)
+                        <x-table>
+                            <x-slot name="head">
+                                <x-th>Ingredient</x-th>
+                                <x-th align="right">Qty</x-th>
+                                <x-th align="right">Unit Cost</x-th>
+                                <x-th align="right">Total</x-th>
+                            </x-slot>
+
+                            @php $totalCost = 0; @endphp
+                            @foreach($product->recipe->items as $item)
+                                @php
+                                    $unitCost = $item->inventoryItem->cost_price ?? 0;
+                                    $wasteFactor = 1 + (($item->waste_percentage ?? 0) / 100);
+                                    $itemCost = $unitCost * $item->quantity * $wasteFactor;
+                                    $totalCost += $itemCost;
+                                @endphp
+                                <tr>
+                                    <x-td>
+                                        <div>
+                                            <p class="font-medium">{{ $item->inventoryItem->name ?? 'Unknown' }}</p>
+                                            @if($item->waste_percentage > 0)
+                                                <p class="text-xs text-muted">+{{ $item->waste_percentage }}% waste</p>
+                                            @endif
+                                        </div>
+                                    </x-td>
+                                    <x-td align="right">
+                                        {{ number_format($item->quantity, 2) }} {{ $item->unit->abbreviation ?? $item->unit->name ?? '' }}
+                                    </x-td>
+                                    <x-td align="right">
+                                        Rp {{ number_format($unitCost, 0, ',', '.') }}
+                                    </x-td>
+                                    <x-td align="right">
+                                        <span class="font-medium">Rp {{ number_format($itemCost, 0, ',', '.') }}</span>
+                                    </x-td>
+                                </tr>
+                            @endforeach
+                            <tr class="border-t-2 border-border bg-secondary-50">
+                                <x-td colspan="3" class="text-right font-medium">Total Ingredient Cost</x-td>
+                                <x-td align="right">
+                                    <span class="font-bold text-accent">Rp {{ number_format($totalCost, 0, ',', '.') }}</span>
+                                </x-td>
+                            </tr>
+                        </x-table>
+                    @else
+                        <x-empty-state
+                            icon="beaker"
+                            title="No Ingredients"
+                            description="This recipe has no ingredients yet."
+                        >
+                            <x-button href="{{ route('inventory.recipes.edit', $product->recipe) }}" icon="plus" size="sm">
+                                Add Ingredients
+                            </x-button>
+                        </x-empty-state>
+                    @endif
+                @else
+                    <!-- No Recipe - Show options to link or create -->
+                    <x-empty-state
+                        icon="beaker"
+                        title="No Recipe Linked"
+                        description="Link an existing recipe or create a new one to track ingredients and costs."
+                    >
+                        <div class="flex flex-col gap-3">
+                            @if($availableRecipes->count() > 0)
+                                <form action="{{ route('menu.products.link-recipe', $product) }}" method="POST" class="flex gap-2">
+                                    @csrf
+                                    <select name="recipe_id" class="form-select rounded-lg border-border text-sm flex-1">
+                                        <option value="">Select existing recipe...</option>
+                                        @foreach($availableRecipes as $recipe)
+                                            <option value="{{ $recipe->id }}">{{ $recipe->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <x-button type="submit" variant="outline-secondary" size="sm" icon="link">
+                                        Link
+                                    </x-button>
+                                </form>
+                                <div class="text-center text-muted text-sm">or</div>
+                            @endif
+                            <x-button href="{{ route('inventory.recipes.create', ['product_id' => $product->id]) }}" icon="plus">
+                                Create New Recipe
+                            </x-button>
+                        </div>
+                    </x-empty-state>
+                @endif
+            </x-card>
         </div>
 
         <!-- Sidebar -->

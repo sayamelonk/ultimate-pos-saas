@@ -93,18 +93,26 @@
                         <div class="flex gap-4 mb-4 p-4 bg-secondary-50 rounded-lg">
                             <div class="flex-1">
                                 <label class="text-sm font-medium text-text">Inventory Item</label>
-                                <select x-model="item.inventory_item_id" @change="updateItemCost(index)" :name="'items[' + index + '][inventory_item_id]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" required>
+                                <select x-model="item.inventory_item_id" @change="onItemChange(index)" :name="'items[' + index + '][inventory_item_id]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" required>
                                     <option value="">Select Item</option>
                                     @foreach($inventoryItems as $invItem)
-                                        <option value="{{ $invItem->id }}" data-cost="{{ $invItem->cost_price }}">{{ $invItem->name }} ({{ $invItem->sku }})</option>
+                                        <option value="{{ $invItem->id }}">{{ $invItem->name }} ({{ $invItem->sku }})</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="w-28">
+                            <div class="w-24">
                                 <label class="text-sm font-medium text-text">Quantity</label>
                                 <input type="number" step="0.001" x-model="item.quantity" @input="updateItemCost(index)" :name="'items[' + index + '][quantity]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" placeholder="0" min="0.001" required>
                             </div>
-                            <div class="w-36">
+                            <div class="w-28">
+                                <label class="text-sm font-medium text-text">Unit</label>
+                                <select x-model="item.unit_id" @change="updateItemCost(index)" :name="'items[' + index + '][unit_id]'" class="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent" required>
+                                    <template x-for="unit in getAvailableUnits(item.inventory_item_id)" :key="unit.id">
+                                        <option :value="unit.id" x-text="unit.abbreviation" :selected="unit.id === item.unit_id"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="w-32">
                                 <label class="text-sm font-medium text-text">Cost</label>
                                 <div class="mt-1 px-3 py-2 bg-secondary-100 rounded-lg text-right font-medium" x-text="'Rp ' + formatNumber(item.cost)"></div>
                             </div>
@@ -152,21 +160,54 @@
         </div>
     </form>
 
+    @php
+        $itemsData = $recipe->items->map(function($item) {
+            return [
+                'inventory_item_id' => $item->inventory_item_id,
+                'quantity' => (float) $item->quantity,
+                'unit_id' => $item->unit_id,
+                'cost' => (float) $item->calculateCost(),
+            ];
+        });
+
+        // Item data: cost_price per base unit, base unit_id
+        $itemDataMap = $inventoryItems->mapWithKeys(function($item) {
+            return [$item->id => [
+                'cost_price' => (float) ($item->cost_price ?? 0),
+                'unit_id' => $item->unit_id,
+            ]];
+        });
+
+        // Units with conversion data
+        $unitsData = $units->mapWithKeys(function($unit) {
+            return [$unit->id => [
+                'id' => $unit->id,
+                'name' => $unit->name,
+                'abbreviation' => $unit->abbreviation,
+                'base_unit_id' => $unit->base_unit_id,
+                'conversion_factor' => (float) ($unit->conversion_factor ?? 1),
+            ]];
+        });
+    @endphp
+
     @push('scripts')
     <script>
         function recipeForm() {
-            @php
-                $itemsData = $recipe->items->map(function($item) {
-                    return [
-                        'inventory_item_id' => $item->inventory_item_id,
-                        'quantity' => (float) $item->quantity,
-                        'cost' => $item->calculateCost(),
-                    ];
-                });
-            @endphp
             return {
                 items: @json($itemsData),
-                itemCosts: @json($inventoryItems->pluck('cost_price', 'id')),
+                itemData: @json($itemDataMap),
+                units: @json($unitsData),
+
+                init() {
+                    // Watch for changes in items and recalculate costs
+                    this.$watch('items', (items) => {
+                        items.forEach((item, index) => {
+                            if (item.inventory_item_id && item.quantity > 0) {
+                                this.updateItemCost(index);
+                            }
+                        });
+                    }, { deep: true });
+                },
 
                 get totalCost() {
                     return this.items.reduce((sum, item) => sum + (parseFloat(item.cost) || 0), 0);
@@ -177,8 +218,39 @@
                     return qty > 0 ? this.totalCost / qty : 0;
                 },
 
+                // Get available units for an inventory item (base unit + related units)
+                getAvailableUnits(inventoryItemId) {
+                    if (!inventoryItemId || !this.itemData[inventoryItemId]) return [];
+
+                    const baseUnitId = this.itemData[inventoryItemId].unit_id;
+                    const availableUnits = [];
+
+                    // Add base unit first
+                    if (this.units[baseUnitId]) {
+                        availableUnits.push(this.units[baseUnitId]);
+                    }
+
+                    // Add units that convert to this base unit
+                    Object.values(this.units).forEach(unit => {
+                        if (unit.base_unit_id === baseUnitId) {
+                            availableUnits.push(unit);
+                        }
+                    });
+
+                    return availableUnits;
+                },
+
+                // When inventory item changes, set default unit
+                onItemChange(index) {
+                    const item = this.items[index];
+                    if (item.inventory_item_id && this.itemData[item.inventory_item_id]) {
+                        item.unit_id = this.itemData[item.inventory_item_id].unit_id;
+                    }
+                    this.updateItemCost(index);
+                },
+
                 addItem() {
-                    this.items.push({ inventory_item_id: '', quantity: 0, cost: 0 });
+                    this.items.push({ inventory_item_id: '', quantity: 0, unit_id: '', cost: 0 });
                 },
 
                 removeItem(index) {
@@ -187,12 +259,32 @@
 
                 updateItemCost(index) {
                     const item = this.items[index];
-                    const unitCost = this.itemCosts[item.inventory_item_id] || 0;
-                    item.cost = (parseFloat(item.quantity) || 0) * unitCost;
+                    if (!item.inventory_item_id || !this.itemData[item.inventory_item_id]) {
+                        item.cost = 0;
+                        return;
+                    }
+
+                    const invItem = this.itemData[item.inventory_item_id];
+                    const baseUnitCost = invItem.cost_price; // Cost per base unit (e.g., per kg)
+                    const quantity = parseFloat(item.quantity) || 0;
+
+                    // Get conversion factor for selected unit
+                    let conversionFactor = 1;
+                    if (item.unit_id && this.units[item.unit_id]) {
+                        const selectedUnit = this.units[item.unit_id];
+                        // If selected unit has a conversion factor (e.g., gram to kg = 0.001)
+                        if (selectedUnit.conversion_factor && selectedUnit.conversion_factor !== 1) {
+                            conversionFactor = selectedUnit.conversion_factor;
+                        }
+                    }
+
+                    // Cost = quantity * conversion_factor * base_unit_cost
+                    // e.g., 18 gram * 0.001 (kg/g) * 180000 (Rp/kg) = 3240
+                    item.cost = quantity * conversionFactor * baseUnitCost;
                 },
 
                 formatNumber(num) {
-                    return new Intl.NumberFormat('id-ID').format(num || 0);
+                    return new Intl.NumberFormat('id-ID').format(Math.round(num) || 0);
                 }
             }
         }

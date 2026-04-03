@@ -24,12 +24,31 @@
                 <!-- Basic Information -->
                 <x-card title="Combo Information">
                     <div class="space-y-4">
-                        <x-form-group label="Combo Name" name="name" required>
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-form-group label="Combo Name" name="name" required>
+                                <x-input
+                                    name="name"
+                                    :value="old('name', $combo->name)"
+                                    placeholder="e.g., Lunch Combo, Family Pack"
+                                    required
+                                />
+                            </x-form-group>
+
+                            <x-form-group label="SKU" name="sku" required>
+                                <x-input
+                                    name="sku"
+                                    :value="old('sku', $combo->sku)"
+                                    placeholder="e.g., CMB-001"
+                                    required
+                                />
+                            </x-form-group>
+                        </div>
+
+                        <x-form-group label="Barcode" name="barcode">
                             <x-input
-                                name="name"
-                                :value="old('name', $combo->name)"
-                                placeholder="e.g., Lunch Combo, Family Pack"
-                                required
+                                name="barcode"
+                                :value="old('barcode', $combo->barcode)"
+                                placeholder="Optional barcode"
                             />
                         </x-form-group>
 
@@ -43,13 +62,13 @@
                         </x-form-group>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <x-form-group label="Sort Order" name="sort_order">
-                                <x-input
-                                    type="number"
-                                    name="sort_order"
-                                    :value="old('sort_order', $combo->sort_order)"
-                                    min="0"
-                                />
+                            <x-form-group label="Category" name="category_id">
+                                <x-select name="category_id">
+                                    <option value="">No Category</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->id }}" @selected(old('category_id', $combo->category_id) == $category->id)>{{ $category->name }}</option>
+                                    @endforeach
+                                </x-select>
                             </x-form-group>
 
                             <x-form-group>
@@ -72,7 +91,7 @@
                                             type="checkbox"
                                             name="allow_substitutions"
                                             value="1"
-                                            {{ old('allow_substitutions', $combo->allow_substitutions) ? 'checked' : '' }}
+                                            {{ old('allow_substitutions', $combo->combo?->allow_substitutions) ? 'checked' : '' }}
                                             class="rounded border-border text-accent focus:ring-accent"
                                         >
                                         <span class="text-sm font-medium text-text">Allow Substitutions</span>
@@ -80,12 +99,63 @@
                                 </div>
                             </x-form-group>
                         </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="hidden" name="is_featured" value="0">
+                                <input
+                                    type="checkbox"
+                                    name="is_featured"
+                                    value="1"
+                                    {{ old('is_featured', $combo->is_featured) ? 'checked' : '' }}
+                                    class="rounded border-border text-accent focus:ring-accent"
+                                >
+                                <span class="text-sm font-medium text-text">Featured</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="hidden" name="show_in_pos" value="0">
+                                <input
+                                    type="checkbox"
+                                    name="show_in_pos"
+                                    value="1"
+                                    {{ old('show_in_pos', $combo->show_in_pos) ? 'checked' : '' }}
+                                    class="rounded border-border text-accent focus:ring-accent"
+                                >
+                                <span class="text-sm font-medium text-text">Show in POS</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="hidden" name="show_in_menu" value="0">
+                                <input
+                                    type="checkbox"
+                                    name="show_in_menu"
+                                    value="1"
+                                    {{ old('show_in_menu', $combo->show_in_menu) ? 'checked' : '' }}
+                                    class="rounded border-border text-accent focus:ring-accent"
+                                >
+                                <span class="text-sm font-medium text-text">Show in Menu</span>
+                            </label>
+                        </div>
                     </div>
                 </x-card>
 
                 <!-- Pricing -->
                 <x-card title="Pricing">
                     <div class="space-y-4">
+                        <x-form-group label="Combo Price" name="base_price" required>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">Rp</span>
+                                <x-input
+                                    type="number"
+                                    name="base_price"
+                                    :value="old('base_price', $combo->base_price)"
+                                    min="0"
+                                    step="100"
+                                    class="pl-10"
+                                />
+                            </div>
+                            <p class="text-xs text-muted mt-1">This is the selling price of the combo</p>
+                        </x-form-group>
+
                         <x-form-group label="Pricing Type" name="pricing_type" required>
                             <div class="grid grid-cols-2 gap-3">
                                 <label class="relative cursor-pointer">
@@ -94,12 +164,12 @@
                                         name="pricing_type"
                                         value="fixed"
                                         x-model="pricingType"
-                                        {{ old('pricing_type', $combo->pricing_type) === 'fixed' ? 'checked' : '' }}
+                                        {{ old('pricing_type', $combo->combo?->pricing_type) === 'fixed' ? 'checked' : '' }}
                                         class="peer sr-only"
                                     >
                                     <div class="p-4 border-2 border-border rounded-lg peer-checked:border-accent peer-checked:bg-accent/5 transition-all">
                                         <p class="font-medium">Fixed Price</p>
-                                        <p class="text-xs text-muted mt-1">Set a fixed combo price</p>
+                                        <p class="text-xs text-muted mt-1">Use the combo price above</p>
                                     </div>
                                 </label>
                                 <label class="relative cursor-pointer">
@@ -108,7 +178,7 @@
                                         name="pricing_type"
                                         value="sum"
                                         x-model="pricingType"
-                                        {{ old('pricing_type', $combo->pricing_type) === 'sum' ? 'checked' : '' }}
+                                        {{ old('pricing_type', $combo->combo?->pricing_type) === 'sum' ? 'checked' : '' }}
                                         class="peer sr-only"
                                     >
                                     <div class="p-4 border-2 border-border rounded-lg peer-checked:border-accent peer-checked:bg-accent/5 transition-all">
@@ -122,12 +192,12 @@
                                         name="pricing_type"
                                         value="discount_percent"
                                         x-model="pricingType"
-                                        {{ old('pricing_type', $combo->pricing_type) === 'discount_percent' ? 'checked' : '' }}
+                                        {{ old('pricing_type', $combo->combo?->pricing_type) === 'discount_percent' ? 'checked' : '' }}
                                         class="peer sr-only"
                                     >
                                     <div class="p-4 border-2 border-border rounded-lg peer-checked:border-accent peer-checked:bg-accent/5 transition-all">
                                         <p class="font-medium">Percentage Discount</p>
-                                        <p class="text-xs text-muted mt-1">% off total price</p>
+                                        <p class="text-xs text-muted mt-1">% off items total</p>
                                     </div>
                                 </label>
                                 <label class="relative cursor-pointer">
@@ -136,40 +206,24 @@
                                         name="pricing_type"
                                         value="discount_amount"
                                         x-model="pricingType"
-                                        {{ old('pricing_type', $combo->pricing_type) === 'discount_amount' ? 'checked' : '' }}
+                                        {{ old('pricing_type', $combo->combo?->pricing_type) === 'discount_amount' ? 'checked' : '' }}
                                         class="peer sr-only"
                                     >
                                     <div class="p-4 border-2 border-border rounded-lg peer-checked:border-accent peer-checked:bg-accent/5 transition-all">
                                         <p class="font-medium">Fixed Discount</p>
-                                        <p class="text-xs text-muted mt-1">Flat amount off</p>
+                                        <p class="text-xs text-muted mt-1">Flat amount off items total</p>
                                     </div>
                                 </label>
                             </div>
                         </x-form-group>
 
-                        <div x-show="pricingType === 'fixed'" x-cloak>
-                            <x-form-group label="Fixed Price" name="fixed_price">
-                                <div class="relative">
-                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">Rp</span>
-                                    <x-input
-                                        type="number"
-                                        name="fixed_price"
-                                        :value="old('fixed_price', $combo->fixed_price)"
-                                        min="0"
-                                        step="100"
-                                        class="pl-10"
-                                    />
-                                </div>
-                            </x-form-group>
-                        </div>
-
                         <div x-show="pricingType === 'discount_percent'" x-cloak>
-                            <x-form-group label="Discount Percentage" name="discount_percent">
+                            <x-form-group label="Discount Percentage" name="discount_value">
                                 <div class="relative">
                                     <x-input
                                         type="number"
-                                        name="discount_percent"
-                                        :value="old('discount_percent', $combo->pricing_type === 'discount_percent' ? $combo->discount_value : 10)"
+                                        name="discount_value"
+                                        :value="old('discount_value', $combo->combo?->pricing_type === 'discount_percent' ? $combo->combo?->discount_value : 10)"
                                         min="0"
                                         max="100"
                                         step="0.1"
@@ -181,13 +235,13 @@
                         </div>
 
                         <div x-show="pricingType === 'discount_amount'" x-cloak>
-                            <x-form-group label="Discount Amount" name="discount_amount">
+                            <x-form-group label="Discount Amount" name="discount_value">
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">Rp</span>
                                     <x-input
                                         type="number"
-                                        name="discount_amount"
-                                        :value="old('discount_amount', $combo->pricing_type === 'discount_amount' ? $combo->discount_value : 0)"
+                                        name="discount_value"
+                                        :value="old('discount_value', $combo->combo?->pricing_type === 'discount_amount' ? $combo->combo?->discount_value : 0)"
                                         min="0"
                                         step="100"
                                         class="pl-10"
@@ -330,12 +384,29 @@
                 'sort_order' => $i->sort_order
             ];
         })->toArray());
+        $productsJson = $products->map(function($p) {
+            return ['id' => $p->id, 'name' => $p->name, 'price' => $p->base_price];
+        })->keyBy('id');
+        $categoriesJson = $categories->map(function($c) {
+            return ['id' => $c->id, 'name' => $c->name];
+        })->keyBy('id');
     @endphp
     <script>
         function comboForm() {
             return {
                 pricingType: '{{ old('pricing_type', $comboSettings?->pricing_type ?? 'fixed') }}',
+                products: @json($productsJson),
+                categories: @json($categoriesJson),
                 items: @json($itemsData),
+
+                getItemName(item) {
+                    if (item.selection_type === 'product' && item.product_id) {
+                        return this.products[item.product_id]?.name || 'Product';
+                    } else if (item.selection_type === 'category' && item.category_id) {
+                        return 'Any ' + (this.categories[item.category_id]?.name || 'Category');
+                    }
+                    return item.selection_type === 'product' ? 'Select Product' : 'Select Category';
+                },
 
                 addItem() {
                     this.items.push({

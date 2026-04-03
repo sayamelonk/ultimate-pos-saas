@@ -4,11 +4,10 @@ namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\POS\CheckoutRequest;
-use App\Models\InventoryCategory;
-use App\Models\InventoryItem;
 use App\Models\Outlet;
 use App\Models\PaymentMethod;
-use App\Models\Price;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Transaction;
 use App\Services\CustomerService;
 use App\Services\PosSessionService;
@@ -54,10 +53,15 @@ class PosController extends Controller
             }
         }
 
-        $categories = InventoryCategory::where('tenant_id', $tenantId)
+        // Use ProductCategory instead of InventoryCategory
+        $categories = ProductCategory::where('tenant_id', $tenantId)
             ->where('is_active', true)
+            ->where('show_in_pos', true)
             ->whereNull('parent_id')
-            ->with('children')
+            ->with(['children' => function ($q) {
+                $q->where('is_active', true)->where('show_in_pos', true);
+            }])
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
@@ -75,14 +79,22 @@ class PosController extends Controller
         ]);
     }
 
-    public function getItems(Request $request): JsonResponse
+    public function getProducts(Request $request): JsonResponse
     {
         $user = auth()->user();
         $outletId = $request->outlet_id;
 
-        $query = InventoryItem::where('tenant_id', $user->tenant_id)
+        $query = Product::where('tenant_id', $user->tenant_id)
             ->where('is_active', true)
-            ->with(['category', 'unit']);
+            ->where('show_in_pos', true)
+            ->with([
+                'category',
+                'variants' => fn ($q) => $q->where('is_active', true),
+                'modifierGroups' => fn ($q) => $q->where('is_active', true),
+                'modifierGroups.modifiers' => fn ($q) => $q->where('is_active', true),
+                'productOutlets' => fn ($q) => $q->where('outlet_id', $outletId),
+                'combo.items.product',
+            ]);
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
@@ -97,36 +109,78 @@ class PosController extends Controller
             });
         }
 
-        $items = $query->orderBy('name')->limit(50)->get();
+        $products = $query->orderBy('sort_order')->orderBy('name')->limit(50)->get();
 
-        $prices = Price::where('outlet_id', $outletId)
-            ->whereIn('inventory_item_id', $items->pluck('id'))
-            ->where('is_active', true)
-            ->get()
-            ->keyBy('inventory_item_id');
+        $productsData = $products->map(function ($product) {
+            // Check availability at outlet
+            $productOutlet = $product->productOutlets->first();
+            if ($productOutlet && ! $productOutlet->is_available) {
+                return null; // Skip unavailable products
+            }
 
-        $itemsWithPrices = $items->map(function ($item) use ($prices) {
-            $price = $prices->get($item->id);
+            // Get price (custom price for outlet or base price)
+            $sellingPrice = $productOutlet?->custom_price ?? $product->base_price;
 
             return [
-                'id' => $item->id,
-                'sku' => $item->sku,
-                'barcode' => $item->barcode,
-                'name' => $item->name,
-                'image' => $item->image,
-                'category_id' => $item->category_id,
-                'category_name' => $item->category?->name,
-                'unit_name' => $item->unit?->name ?? 'pcs',
-                'cost_price' => $item->cost_price,
-                'selling_price' => $price?->selling_price ?? ($item->cost_price * 1.5),
-                'member_price' => $price?->member_price,
-                'has_price' => $price !== null,
+                'id' => $product->id,
+                'sku' => $product->sku,
+                'barcode' => $product->barcode,
+                'name' => $product->name,
+                'image' => $product->image,
+                'category_id' => $product->category_id,
+                'category_name' => $product->category?->name,
+                'category_color' => $product->category?->color,
+                'product_type' => $product->product_type,
+                'base_price' => $product->base_price,
+                'selling_price' => $sellingPrice,
+                'cost_price' => $product->cost_price,
+                'allow_notes' => $product->allow_notes,
+                'has_variants' => $product->isVariant() && $product->variants->isNotEmpty(),
+                'has_modifiers' => $product->modifierGroups->isNotEmpty(),
+                'is_combo' => $product->isCombo(),
+                'variants' => $product->isVariant() ? $product->variants->map(fn ($v) => [
+                    'id' => $v->id,
+                    'name' => $v->name,
+                    'sku' => $v->sku,
+                    'price' => $v->price,
+                    'price_adjustment' => $v->price - $product->base_price,
+                ]) : [],
+                'modifier_groups' => $product->modifierGroups->map(fn ($mg) => [
+                    'id' => $mg->id,
+                    'name' => $mg->name,
+                    'display_name' => $mg->display_name ?? $mg->name,
+                    'selection_type' => $mg->selection_type,
+                    'min_selections' => $mg->pivot->min_selections ?? $mg->min_selections,
+                    'max_selections' => $mg->pivot->max_selections ?? $mg->max_selections,
+                    'is_required' => $mg->pivot->is_required ?? $mg->is_required,
+                    'modifiers' => $mg->modifiers->map(fn ($m) => [
+                        'id' => $m->id,
+                        'name' => $m->name,
+                        'display_name' => $m->display_name ?? $m->name,
+                        'price' => $m->price,
+                        'is_default' => $m->is_default,
+                    ]),
+                ]),
+                'combo_items' => $product->isCombo() && $product->combo ? $product->combo->items->map(fn ($ci) => [
+                    'id' => $ci->id,
+                    'product_id' => $ci->product_id,
+                    'product_name' => $ci->product?->name,
+                    'category_id' => $ci->category_id,
+                    'quantity' => $ci->quantity,
+                    'is_required' => $ci->is_required,
+                ]) : [],
             ];
-        });
+        })->filter()->values();
 
         return response()->json([
-            'items' => $itemsWithPrices,
+            'products' => $productsData,
         ]);
+    }
+
+    // Keep old method for backward compatibility (will be removed later)
+    public function getItems(Request $request): JsonResponse
+    {
+        return $this->getProducts($request);
     }
 
     public function searchCustomers(Request $request): JsonResponse

@@ -30,13 +30,28 @@ class RecipeCostService
             $itemCost = $item->calculateCost();
             $totalCost += $itemCost;
 
+            // Use recipe item's unit, fallback to inventory item's unit
+            $displayUnit = $item->unit ?? $item->inventoryItem->unit;
+            $baseUnit = $item->inventoryItem->unit;
+
+            // Calculate unit cost in the display unit
+            $unitCostInDisplayUnit = $item->inventoryItem->cost_price ?? 0;
+            if ($displayUnit && $baseUnit && $displayUnit->id !== $baseUnit->id && $displayUnit->conversion_factor) {
+                // Convert cost from base unit to display unit
+                // If base is kg (cost per kg) and display is gram, cost per gram = cost per kg * 0.001
+                $unitCostInDisplayUnit = $unitCostInDisplayUnit * $displayUnit->conversion_factor;
+            }
+
             $ingredients[] = [
                 'name' => $item->inventoryItem->name,
                 'sku' => $item->inventoryItem->sku,
                 'quantity' => $item->quantity,
                 'gross_quantity' => $item->getGrossQuantity(),
-                'unit' => $item->inventoryItem->unit->abbreviation ?? '',
-                'unit_cost' => $item->inventoryItem->cost_price ?? 0,
+                'unit' => $displayUnit->abbreviation ?? '',
+                'unit_name' => $displayUnit->name ?? '',
+                'base_unit' => $baseUnit->abbreviation ?? '',
+                'unit_cost' => $unitCostInDisplayUnit,
+                'unit_cost_label' => $displayUnit->abbreviation ?? '',
                 'waste_percentage' => $item->waste_percentage ?? 0,
                 'total_cost' => $itemCost,
                 'percentage_of_total' => 0, // Will be calculated below

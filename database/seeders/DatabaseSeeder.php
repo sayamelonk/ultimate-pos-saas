@@ -46,6 +46,12 @@ class DatabaseSeeder extends Seeder
             ModifierGroupSeeder::class,
             ProductSeeder::class,
             ComboSeeder::class,
+
+            // Phase 5 - Link Products to Recipes
+            ProductRecipeSeeder::class,
+
+            // Phase 6 - Discounts
+            DiscountSeeder::class,
         ]);
     }
 }

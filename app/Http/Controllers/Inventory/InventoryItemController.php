@@ -128,7 +128,14 @@ class InventoryItemController extends Controller
             },
         ]);
 
-        return view('inventory.items.show', compact('item'));
+        // Get recent stock movements for this item
+        $recentMovements = \App\Models\StockMovement::where('inventory_item_id', $item->id)
+            ->with(['outlet', 'createdBy'])
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        return view('inventory.items.show', compact('item', 'recentMovements'));
     }
 
     public function edit(InventoryItem $item): View

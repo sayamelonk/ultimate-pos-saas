@@ -44,7 +44,7 @@
                             <code class="px-2 py-1 bg-secondary-100 rounded text-xs">{{ $batch->batch_number }}</code>
                         </x-td>
                         <x-td>{{ $batch->outlet->name }}</x-td>
-                        <x-td align="right">{{ number_format($batch->current_qty, 2) }} {{ $batch->inventoryItem->unit->abbreviation ?? '' }}</x-td>
+                        <x-td align="right">{{ number_format($batch->current_quantity, 2) }} {{ $batch->inventoryItem->unit->abbreviation ?? '' }}</x-td>
                         <x-td>
                             @if($batch->expiry_date->isPast())
                                 <x-badge type="danger">{{ $batch->expiry_date->format('M d, Y') }} - Expired</x-badge>
@@ -54,7 +54,7 @@
                                 <x-badge type="warning">{{ $batch->expiry_date->format('M d, Y') }} ({{ $batch->expiry_date->diffInDays(now()) }} days)</x-badge>
                             @endif
                         </x-td>
-                        <x-td align="right">Rp {{ number_format($batch->current_qty * $batch->cost_price, 0, ',', '.') }}</x-td>
+                        <x-td align="right">Rp {{ number_format($batch->current_quantity * $batch->unit_cost, 0, ',', '.') }}</x-td>
                     </tr>
                 @endforeach
             </x-table>

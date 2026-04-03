@@ -119,7 +119,7 @@ class SupplierSeeder extends Seeder
         ];
 
         foreach ($suppliers as $supplierData) {
-            Supplier::firstOrCreate(array_merge($supplierData, [
+            Supplier::create(array_merge($supplierData, [
                 'tenant_id' => $tenant->id,
                 'is_active' => true,
             ]));
