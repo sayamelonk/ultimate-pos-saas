@@ -55,18 +55,44 @@ class TransactionService
             $pointsDiscount = min($pointsDiscount, $subtotal - $discountAmount);
         }
 
+        // After discount (gross amount in inclusive mode)
         $afterDiscount = $subtotal - $discountAmount - $pointsDiscount;
 
-        $taxPercentage = $outlet->tax_percentage ?? 0;
-        $taxAmount = ($afterDiscount * $taxPercentage) / 100;
+        // Get tax mode and percentage
+        $taxMode = $outlet->getTaxMode();
+        $taxPercentage = $outlet->getEffectiveTaxPercentage();
+        $serviceChargePercentage = $outlet->getEffectiveServiceChargePercentage();
 
-        $serviceChargePercentage = $outlet->service_charge_percentage ?? 0;
-        $serviceChargeAmount = ($afterDiscount * $serviceChargePercentage) / 100;
+        // Calculate tax based on mode
+        if ($taxMode === 'inclusive') {
+            // Inclusive: Tax is already included in price
+            // Formula: tax = grossAmount × (rate / (100 + rate))
+            // Example: 100,000 × (10 / 110) = 9,090.91
+            $taxAmount = $taxPercentage > 0
+                ? $afterDiscount * ($taxPercentage / (100 + $taxPercentage))
+                : 0;
 
-        $grandTotal = $afterDiscount + $taxAmount + $serviceChargeAmount;
+            // Service charge is calculated from gross (business rule)
+            $serviceChargeAmount = ($afterDiscount * $serviceChargePercentage) / 100;
+
+            // Grand total = gross + service charge (tax already in gross)
+            $grandTotal = $afterDiscount + $serviceChargeAmount;
+        } else {
+            // Exclusive (default): Tax is added on top
+            $taxAmount = ($afterDiscount * $taxPercentage) / 100;
+            $serviceChargeAmount = ($afterDiscount * $serviceChargePercentage) / 100;
+
+            // Grand total = afterDiscount + tax + service charge
+            $grandTotal = $afterDiscount + $taxAmount + $serviceChargeAmount;
+        }
+
         $grandTotal = round($grandTotal);
 
-        $rounding = $grandTotal - ($afterDiscount + $taxAmount + $serviceChargeAmount);
+        // Calculate rounding difference
+        $beforeRounding = $taxMode === 'inclusive'
+            ? $afterDiscount + $serviceChargeAmount
+            : $afterDiscount + $taxAmount + $serviceChargeAmount;
+        $rounding = $grandTotal - $beforeRounding;
 
         $pointsEarned = $customer ? $this->customerService->calculatePointsEarned($grandTotal) : 0;
 
@@ -76,6 +102,7 @@ class TransactionService
             'discount_amount' => $discountAmount,
             'points_discount' => $pointsDiscount,
             'points_to_redeem' => $pointsToRedeem ? min($pointsToRedeem, $customer?->total_points ?? 0) : 0,
+            'tax_mode' => $taxMode,
             'tax_percentage' => $taxPercentage,
             'tax_amount' => $taxAmount,
             'service_charge_percentage' => $serviceChargePercentage,
@@ -247,6 +274,7 @@ class TransactionService
                 'payment_amount' => $paymentAmount,
                 'change_amount' => max(0, $paymentAmount - $calculation['grand_total']),
                 'tax_percentage' => $calculation['tax_percentage'],
+                'tax_mode' => $calculation['tax_mode'],
                 'service_charge_percentage' => $calculation['service_charge_percentage'],
                 'points_earned' => $calculation['points_earned'],
                 'points_redeemed' => $calculation['points_to_redeem'],

@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminInvoiceController;
+use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OutletController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPinController;
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Customer\CustomerController;
@@ -29,6 +33,7 @@ use App\Http\Controllers\Menu\ModifierGroupController;
 use App\Http\Controllers\Menu\ProductCategoryController;
 use App\Http\Controllers\Menu\ProductController;
 use App\Http\Controllers\Menu\VariantGroupController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\POS\AuthorizationController;
 use App\Http\Controllers\POS\CashDrawerController;
 use App\Http\Controllers\POS\HeldOrderController;
@@ -47,6 +52,22 @@ Route::get('/', function () {
     return view('landing');
 })->name('landing');
 
+// Legal Pages
+Route::get('/terms', function () {
+    return view('legal.terms');
+})->name('terms');
+
+Route::get('/privacy', function () {
+    return view('legal.privacy');
+})->name('privacy');
+
+// Public Pricing Page
+Route::get('/pricing', function () {
+    $plans = \App\Models\SubscriptionPlan::active()->ordered()->get();
+
+    return view('pricing', compact('plans'));
+})->name('pricing');
+
 // Locale Switcher (available for all users)
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
 
@@ -58,8 +79,33 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisterController::class, 'register']);
 });
 
-// Auth Routes
-Route::middleware(['auth', 'tenant'])->group(function () {
+// Email Verification Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
+        ->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+});
+
+// Onboarding Routes (after email verification)
+Route::middleware(['auth', 'verified'])->prefix('onboarding')->name('onboarding.')->group(function () {
+    Route::get('/', [OnboardingController::class, 'index'])->name('index');
+    Route::post('/business', [OnboardingController::class, 'updateBusiness'])->name('business');
+    Route::post('/product', [OnboardingController::class, 'storeProduct'])->name('product');
+    Route::post('/payment-methods', [OnboardingController::class, 'storePaymentMethods'])->name('payment-methods');
+    Route::post('/staff', [OnboardingController::class, 'inviteStaff'])->name('staff');
+    Route::get('/complete', [OnboardingController::class, 'complete'])->name('complete');
+    Route::get('/skip', [OnboardingController::class, 'skip'])->name('skip');
+});
+
+// Auth Routes (require email verification)
+Route::middleware(['auth', 'verified', 'tenant'])->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     // Admin Routes
@@ -71,8 +117,20 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         Route::post('/tenants/{tenant}/switch', [TenantController::class, 'switchTenant'])->name('tenants.switch');
         Route::post('/tenants/clear', [TenantController::class, 'clearTenant'])->name('tenants.clear');
 
+        // Subscription Management (Super Admin only)
+        Route::middleware('super-admin')->group(function () {
+            Route::resource('subscription-plans', SubscriptionPlanController::class);
+            Route::get('/subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+            Route::get('/subscriptions/{subscription}', [AdminSubscriptionController::class, 'show'])->name('subscriptions.show');
+            Route::patch('/subscriptions/{subscription}/status', [AdminSubscriptionController::class, 'updateStatus'])->name('subscriptions.update-status');
+            Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+            Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+            Route::patch('/invoices/{invoice}/status', [AdminInvoiceController::class, 'updateStatus'])->name('invoices.update-status');
+        });
+
         // Outlet Management
         Route::resource('outlets', OutletController::class);
+        Route::post('/outlets/{outlet}/switch', [OutletController::class, 'switchOutlet'])->name('outlets.switch');
 
         // User Management
         Route::resource('users', UserController::class);
@@ -283,7 +341,10 @@ Route::post('/webhook/xendit/invoice', [XenditWebhookController::class, 'handleI
 Route::middleware(['auth', 'tenant'])->prefix('subscription')->name('subscription.')->group(function () {
     Route::get('/', [SubscriptionController::class, 'index'])->name('index');
     Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
+    Route::get('/choose-plan', [SubscriptionController::class, 'choosePlan'])->name('choose-plan');
     Route::post('/subscribe/{plan}', [SubscriptionController::class, 'subscribe'])->name('subscribe');
+    Route::get('/upgrade/{plan}', [SubscriptionController::class, 'upgradePreview'])->name('upgrade.preview');
+    Route::post('/upgrade/{plan}', [SubscriptionController::class, 'upgrade'])->name('upgrade');
     Route::post('/renew', [SubscriptionController::class, 'renew'])->name('renew');
     Route::post('/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
     Route::get('/invoice/{invoice}', [SubscriptionController::class, 'showInvoice'])->name('invoice');

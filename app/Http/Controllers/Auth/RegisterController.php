@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\Role;
+use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -85,6 +86,9 @@ class RegisterController extends Controller
             // Assign user to the default outlet
             $user->outlets()->attach($outlet->id, ['is_default' => true]);
 
+            // Start 14-day trial for the tenant
+            Subscription::createTrial($tenant);
+
             return $user;
         });
 
@@ -92,7 +96,7 @@ class RegisterController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('admin.dashboard')
-            ->with('success', 'Welcome! Your account has been created successfully.');
+        // Redirect to email verification, then onboarding
+        return redirect()->route('verification.notice');
     }
 }

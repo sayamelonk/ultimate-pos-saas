@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SubscriptionInvoice extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'tenant_id',
         'subscription_id',
@@ -19,6 +22,8 @@ class SubscriptionInvoice extends Model
         'total_amount',
         'currency',
         'billing_cycle',
+        'period_start',
+        'period_end',
         'status',
         'payment_method',
         'payment_channel',
@@ -34,6 +39,8 @@ class SubscriptionInvoice extends Model
             'amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'period_start' => 'datetime',
+            'period_end' => 'datetime',
             'paid_at' => 'datetime',
             'expired_at' => 'datetime',
             'xendit_response' => 'array',
