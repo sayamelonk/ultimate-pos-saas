@@ -79,6 +79,59 @@
                     </div>
                 </div>
 
+                <!-- PIN -->
+                <div>
+                    <div class="flex items-center gap-3 mb-1.5">
+                        <label class="block text-sm font-medium text-text">PIN</label>
+                        @if($hasPin)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">PIN Aktif</span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Belum ada PIN</span>
+                        @endif
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <input type="password"
+                                   name="pin"
+                                   inputmode="numeric"
+                                   pattern="[0-9]*"
+                                   maxlength="{{ $pinLength }}"
+                                   class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
+                                          focus:ring-2 focus:ring-accent/20 focus:border-accent
+                                          placeholder:text-muted transition-colors"
+                                   placeholder="Masukkan {{ $pinLength }} digit PIN">
+                            @error('pin')
+                                <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <input type="password"
+                                   name="pin_confirmation"
+                                   inputmode="numeric"
+                                   pattern="[0-9]*"
+                                   maxlength="{{ $pinLength }}"
+                                   class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
+                                          focus:ring-2 focus:ring-accent/20 focus:border-accent
+                                          placeholder:text-muted transition-colors"
+                                   placeholder="Konfirmasi PIN">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-1.5">
+                        <p class="text-sm text-muted">Kosongkan untuk tidak mengubah PIN.</p>
+                        @if($hasPin)
+                            <form action="{{ route('admin.users.pin.destroy', $user) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="text-xs text-danger hover:text-danger/80 underline"
+                                        onclick="return confirm('Yakin ingin menghapus PIN user ini?')">
+                                    Hapus PIN
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Roles -->
                 <div>
                     <label class="block text-sm font-medium text-text mb-2">

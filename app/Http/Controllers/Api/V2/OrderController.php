@@ -476,6 +476,138 @@ class OrderController extends Controller
     }
 
     #[OA\Post(
+        path: '/orders/{order}/pay',
+        summary: 'Pay an existing pending order (e.g., waiter order)',
+        description: 'Process payment for a pending transaction created by waiter or QR order. Requires an active POS session.',
+        security: [['sanctum' => []]],
+        tags: ['Orders'],
+        parameters: [
+            new OA\Parameter(name: 'order', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['payments'],
+                properties: [
+                    new OA\Property(
+                        property: 'payments',
+                        type: 'array',
+                        items: new OA\Items(
+                            required: ['payment_method_id', 'amount'],
+                            properties: [
+                                new OA\Property(property: 'payment_method_id', type: 'string', format: 'uuid'),
+                                new OA\Property(property: 'amount', type: 'number', minimum: 0.01),
+                                new OA\Property(property: 'reference_number', type: 'string', nullable: true),
+                            ],
+                            type: 'object'
+                        )
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Payment completed successfully'),
+            new OA\Response(response: 400, description: 'Order is not pending or no active session'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Order not found'),
+            new OA\Response(response: 422, description: 'Payment amount is less than grand total'),
+        ]
+    )]
+    public function pay(Request $request, string $orderId): JsonResponse
+    {
+        $transaction = Transaction::where('id', $orderId)
+            ->where('tenant_id', $this->tenantId())
+            ->first();
+
+        if (! $transaction) {
+            return $this->notFound('Order not found');
+        }
+
+        if ($transaction->status !== Transaction::STATUS_PENDING) {
+            return $this->error('Order is not pending.', 400);
+        }
+
+        $validated = $request->validate([
+            'payments' => 'required|array|min:1',
+            'payments.*.payment_method_id' => 'required|uuid',
+            'payments.*.amount' => 'required|numeric|min:0.01',
+            'payments.*.reference_number' => 'nullable|string|max:100',
+        ]);
+
+        $totalPayment = collect($validated['payments'])->sum('amount');
+        if ($totalPayment < $transaction->grand_total) {
+            return $this->error('Payment amount is less than grand total.', 422);
+        }
+
+        // Check active session
+        $session = PosSession::where('outlet_id', $transaction->outlet_id)
+            ->where('user_id', $this->user()->id)
+            ->where('status', PosSession::STATUS_OPEN)
+            ->first();
+
+        if (! $session) {
+            return $this->error('No active POS session. Please open a session first.', 400);
+        }
+
+        try {
+            DB::transaction(function () use ($validated, $transaction, $totalPayment, $session) {
+                // Link to POS session if not set
+                if (! $transaction->pos_session_id) {
+                    $transaction->update(['pos_session_id' => $session->id]);
+                }
+
+                // Create payment records
+                foreach ($validated['payments'] as $payment) {
+                    $paymentMethod = PaymentMethod::find($payment['payment_method_id']);
+                    $chargeAmount = $paymentMethod ? $paymentMethod->calculateCharge($payment['amount']) : 0;
+
+                    TransactionPayment::create([
+                        'transaction_id' => $transaction->id,
+                        'payment_method_id' => $payment['payment_method_id'],
+                        'amount' => $payment['amount'],
+                        'charge_amount' => $chargeAmount,
+                        'reference_number' => $payment['reference_number'] ?? null,
+                    ]);
+                }
+
+                // Update payment amount and complete
+                $transaction->update([
+                    'payment_amount' => $totalPayment,
+                    'change_amount' => $totalPayment - $transaction->grand_total,
+                ]);
+                $transaction->complete();
+
+                // Close table session if dine-in and no other pending orders
+                if ($transaction->table_id && $transaction->tableSession) {
+                    $tableSession = $transaction->tableSession;
+                    $otherPending = $tableSession->transactions()
+                        ->where('id', '!=', $transaction->id)
+                        ->whereIn('status', ['pending', 'processing'])
+                        ->exists();
+
+                    if (! $otherPending) {
+                        $tableSession->close($this->user()->id);
+                    }
+                }
+            });
+
+            $transaction->refresh()->load([
+                'items.product:id,name,image',
+                'items.productVariant:id,name',
+                'payments.paymentMethod:id,name,type,icon',
+                'customer:id,name,phone,email',
+                'user:id,name',
+                'table:id,number,name',
+                'outlet:id,name,code',
+            ]);
+
+            return $this->success($this->formatOrderDetail($transaction), 'Payment completed successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to process payment: '.$e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Post(
         path: '/orders/{order}/void',
         summary: 'Void order',
         security: [['sanctum' => []]],

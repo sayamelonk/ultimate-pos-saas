@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
+use App\Models\StockMovement;
 use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -129,7 +130,7 @@ class InventoryItemController extends Controller
         ]);
 
         // Get recent stock movements for this item
-        $recentMovements = \App\Models\StockMovement::where('inventory_item_id', $item->id)
+        $recentMovements = StockMovement::where('inventory_item_id', $item->id)
             ->with(['outlet', 'createdBy'])
             ->orderByDesc('created_at')
             ->limit(20)

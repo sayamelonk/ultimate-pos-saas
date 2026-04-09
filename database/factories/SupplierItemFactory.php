@@ -4,11 +4,12 @@ namespace Database\Factories;
 
 use App\Models\InventoryItem;
 use App\Models\Supplier;
+use App\Models\SupplierItem;
 use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SupplierItem>
+ * @extends Factory<SupplierItem>
  */
 class SupplierItemFactory extends Factory
 {

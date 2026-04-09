@@ -6,6 +6,7 @@ use App\Models\PosSession;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\TransactionPayment;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -318,7 +319,7 @@ class ReportsController extends Controller
         }
 
         $date = $request->input('date')
-            ? \Carbon\Carbon::parse($request->input('date'))
+            ? Carbon::parse($request->input('date'))
             : now();
 
         // Use driver-agnostic hour extraction

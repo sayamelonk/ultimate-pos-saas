@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V2\CashDrawerController;
 use App\Http\Controllers\Api\V2\InventoryController;
 use App\Http\Controllers\Api\V2\KDSController;
 use App\Http\Controllers\Api\V2\OrderController;
+use App\Http\Controllers\Api\V2\QrOrderApiController;
 use App\Http\Controllers\Api\V2\ReportsController;
 use App\Http\Controllers\Api\V2\SettingsController;
 use App\Http\Controllers\Api\V2\SyncController;
@@ -112,7 +113,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [TransactionController::class, 'index']);
             Route::post('calculate', [TransactionController::class, 'calculate']);
             Route::post('checkout', [TransactionController::class, 'checkout']);
+            Route::post('send-to-kitchen', [TransactionController::class, 'sendToKitchen']);
             Route::get('{transaction}', [TransactionController::class, 'show']);
+            Route::post('{transaction}/pay', [TransactionController::class, 'pay']);
             Route::post('{transaction}/void', [TransactionController::class, 'void']);
             Route::post('{transaction}/refund', [TransactionController::class, 'refund']);
             Route::get('{transaction}/receipt', [TransactionController::class, 'receipt']);
@@ -295,6 +298,7 @@ Route::prefix('v2')->group(function () {
             Route::post('calculate', [OrderController::class, 'calculate']);
             Route::post('checkout', [OrderController::class, 'checkout']);
             Route::get('{order}', [OrderController::class, 'show']);
+            Route::post('{order}/pay', [OrderController::class, 'pay']);
             Route::post('{order}/void', [OrderController::class, 'void']);
             Route::post('{order}/refund', [OrderController::class, 'refund']);
             Route::get('{order}/receipt', [OrderController::class, 'receipt']);
@@ -471,6 +475,16 @@ Route::prefix('v2')->group(function () {
             Route::post('orders/{order}/items', [WaiterController::class, 'addItems']);
             Route::post('orders/{order}/send', [WaiterController::class, 'sendToKitchen']);
             Route::patch('orders/{order}/pickup', [WaiterController::class, 'pickupOrder']);
+        });
+
+        // QR Orders
+        Route::prefix('qr-orders')->group(function () {
+            Route::get('/', [QrOrderApiController::class, 'index']);
+            Route::get('count', [QrOrderApiController::class, 'count']);
+            Route::get('{qrOrder}', [QrOrderApiController::class, 'show']);
+            Route::post('{qrOrder}/approve', [QrOrderApiController::class, 'approve']);
+            Route::post('{qrOrder}/complete', [QrOrderApiController::class, 'complete']);
+            Route::post('{qrOrder}/cancel', [QrOrderApiController::class, 'cancel']);
         });
 
         // Kitchen Display System (KDS)

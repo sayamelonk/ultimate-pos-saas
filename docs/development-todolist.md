@@ -191,7 +191,7 @@
 - [ ] Create sample inventory categories seeder
 - [ ] Create sample suppliers seeder
 
-### 2.4 Services
+### 2.4 Serviceshttp://localhost:8000/inventory/waste-logs 
 - [ ] Create StockService (stock in/out logic)
 - [ ] Create RecipeCostCalculatorService
 - [ ] Create AutoDeductStockService
@@ -727,13 +727,13 @@ If you want to launch faster, prioritize:
 
 ### MVP Phase 1 (Core System)
 1. [x] Phase 1: Foundation & Multi-tenant
-2. [ ] Phase 3: Product & Menu (skip inventory first)
-3. [ ] Phase 4: POS Core Web
-4. [ ] Phase 6: Kitchen Printer only (no KDS)
+2. [x] Phase 2: Inventory, Stock & Recipe
+3. [x] Phase 3: Product & Menu Management
+4. [x] Phase 4: POS Core Web
+5. [ ] Phase 6: Kitchen Printer only (no KDS)
 
 ### MVP Phase 2 (Essential Features)
-5. [ ] Phase 5: Table Management
-6. [ ] Phase 2: Inventory & Recipe
+6. [ ] Phase 5: Table Management
 7. [ ] Phase 6: Full KDS
 
 ### MVP Phase 3 (Growth Features)

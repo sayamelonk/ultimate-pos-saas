@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -192,7 +193,7 @@ class OnboardingController extends Controller
                 ]);
 
                 // Assign role
-                $role = \App\Models\Role::where('slug', $staffData['role'])
+                $role = Role::where('slug', $staffData['role'])
                     ->whereNull('tenant_id')
                     ->first();
 

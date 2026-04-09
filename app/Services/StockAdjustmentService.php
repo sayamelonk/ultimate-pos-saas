@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\InventoryStock;
 use App\Models\StockAdjustment;
 use App\Models\StockAdjustmentItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StockAdjustmentService
@@ -260,7 +261,7 @@ class StockAdjustmentService
     /**
      * Get items that need counting for an outlet
      */
-    public function getItemsForStockTake(string $outletId): \Illuminate\Database\Eloquent\Collection
+    public function getItemsForStockTake(string $outletId): Collection
     {
         return InventoryStock::where('outlet_id', $outletId)
             ->with('inventoryItem.unit')

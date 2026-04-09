@@ -3,6 +3,7 @@
 namespace App\Services\Inventory;
 
 use App\Models\Recipe;
+use Illuminate\Support\Collection;
 
 class RecipeCostService
 {
@@ -118,7 +119,7 @@ class RecipeCostService
         return $count;
     }
 
-    public function getRecipesByIngredient(string $tenantId, string $inventoryItemId): \Illuminate\Support\Collection
+    public function getRecipesByIngredient(string $tenantId, string $inventoryItemId): Collection
     {
         return Recipe::where('tenant_id', $tenantId)
             ->whereHas('items', function ($query) use ($inventoryItemId) {

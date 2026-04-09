@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -172,7 +173,7 @@ class Subscription extends Model
         return max(0, (int) now()->diffInDays($this->ends_at, false));
     }
 
-    public function getEffectiveEndDate(): ?\Carbon\Carbon
+    public function getEffectiveEndDate(): ?Carbon
     {
         if ($this->isTrial()) {
             return $this->trial_ends_at;

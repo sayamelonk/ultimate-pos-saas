@@ -9,6 +9,7 @@ use App\Models\InventoryStock;
 use App\Models\Outlet;
 use App\Models\StockAdjustment;
 use App\Services\Inventory\StockAdjustmentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -249,7 +250,7 @@ class StockAdjustmentController extends Controller
         return view('inventory.stock-adjustments.stock-take', compact('outlets', 'categories'));
     }
 
-    public function getStockForOutlet(Request $request): \Illuminate\Http\JsonResponse
+    public function getStockForOutlet(Request $request): JsonResponse
     {
         $tenantId = $this->getTenantId();
 

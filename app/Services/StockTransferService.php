@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StockTransferService
@@ -240,7 +241,7 @@ class StockTransferService
     /**
      * Get pending incoming transfers for an outlet
      */
-    public function getPendingIncoming(string $outletId): \Illuminate\Database\Eloquent\Collection
+    public function getPendingIncoming(string $outletId): Collection
     {
         return StockTransfer::where('to_outlet_id', $outletId)
             ->where('status', StockTransfer::STATUS_IN_TRANSIT)
@@ -252,7 +253,7 @@ class StockTransferService
     /**
      * Get pending outgoing transfers for an outlet
      */
-    public function getPendingOutgoing(string $outletId): \Illuminate\Database\Eloquent\Collection
+    public function getPendingOutgoing(string $outletId): Collection
     {
         return StockTransfer::where('from_outlet_id', $outletId)
             ->whereIn('status', [
@@ -272,7 +273,7 @@ class StockTransferService
         string $toOutletId,
         ?\DateTimeInterface $startDate = null,
         ?\DateTimeInterface $endDate = null
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         $query = StockTransfer::where('from_outlet_id', $fromOutletId)
             ->where('to_outlet_id', $toOutletId)
             ->where('status', StockTransfer::STATUS_RECEIVED);

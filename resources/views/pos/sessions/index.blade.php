@@ -38,9 +38,9 @@
                         <x-td>{{ $session->user->name }}</x-td>
                         <x-td>
                             <div class="text-sm">
-                                <p>{{ $session->opened_at->format('d M Y H:i') }}</p>
+                                <p>{{ $session->opened_at->setTimezone('Asia/Jakarta')->format('d M Y H:i') }}</p>
                                 @if($session->closed_at)
-                                    <p class="text-muted">{{ $session->closed_at->format('d M Y H:i') }}</p>
+                                    <p class="text-muted">{{ $session->closed_at->setTimezone('Asia/Jakarta')->format('d M Y H:i') }}</p>
                                 @else
                                     <p class="text-muted">-</p>
                                 @endif

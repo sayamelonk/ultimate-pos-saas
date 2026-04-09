@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V2;
 
 use App\Models\CashDrawerLog;
 use App\Models\PosSession;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -102,7 +103,7 @@ class CashDrawerController extends Controller
         }
 
         if ($request->has('date')) {
-            $date = \Carbon\Carbon::parse($request->input('date'));
+            $date = Carbon::parse($request->input('date'));
             $query->whereDate('created_at', $date);
         }
 

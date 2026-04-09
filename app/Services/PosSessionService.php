@@ -21,8 +21,9 @@ class PosSessionService
             throw new \RuntimeException('User already has an open session at this outlet');
         }
 
-        $outlet = Outlet::findOrFail($outletId);
         $sessionNumber = $this->generateSessionNumber($outletId, $userId);
+
+        $outlet = Outlet::findOrFail($outletId);
 
         return PosSession::create([
             'tenant_id' => $outlet->tenant_id,

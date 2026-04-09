@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use App\Models\SupplierItem;
 use App\Models\Tenant;
 use App\Models\Unit;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 
 class InventoryItemSeeder extends Seeder
@@ -227,7 +228,7 @@ class InventoryItemSeeder extends Seeder
     /**
      * @param  array<string, InventoryCategory>  $categories
      * @param  array<string, Unit>  $units
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Supplier>  $suppliers
+     * @param  Collection<int, Supplier>  $suppliers
      * @param  array<int, array<string, mixed>>  $items
      */
     private function createItemsForCategory(

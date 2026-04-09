@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuthorizationSetting;
 use App\Models\Outlet;
 use App\Models\Role;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Authorization\AuthorizationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -59,7 +63,7 @@ class UserController extends Controller
         $tenants = collect();
 
         if ($user->isSuperAdmin()) {
-            $tenants = \App\Models\Tenant::where('is_active', true)
+            $tenants = Tenant::where('is_active', true)
                 ->orderBy('name')
                 ->get();
         } else {
@@ -68,12 +72,22 @@ class UserController extends Controller
                 ->get();
         }
 
-        return view('admin.users.create', compact('roles', 'outlets', 'tenants'));
+        $pinLength = 4;
+        if (! $user->isSuperAdmin() && $user->tenant_id) {
+            $pinLength = AuthorizationSetting::getForTenant($user->tenant_id)->pin_length;
+        }
+
+        return view('admin.users.create', compact('roles', 'outlets', 'tenants', 'pinLength'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AuthorizationService $authorizationService): RedirectResponse
     {
         $authUser = auth()->user();
+
+        $pinLength = 4;
+        if (! $authUser->isSuperAdmin() && $authUser->tenant_id) {
+            $pinLength = AuthorizationSetting::getForTenant($authUser->tenant_id)->pin_length;
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -85,6 +99,7 @@ class UserController extends Controller
             'outlets' => ['nullable', 'array'],
             'outlets.*' => ['exists:outlets,id'],
             'is_active' => ['boolean'],
+            'pin' => ['nullable', 'digits:'.$pinLength, 'confirmed'],
         ]);
 
         // Determine tenant_id
@@ -107,6 +122,11 @@ class UserController extends Controller
             'phone' => $validated['phone'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);
+
+        // Set PIN if provided
+        if (! empty($validated['pin'])) {
+            $authorizationService->setUserPin($user->id, $validated['pin']);
+        }
 
         // Attach roles
         $user->roles()->attach($validated['roles']);
@@ -162,12 +182,18 @@ class UserController extends Controller
         $userRoles = $user->roles->pluck('id')->toArray();
         $userOutlets = $user->outlets->pluck('id')->toArray();
 
-        return view('admin.users.edit', compact('user', 'roles', 'outlets', 'userRoles', 'userOutlets'));
+        $pinLength = AuthorizationSetting::getForTenant($targetTenantId)->pin_length;
+        $hasPin = $user->hasPin();
+
+        return view('admin.users.edit', compact('user', 'roles', 'outlets', 'userRoles', 'userOutlets', 'pinLength', 'hasPin'));
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(Request $request, User $user, AuthorizationService $authorizationService): RedirectResponse
     {
         $this->authorizeUser($user);
+
+        $targetTenantId = $user->tenant_id ?? auth()->user()->tenant_id;
+        $pinLength = AuthorizationSetting::getForTenant($targetTenantId)->pin_length;
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -179,6 +205,7 @@ class UserController extends Controller
             'outlets' => ['nullable', 'array'],
             'outlets.*' => ['exists:outlets,id'],
             'is_active' => ['boolean'],
+            'pin' => ['nullable', 'digits:'.$pinLength, 'confirmed'],
         ]);
 
         $updateData = [
@@ -193,6 +220,11 @@ class UserController extends Controller
         }
 
         $user->update($updateData);
+
+        // Set PIN if provided
+        if (! empty($validated['pin'])) {
+            $authorizationService->setUserPin($user->id, $validated['pin']);
+        }
 
         // Sync roles
         $user->roles()->sync($validated['roles']);
@@ -243,7 +275,7 @@ class UserController extends Controller
     /**
      * Get outlets for a specific tenant (AJAX endpoint for Super Admin)
      */
-    public function getOutletsByTenant(\App\Models\Tenant $tenant): \Illuminate\Http\JsonResponse
+    public function getOutletsByTenant(Tenant $tenant): JsonResponse
     {
         // Only super admin can access this
         if (! auth()->user()->isSuperAdmin()) {

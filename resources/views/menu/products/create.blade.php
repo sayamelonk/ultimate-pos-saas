@@ -513,9 +513,21 @@
         $comboProductsData = ($comboProducts ?? $products ?? collect([]))->map(function($p) {
             return ['id' => $p->id, 'name' => $p->name, 'price' => $p->base_price];
         })->keyBy('id')->toArray();
+
         $defaultComboItems = old('combo_items', [
             ['product_id' => '', 'quantity' => 1]
         ]);
+
+        $outletsData = $outlets->map(function($outlet, $index) {
+            $oldOutlets = old('outlets', []);
+            $isEnabled = isset($oldOutlets[$index]);
+            $customPrice = $oldOutlets[$index]['custom_price'] ?? null;
+            return [
+                'id' => $outlet->id,
+                'enabled' => $isEnabled || count($oldOutlets) === 0,
+                'customPrice' => $customPrice,
+            ];
+        })->values();
     @endphp
     <script>
         function productForm() {
@@ -704,16 +716,7 @@
 
         function outletAvailability() {
             return {
-                outlets: @json($outlets->map(function($outlet, $index) {
-                    $oldOutlets = old('outlets', []);
-                    $isEnabled = isset($oldOutlets[$index]);
-                    $customPrice = $oldOutlets[$index]['custom_price'] ?? null;
-                    return [
-                        'id' => $outlet->id,
-                        'enabled' => $isEnabled || count($oldOutlets) === 0, // Enable all by default on fresh form
-                        'customPrice' => $customPrice,
-                    ];
-                })->values())
+                outlets: @json($outletsData)
             }
         }
     </script>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\Price;
+use Illuminate\Database\Eloquent\Collection;
 
 class PriceService
 {
@@ -112,7 +113,7 @@ class PriceService
         return $count;
     }
 
-    public function getPricesForOutlet(string $outletId): \Illuminate\Database\Eloquent\Collection
+    public function getPricesForOutlet(string $outletId): Collection
     {
         return Price::where('outlet_id', $outletId)
             ->where('is_active', true)
@@ -120,7 +121,7 @@ class PriceService
             ->get();
     }
 
-    public function getItemsWithoutPrice(string $tenantId, string $outletId): \Illuminate\Database\Eloquent\Collection
+    public function getItemsWithoutPrice(string $tenantId, string $outletId): Collection
     {
         $pricedItemIds = Price::where('outlet_id', $outletId)
             ->where('is_active', true)

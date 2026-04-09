@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Outlet;
 use App\Models\Role;
+use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -44,6 +46,20 @@ class TenantSeeder extends Seeder
             'max_outlets' => 5,
             'is_active' => true,
         ]);
+
+        // Create Subscription (Professional plan for demo)
+        $professionalPlan = SubscriptionPlan::where('slug', 'professional')->first();
+        if ($professionalPlan) {
+            Subscription::create([
+                'tenant_id' => $tenant->id,
+                'subscription_plan_id' => $professionalPlan->id,
+                'billing_cycle' => 'monthly',
+                'is_trial' => false,
+                'status' => Subscription::STATUS_ACTIVE,
+                'starts_at' => now(),
+                'ends_at' => now()->addYear(),
+            ]);
+        }
 
         // Create Demo Outlet
         $outlet = Outlet::create([

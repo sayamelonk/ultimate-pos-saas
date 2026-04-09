@@ -43,8 +43,12 @@ use App\Http\Controllers\POS\TransactionController;
 use App\Http\Controllers\Pricing\DiscountController;
 use App\Http\Controllers\Pricing\PaymentMethodController;
 use App\Http\Controllers\Pricing\PriceController;
+use App\Http\Controllers\QrMenu\QrMenuController;
+use App\Http\Controllers\QrOrders\QrOrderController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\TableManagementController;
 use App\Http\Controllers\Webhook\XenditWebhookController;
+use App\Models\SubscriptionPlan;
 use Illuminate\Support\Facades\Route;
 
 // Landing Page
@@ -63,13 +67,19 @@ Route::get('/privacy', function () {
 
 // Public Pricing Page
 Route::get('/pricing', function () {
-    $plans = \App\Models\SubscriptionPlan::active()->ordered()->get();
+    $plans = SubscriptionPlan::active()->ordered()->get();
 
     return view('pricing', compact('plans'));
 })->name('pricing');
 
 // Locale Switcher (available for all users)
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
+
+// QR Menu - Public Routes (no auth required)
+Route::get('/qr/{qrToken}', [QrMenuController::class, 'show'])->name('qr-menu.show');
+Route::post('/qr/{qrToken}/order', [QrMenuController::class, 'placeOrder'])->name('qr-menu.order');
+Route::get('/qr/order/{qrOrder}/status', [QrMenuController::class, 'orderStatus'])->name('qr-menu.order-status');
+Route::get('/qr/order/{qrOrder}/status.json', [QrMenuController::class, 'orderStatusJson'])->name('qr-menu.order-status-json');
 
 // Guest Routes
 Route::middleware('guest')->group(function () {
@@ -315,6 +325,30 @@ Route::middleware(['auth', 'verified', 'tenant'])->group(function () {
         // Authorization (PIN verification for void/refund/etc)
         Route::post('/auth/check', [AuthorizationController::class, 'checkRequired'])->name('auth.check');
         Route::post('/auth/verify', [AuthorizationController::class, 'verify'])->name('auth.verify');
+    });
+
+    // QR Orders (merchant management)
+    // Table Management
+    Route::prefix('tables')->name('tables.')->group(function () {
+        Route::get('/', [TableManagementController::class, 'index'])->name('index');
+        Route::post('/', [TableManagementController::class, 'storeTable'])->name('store');
+        Route::put('/{table}', [TableManagementController::class, 'updateTable'])->name('update');
+        Route::delete('/{table}', [TableManagementController::class, 'destroyTable'])->name('destroy');
+        Route::post('/floors', [TableManagementController::class, 'storeFloor'])->name('floors.store');
+        Route::delete('/floors/{floor}', [TableManagementController::class, 'destroyFloor'])->name('floors.destroy');
+    });
+
+    Route::middleware('feature:qr_order')->prefix('qr-orders')->name('qr-orders.')->group(function () {
+        Route::get('/', [QrOrderController::class, 'index'])->name('index');
+        Route::get('/poll/pending', [QrOrderController::class, 'pollPending'])->name('poll-pending');
+        Route::get('/{qrOrder}', [QrOrderController::class, 'show'])->name('show');
+        Route::post('/{qrOrder}/approve', [QrOrderController::class, 'approve'])->name('approve');
+        Route::post('/{qrOrder}/cancel', [QrOrderController::class, 'cancel'])->name('cancel');
+        Route::post('/{qrOrder}/complete', [QrOrderController::class, 'complete'])->name('complete');
+        Route::post('/tables/{table}/generate-qr', [QrOrderController::class, 'generateQr'])->name('generate-qr');
+        Route::delete('/tables/{table}/revoke-qr', [QrOrderController::class, 'revokeQr'])->name('revoke-qr');
+        Route::get('/tables/{table}/qr-download', [QrOrderController::class, 'downloadQr'])->name('download-qr');
+        Route::get('/tables/{table}/qr-print', [QrOrderController::class, 'printQr'])->name('print-qr');
     });
 
     // Transaction Routes
