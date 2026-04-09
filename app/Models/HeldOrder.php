@@ -93,7 +93,7 @@ class HeldOrder extends Model
         return $this->hold_number;
     }
 
-    public static function generateHoldNumber(int $outletId): string
+    public static function generateHoldNumber(string $outletId): string
     {
         $today = now()->format('Ymd');
         $count = self::where('outlet_id', $outletId)

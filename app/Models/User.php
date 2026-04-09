@@ -2,17 +2,28 @@
 
 namespace App\Models;
 
+use App\Notifications\CustomVerifyEmail;
 use App\Traits\HasUuid;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, HasUuid, Notifiable;
+    use HasApiTokens, HasFactory, HasUuid, Notifiable;
+
+    /**
+     * Send the email verification notification.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new CustomVerifyEmail);
+    }
 
     protected $fillable = [
         'tenant_id',
@@ -154,5 +165,50 @@ class User extends Authenticatable
     public function isSupervisor(): bool
     {
         return $this->hasAnyRole(['supervisor', 'spv', 'manager', 'outlet-manager', 'admin', 'administrator', 'tenant-owner', 'super-admin']);
+    }
+
+    public function isCashier(): bool
+    {
+        return $this->hasRole('cashier');
+    }
+
+    public function isWaiter(): bool
+    {
+        return $this->hasRole('waiter');
+    }
+
+    public function isKitchenStaff(): bool
+    {
+        return $this->hasRole('kitchen-staff');
+    }
+
+    public function canAccessMenu(): bool
+    {
+        // Cashier, Waiter, Kitchen Staff cannot access Menu management
+        return ! $this->hasAnyRole(['cashier', 'waiter', 'kitchen-staff']);
+    }
+
+    public function canAccessPricing(): bool
+    {
+        // Only Owner and Manager can access Pricing
+        return $this->hasAnyRole(['tenant-owner', 'outlet-manager', 'admin', 'administrator', 'super-admin']);
+    }
+
+    public function canAccessInventory(): bool
+    {
+        // Cashier, Waiter, Kitchen Staff cannot access Inventory
+        return ! $this->hasAnyRole(['cashier', 'waiter', 'kitchen-staff']);
+    }
+
+    public function canAccessAdmin(): bool
+    {
+        // Only Owner and Manager can access Admin settings
+        return $this->hasAnyRole(['tenant-owner', 'outlet-manager', 'admin', 'administrator', 'super-admin']);
+    }
+
+    public function canAccessReports(): bool
+    {
+        // Cashier, Waiter, Kitchen Staff cannot access Reports
+        return ! $this->hasAnyRole(['cashier', 'waiter', 'kitchen-staff']);
     }
 }

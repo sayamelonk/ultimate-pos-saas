@@ -12,9 +12,11 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('tenant_id');
             $table->uuid('outlet_id');
-            $table->uuid('pos_session_id');
+            $table->uuid('pos_session_id')->nullable();
             $table->uuid('customer_id')->nullable();
+            $table->string('customer_name')->nullable();
             $table->uuid('user_id');
+            $table->uuid('waiter_id')->nullable();
             $table->string('transaction_number', 50);
             $table->enum('type', ['sale', 'refund', 'void']);
             $table->uuid('original_transaction_id')->nullable();
@@ -37,7 +39,7 @@ return new class extends Migration
 
             $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
             $table->foreign('outlet_id')->references('id')->on('outlets')->onDelete('restrict');
-            $table->foreign('pos_session_id')->references('id')->on('pos_sessions')->onDelete('restrict');
+            $table->foreign('pos_session_id')->references('id')->on('pos_sessions')->nullOnDelete();
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('original_transaction_id')->references('id')->on('transactions')->onDelete('set null');

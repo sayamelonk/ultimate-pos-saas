@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit {{ $modifierGroup->name }} - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('products.edit_modifier_group') }} {{ $modifierGroup->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit Modifier Group')
+    @section('page-title', __('products.edit_modifier_group'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('menu.modifier-groups.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('products.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Modifier Group</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('products.edit_modifier_group') }}</h2>
                 <p class="text-muted mt-1">{{ $modifierGroup->name }}</p>
             </div>
         </div>
@@ -22,27 +22,27 @@
         <div class="grid grid-cols-3 gap-6">
             <div class="col-span-2 space-y-6">
                 <!-- Basic Information -->
-                <x-card title="Group Information">
+                <x-card title="{{ __('products.group_information') }}">
                     <div class="space-y-4">
-                        <x-form-group label="Group Name" name="name" required>
+                        <x-form-group label="{{ __('products.group_name') }}" name="name" required>
                             <x-input
                                 name="name"
                                 :value="old('name', $modifierGroup->name)"
-                                placeholder="e.g., Toppings, Extra Shots, Sauces"
+                                placeholder="{{ __('products.group_name_placeholder') }}"
                                 required
                             />
                         </x-form-group>
 
-                        <x-form-group label="Description" name="description">
+                        <x-form-group label="{{ __('products.description') }}" name="description">
                             <x-textarea
                                 name="description"
                                 :value="old('description', $modifierGroup->description)"
-                                placeholder="Optional description..."
+                                placeholder="{{ __('products.description_placeholder') }}"
                                 rows="2"
                             />
                         </x-form-group>
 
-                        <x-form-group label="Selection Type" name="selection_type" required>
+                        <x-form-group label="{{ __('products.selection_type') }}" name="selection_type" required>
                             <div class="grid grid-cols-2 gap-3">
                                 <label class="relative cursor-pointer">
                                     <input
@@ -55,8 +55,8 @@
                                     >
                                     <div class="p-4 border-2 border-border rounded-lg peer-checked:border-accent peer-checked:bg-accent/5 transition-all">
                                         <x-icon name="check-circle" class="w-6 h-6 mb-2 mx-auto text-muted" />
-                                        <p class="text-center font-medium">Single Select</p>
-                                        <p class="text-xs text-center text-muted mt-1">Customer picks one option</p>
+                                        <p class="text-center font-medium">{{ __('products.single_select') }}</p>
+                                        <p class="text-xs text-center text-muted mt-1">{{ __('products.customer_picks_one') }}</p>
                                     </div>
                                 </label>
                                 <label class="relative cursor-pointer">
@@ -70,8 +70,8 @@
                                     >
                                     <div class="p-4 border-2 border-border rounded-lg peer-checked:border-accent peer-checked:bg-accent/5 transition-all">
                                         <x-icon name="squares-plus" class="w-6 h-6 mb-2 mx-auto text-muted" />
-                                        <p class="text-center font-medium">Multi Select</p>
-                                        <p class="text-xs text-center text-muted mt-1">Customer picks multiple</p>
+                                        <p class="text-center font-medium">{{ __('products.multi_select') }}</p>
+                                        <p class="text-xs text-center text-muted mt-1">{{ __('products.customer_picks_multiple') }}</p>
                                     </div>
                                 </label>
                             </div>
@@ -79,29 +79,29 @@
 
                         <!-- Selection Rules (for multiple) -->
                         <div x-show="selectionType === 'multiple'" x-cloak class="grid grid-cols-2 gap-4">
-                            <x-form-group label="Minimum Selections" name="min_selections">
+                            <x-form-group label="{{ __('products.min_selections') }}" name="min_selections">
                                 <x-input
                                     type="number"
                                     name="min_selections"
                                     :value="old('min_selections', $modifierGroup->min_selections ?? 0)"
                                     min="0"
                                 />
-                                <p class="text-xs text-muted mt-1">0 = optional</p>
+                                <p class="text-xs text-muted mt-1">{{ __('products.zero_optional') }}</p>
                             </x-form-group>
 
-                            <x-form-group label="Maximum Selections" name="max_selections">
+                            <x-form-group label="{{ __('products.max_selections') }}" name="max_selections">
                                 <x-input
                                     type="number"
                                     name="max_selections"
                                     :value="old('max_selections', $modifierGroup->max_selections)"
                                     min="1"
-                                    placeholder="Leave empty for unlimited"
+                                    placeholder="{{ __('products.unlimited_placeholder') }}"
                                 />
                             </x-form-group>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <x-form-group label="Sort Order" name="sort_order">
+                            <x-form-group label="{{ __('products.sort_order') }}" name="sort_order">
                                 <x-input
                                     type="number"
                                     name="sort_order"
@@ -121,7 +121,7 @@
                                         {{ old('is_active', $modifierGroup->is_active) ? 'checked' : '' }}
                                         class="rounded border-border text-accent focus:ring-accent"
                                     >
-                                    <span class="text-sm font-medium text-text">Active</span>
+                                    <span class="text-sm font-medium text-text">{{ __('products.active') }}</span>
                                 </label>
                             </x-form-group>
                         </div>
@@ -129,8 +129,8 @@
                 </x-card>
 
                 <!-- Modifiers -->
-                <x-card title="Modifiers">
-                    <p class="text-muted mb-4">Manage modifier options</p>
+                <x-card title="{{ __('products.modifiers') }}">
+                    <p class="text-muted mb-4">{{ __('products.manage_modifier_options') }}</p>
 
                     <div class="space-y-3">
                         <template x-for="(modifier, index) in modifiers" :key="modifier.id || index">
@@ -138,18 +138,18 @@
                                 <input type="hidden" :name="`modifiers[${index}][id]`" :value="modifier.id">
                                 <div class="flex-1 grid grid-cols-3 gap-3">
                                     <div>
-                                        <label class="block text-xs text-muted mb-1">Modifier Name *</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.modifier_name_required') }}</label>
                                         <input
                                             type="text"
                                             :name="`modifiers[${index}][name]`"
                                             x-model="modifier.name"
-                                            placeholder="e.g., Extra Cheese"
+                                            placeholder="{{ __('products.modifier_placeholder') }}"
                                             class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                                             required
                                         >
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-muted mb-1">Price</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.price') }}</label>
                                         <div class="relative">
                                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">Rp</span>
                                             <input
@@ -164,13 +164,13 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-muted mb-1">Inventory Item</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.inventory_item') }}</label>
                                         <select
                                             :name="`modifiers[${index}][inventory_item_id]`"
                                             x-model="modifier.inventory_item_id"
                                             class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                                         >
-                                            <option value="">None</option>
+                                            <option value="">{{ __('products.none') }}</option>
                                             @foreach($inventoryItems as $item)
                                                 <option value="{{ $item->id }}">{{ $item->name }}</option>
                                             @endforeach
@@ -186,7 +186,7 @@
                                             value="1"
                                             class="rounded border-border text-accent focus:ring-accent"
                                         >
-                                        Active
+                                        {{ __('products.active') }}
                                     </label>
                                     <button
                                         type="button"
@@ -202,7 +202,7 @@
                     </div>
 
                     <x-button type="button" variant="outline-secondary" size="sm" icon="plus" @click="addModifier()" class="mt-4">
-                        Add Modifier
+                        {{ __('products.add_modifier') }}
                     </x-button>
                 </x-card>
             </div>
@@ -211,7 +211,7 @@
             <div class="space-y-6">
                 <!-- Products Using -->
                 @if($modifierGroup->products->count() > 0)
-                    <x-card title="Products Using This Group">
+                    <x-card title="{{ __('products.products_using_group') }}">
                         <div class="space-y-2 max-h-48 overflow-y-auto">
                             @foreach($modifierGroup->products as $product)
                                 <a href="{{ route('menu.products.show', $product) }}" class="flex items-center gap-2 p-2 bg-secondary-50 rounded hover:bg-secondary-100 transition-colors">
@@ -224,22 +224,22 @@
                 @endif
 
                 <!-- Metadata -->
-                <x-card title="Information">
+                <x-card title="{{ __('products.information') }}">
                     <dl class="space-y-3 text-sm">
                         <div class="flex justify-between">
-                            <dt class="text-muted">Modifiers</dt>
+                            <dt class="text-muted">{{ __('products.modifiers') }}</dt>
                             <dd class="font-medium">{{ $modifierGroup->modifiers->count() }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-muted">Products</dt>
+                            <dt class="text-muted">{{ __('products.products') }}</dt>
                             <dd class="font-medium">{{ $modifierGroup->products->count() }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-muted">Created</dt>
+                            <dt class="text-muted">{{ __('products.created') }}</dt>
                             <dd>{{ $modifierGroup->created_at->format('d M Y') }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-muted">Updated</dt>
+                            <dt class="text-muted">{{ __('products.updated') }}</dt>
                             <dd>{{ $modifierGroup->updated_at->format('d M Y') }}</dd>
                         </div>
                     </dl>
@@ -248,10 +248,10 @@
                 <!-- Actions -->
                 <div class="flex flex-col gap-3">
                     <x-button type="submit" icon="check" class="w-full">
-                        Update Modifier Group
+                        {{ __('products.update_modifier_group') }}
                     </x-button>
                     <x-button href="{{ route('menu.modifier-groups.index') }}" variant="ghost" class="w-full">
-                        Cancel
+                        {{ __('products.cancel') }}
                     </x-button>
                 </div>
             </div>

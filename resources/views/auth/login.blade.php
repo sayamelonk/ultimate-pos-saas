@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Masuk - Ultimate POS</title>
+    <title>{{ __('auth.login') }} - Ultimate POS</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -33,26 +33,26 @@
                 </div>
 
                 <h1 class="text-4xl xl:text-5xl font-bold leading-tight mb-6">
-                    Selamat Datang<br>Kembali!
+                    {{ __('auth.welcome_back') }}
                 </h1>
 
                 <p class="text-lg text-primary-100 mb-12 max-w-md">
-                    Masuk ke akun Anda untuk melanjutkan mengelola bisnis dengan Ultimate POS.
+                    {{ __('auth.welcome_back_subtitle') }}
                 </p>
 
                 <!-- Stats -->
                 <div class="grid grid-cols-3 gap-6 mb-12">
                     <div class="text-center">
                         <p class="text-3xl font-bold">500+</p>
-                        <p class="text-sm text-primary-200">Bisnis Aktif</p>
+                        <p class="text-sm text-primary-200">{{ __('auth.active_businesses') }}</p>
                     </div>
                     <div class="text-center">
                         <p class="text-3xl font-bold">10K+</p>
-                        <p class="text-sm text-primary-200">Transaksi/Hari</p>
+                        <p class="text-sm text-primary-200">{{ __('auth.transactions_per_day') }}</p>
                     </div>
                     <div class="text-center">
                         <p class="text-3xl font-bold">99.9%</p>
-                        <p class="text-sm text-primary-200">Uptime</p>
+                        <p class="text-sm text-primary-200">{{ __('auth.uptime') }}</p>
                     </div>
                 </div>
 
@@ -64,7 +64,7 @@
                         <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium border-2 border-primary-600">MK</div>
                         <div class="w-10 h-10 bg-white/30 rounded-full flex items-center justify-center text-xs font-medium border-2 border-primary-600">+497</div>
                     </div>
-                    <p class="text-sm text-primary-100">Bergabung dengan ratusan pemilik bisnis lainnya</p>
+                    <p class="text-sm text-primary-100">{{ __('auth.join_other_owners') }}</p>
                 </div>
             </div>
         </div>
@@ -87,8 +87,8 @@
                 <div class="w-full max-w-md">
                     <!-- Header -->
                     <div class="mb-8">
-                        <h2 class="text-2xl sm:text-3xl font-bold text-text">Masuk ke Akun</h2>
-                        <p class="text-muted mt-2">Silakan masuk untuk melanjutkan</p>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-text">{{ __('auth.login_title') }}</h2>
+                        <p class="text-muted mt-2">{{ __('auth.login_subtitle') }}</p>
                     </div>
 
                     <!-- Form -->
@@ -98,7 +98,7 @@
                         <!-- Email -->
                         <div>
                             <label for="email" class="block text-sm font-medium text-text mb-1.5">
-                                Email
+                                {{ __('auth.email') }}
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -116,7 +116,7 @@
                                        class="w-full pl-11 pr-4 py-3 border border-border rounded-xl bg-surface text-text
                                               focus:ring-2 focus:ring-primary/20 focus:border-primary
                                               placeholder:text-muted transition-all @error('email') border-danger @enderror"
-                                       placeholder="email@example.com">
+                                       placeholder="{{ __('auth.email_placeholder') }}">
                             </div>
                             @error('email')
                                 <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
@@ -126,7 +126,7 @@
                         <!-- Password -->
                         <div x-data="{ show: false }">
                             <label for="password" class="block text-sm font-medium text-text mb-1.5">
-                                Password
+                                {{ __('auth.password_label') }}
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -142,7 +142,7 @@
                                        class="w-full pl-11 pr-12 py-3 border border-border rounded-xl bg-surface text-text
                                               focus:ring-2 focus:ring-primary/20 focus:border-primary
                                               placeholder:text-muted transition-all @error('password') border-danger @enderror"
-                                       placeholder="Masukkan password">
+                                       placeholder="{{ __('auth.password_placeholder') }}">
                                 <button type="button"
                                         @click="show = !show"
                                         class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors">
@@ -166,10 +166,10 @@
                                 <input type="checkbox"
                                        name="remember"
                                        class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer">
-                                <span class="text-sm text-muted group-hover:text-text transition-colors">Ingat saya</span>
+                                <span class="text-sm text-muted group-hover:text-text transition-colors">{{ __('auth.remember_me') }}</span>
                             </label>
                             <a href="#" class="text-sm text-primary hover:text-primary-600 font-medium transition-colors">
-                                Lupa password?
+                                {{ __('auth.forgot_password') }}
                             </a>
                         </div>
 
@@ -181,7 +181,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                             </svg>
-                            Masuk
+                            {{ __('auth.login_button') }}
                         </button>
                     </form>
 
@@ -191,56 +191,99 @@
                             <div class="w-full border-t border-border"></div>
                         </div>
                         <div class="relative flex justify-center text-sm">
-                            <span class="px-4 bg-background text-muted">atau</span>
+                            <span class="px-4 bg-background text-muted">{{ __('auth.or') }}</span>
                         </div>
                     </div>
 
                     <!-- Register Link -->
                     <div class="text-center mb-6">
                         <p class="text-muted">
-                            Belum punya akun?
+                            {{ __('auth.no_account') }}
                             <a href="{{ route('register') }}" class="text-primary hover:text-primary-600 font-semibold transition-colors">
-                                Daftar sekarang
+                                {{ __('auth.register_now') }}
                             </a>
                         </p>
                     </div>
 
-                    <!-- Demo Credentials -->
-                    <div class="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10">
+                    <!-- Demo Credentials by Role -->
+                    <div class="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10 mb-4">
                         <div class="flex items-center gap-2 mb-3">
                             <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <p class="text-sm font-semibold text-text">Demo Credentials</p>
+                            <p class="text-sm font-semibold text-text">{{ __('auth.demo_by_role') }}</p>
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-xs">
-                            <div class="p-2 bg-white/50 rounded-lg">
-                                <p class="font-medium text-text">Super Admin</p>
+                            <button type="button" onclick="fillCredentials('superadmin@ultimatepos.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left">
+                                <p class="font-medium text-text">{{ __('auth.super_admin') }}</p>
                                 <p class="text-muted truncate">superadmin@ultimatepos.com</p>
-                            </div>
-                            <div class="p-2 bg-white/50 rounded-lg">
-                                <p class="font-medium text-text">Owner</p>
+                            </button>
+                            <button type="button" onclick="fillCredentials('owner@demo.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left">
+                                <p class="font-medium text-text">{{ __('auth.owner') }}</p>
                                 <p class="text-muted truncate">owner@demo.com</p>
-                            </div>
-                            <div class="p-2 bg-white/50 rounded-lg">
-                                <p class="font-medium text-text">Manager</p>
+                            </button>
+                            <button type="button" onclick="fillCredentials('manager@demo.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left">
+                                <p class="font-medium text-text">{{ __('auth.manager') }}</p>
                                 <p class="text-muted truncate">manager@demo.com</p>
-                            </div>
-                            <div class="p-2 bg-white/50 rounded-lg">
-                                <p class="font-medium text-text">Cashier</p>
+                            </button>
+                            <button type="button" onclick="fillCredentials('cashier@demo.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left">
+                                <p class="font-medium text-text">{{ __('auth.cashier') }}</p>
                                 <p class="text-muted truncate">cashier@demo.com</p>
-                            </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Demo Credentials by Plan (Feature Gating Test) -->
+                    <div class="p-4 bg-gradient-to-r from-success/5 to-warning/5 rounded-xl border border-success/20">
+                        <div class="flex items-center gap-2 mb-3">
+                            <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                            </svg>
+                            <p class="text-sm font-semibold text-text">{{ __('auth.test_by_plan') }}</p>
+                            <span class="text-xs text-muted">({{ __('auth.feature_gating') }})</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button type="button" onclick="fillCredentials('starter@demo.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left border-l-2 border-gray-400">
+                                <p class="font-medium text-text">{{ __('auth.starter') }}</p>
+                                <p class="text-muted truncate">starter@demo.com</p>
+                                <p class="text-[10px] text-gray-500 mt-1">{{ __('auth.no_inventory') }}</p>
+                            </button>
+                            <button type="button" onclick="fillCredentials('growth@demo.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left border-l-2 border-blue-400">
+                                <p class="font-medium text-text">{{ __('auth.growth') }}</p>
+                                <p class="text-muted truncate">growth@demo.com</p>
+                                <p class="text-[10px] text-blue-500 mt-1">{{ __('auth.basic_inventory') }}</p>
+                            </button>
+                            <button type="button" onclick="fillCredentials('professional@demo.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left border-l-2 border-purple-400">
+                                <p class="font-medium text-text">{{ __('auth.professional') }}</p>
+                                <p class="text-muted truncate">professional@demo.com</p>
+                                <p class="text-[10px] text-purple-500 mt-1">{{ __('auth.all_features') }}</p>
+                            </button>
+                            <button type="button" onclick="fillCredentials('enterprise@demo.com')" class="p-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors text-left border-l-2 border-amber-400">
+                                <p class="font-medium text-text">{{ __('auth.enterprise') }}</p>
+                                <p class="text-muted truncate">enterprise@demo.com</p>
+                                <p class="text-[10px] text-amber-500 mt-1">{{ __('auth.unlimited_api') }}</p>
+                            </button>
                         </div>
                         <p class="mt-3 text-xs text-center text-muted">
                             <span class="font-medium">Password:</span> password
+                            <span class="mx-2">|</span>
+                            <span class="text-success">{{ __('auth.click_to_autofill') }}</span>
                         </p>
                     </div>
+
+                    <script>
+                        function fillCredentials(email) {
+                            document.getElementById('email').value = email;
+                            document.getElementById('password').value = 'password';
+                            document.getElementById('email').focus();
+                        }
+                    </script>
                 </div>
             </div>
 
             <!-- Footer -->
             <div class="py-4 px-6 text-center text-sm text-muted border-t border-border">
-                &copy; {{ date('Y') }} Ultimate POS. All rights reserved.
+                &copy; {{ date('Y') }} Ultimate POS. {{ __('auth.all_rights_reserved') }}
             </div>
         </div>
     </div>

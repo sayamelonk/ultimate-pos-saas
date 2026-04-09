@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">My PIN - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.my_pin') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'My PIN')
+    @section('page-title', __('admin.my_pin'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
@@ -9,8 +9,8 @@
                 <x-icon name="arrow-left" class="w-4 h-4" />
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">My Authorization PIN</h2>
-                <p class="text-muted mt-1">Set or update your authorization PIN</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.my_authorization_pin') }}</h2>
+                <p class="text-muted mt-1">{{ __('admin.set_update_authorization_pin') }}</p>
             </div>
         </div>
     </x-slot>
@@ -22,11 +22,11 @@
                     <x-icon name="key" class="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                    <h3 class="font-semibold text-lg">Authorization PIN</h3>
+                    <h3 class="font-semibold text-lg">{{ __('admin.authorization_pin') }}</h3>
                     @if($hasPin)
-                        <x-badge type="success" class="mt-1">PIN Active</x-badge>
+                        <x-badge type="success" class="mt-1">{{ __('admin.pin_active') }}</x-badge>
                     @else
-                        <x-badge type="secondary" class="mt-1">No PIN Set</x-badge>
+                        <x-badge type="secondary" class="mt-1">{{ __('admin.no_pin_set') }}</x-badge>
                     @endif
                 </div>
             </div>
@@ -39,13 +39,13 @@
                     @if($hasPin)
                         <div>
                             <label class="block text-sm font-medium text-text mb-1">
-                                Current PIN <span class="text-danger">*</span>
+                                {{ __('admin.current_pin') }} <span class="text-danger">*</span>
                             </label>
                             <x-input
                                 type="password"
                                 name="current_pin"
                                 maxlength="{{ $settings->pin_length }}"
-                                placeholder="Enter current PIN"
+                                placeholder="{{ __('admin.enter_current_pin') }}"
                                 pattern="[0-9]*"
                                 inputmode="numeric"
                                 required
@@ -58,19 +58,19 @@
 
                     <div>
                         <label class="block text-sm font-medium text-text mb-1">
-                            {{ $hasPin ? 'New PIN' : 'PIN' }} <span class="text-danger">*</span>
+                            {{ $hasPin ? __('admin.new_pin') : __('admin.pin') }} <span class="text-danger">*</span>
                         </label>
                         <x-input
                             type="password"
                             name="pin"
                             maxlength="{{ $settings->pin_length }}"
-                            placeholder="Enter {{ $settings->pin_length }}-digit PIN"
+                            placeholder="{{ __('admin.enter_digit_pin', ['length' => $settings->pin_length]) }}"
                             pattern="[0-9]*"
                             inputmode="numeric"
                             required
                             autocomplete="new-password"
                         />
-                        <p class="text-xs text-muted mt-1">Must be exactly {{ $settings->pin_length }} digits</p>
+                        <p class="text-xs text-muted mt-1">{{ __('admin.must_be_exactly_digits', ['length' => $settings->pin_length]) }}</p>
                         @error('pin')
                             <p class="text-danger text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -78,13 +78,13 @@
 
                     <div>
                         <label class="block text-sm font-medium text-text mb-1">
-                            Confirm PIN <span class="text-danger">*</span>
+                            {{ __('admin.confirm_pin') }} <span class="text-danger">*</span>
                         </label>
                         <x-input
                             type="password"
                             name="pin_confirmation"
                             maxlength="{{ $settings->pin_length }}"
-                            placeholder="Confirm {{ $settings->pin_length }}-digit PIN"
+                            placeholder="{{ __('admin.confirm_digit_pin', ['length' => $settings->pin_length]) }}"
                             pattern="[0-9]*"
                             inputmode="numeric"
                             required
@@ -97,18 +97,18 @@
                     <div class="flex gap-3">
                         <x-icon name="information-circle" class="w-5 h-5 text-info shrink-0 mt-0.5" />
                         <div class="text-sm">
-                            <p class="font-medium text-info-700">About Authorization PIN</p>
-                            <p class="text-muted mt-1">Your PIN is used to authorize sensitive actions at the POS such as void transactions, refunds, and price overrides. Keep it secure and don't share it with anyone.</p>
+                            <p class="font-medium text-info-700">{{ __('admin.about_authorization_pin') }}</p>
+                            <p class="text-muted mt-1">{{ __('admin.pin_security_info') }}</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-border">
                     <x-button href="{{ route('admin.dashboard') }}" variant="secondary">
-                        Cancel
+                        {{ __('admin.cancel') }}
                     </x-button>
                     <x-button type="submit" icon="check">
-                        {{ $hasPin ? 'Update PIN' : 'Set PIN' }}
+                        {{ $hasPin ? __('admin.update_pin') : __('admin.set_pin') }}
                     </x-button>
                 </div>
             </form>

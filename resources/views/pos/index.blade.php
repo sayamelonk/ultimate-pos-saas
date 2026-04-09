@@ -269,10 +269,23 @@
                                     <span class="font-medium" x-text="'-' + formatCurrency(totals.discount_amount)"></span>
                                 </div>
                             </template>
-                            <div class="flex justify-between">
-                                <span class="text-muted">Tax (<span x-text="totals.tax_percentage"></span>%)</span>
-                                <span class="font-medium" x-text="formatCurrency(totals.tax_amount)"></span>
-                            </div>
+                            <template x-if="totals.tax_enabled && totals.tax_percentage > 0">
+                                <div class="flex justify-between">
+                                    <span class="text-muted">
+                                        Tax (<span x-text="totals.tax_percentage"></span>%)
+                                        <template x-if="totals.tax_mode === 'inclusive'">
+                                            <span class="text-xs">(incl.)</span>
+                                        </template>
+                                    </span>
+                                    <span class="font-medium" x-text="formatCurrency(totals.tax_amount)"></span>
+                                </div>
+                            </template>
+                            <template x-if="totals.service_charge_enabled && totals.service_charge_percentage > 0">
+                                <div class="flex justify-between">
+                                    <span class="text-muted">Service (<span x-text="totals.service_charge_percentage"></span>%)</span>
+                                    <span class="font-medium" x-text="formatCurrency(totals.service_charge_amount)"></span>
+                                </div>
+                            </template>
                             <div class="flex justify-between items-center pt-2 border-t border-border">
                                 <span class="font-bold">Total</span>
                                 <span class="text-primary text-xl font-bold" x-text="formatCurrency(totals.grand_total)"></span>
@@ -934,7 +947,12 @@
                     subtotal: 0,
                     discount_amount: 0,
                     tax_amount: 0,
-                    tax_percentage: 11,
+                    tax_percentage: {{ $taxSettings['tax_percentage'] }},
+                    tax_enabled: {{ $taxSettings['tax_enabled'] ? 'true' : 'false' }},
+                    tax_mode: '{{ $taxSettings['tax_mode'] }}',
+                    service_charge_amount: 0,
+                    service_charge_percentage: {{ $taxSettings['service_charge_percentage'] }},
+                    service_charge_enabled: {{ $taxSettings['service_charge_enabled'] ? 'true' : 'false' }},
                     grand_total: 0
                 },
 
@@ -1226,12 +1244,37 @@
 
                 recalculate() {
                     const subtotal = this.cart.reduce((sum, item) => sum + item.subtotal, 0);
-                    const taxRate = this.totals.tax_percentage / 100;
-                    const taxAmount = subtotal * taxRate;
-                    const grandTotal = subtotal + taxAmount;
+                    const taxPercentage = this.totals.tax_percentage;
+                    const taxEnabled = this.totals.tax_enabled;
+                    const taxMode = this.totals.tax_mode;
+
+                    let taxAmount = 0;
+                    let grandTotal = 0;
+
+                    // Calculate service charge only if enabled (always from gross/subtotal)
+                    const serviceChargeRate = this.totals.service_charge_enabled ? (this.totals.service_charge_percentage / 100) : 0;
+                    const serviceChargeAmount = subtotal * serviceChargeRate;
+
+                    if (taxMode === 'inclusive') {
+                        // Inclusive: Tax is already included in price
+                        // Formula: tax = gross × (rate / (100 + rate))
+                        if (taxEnabled && taxPercentage > 0) {
+                            taxAmount = subtotal * (taxPercentage / (100 + taxPercentage));
+                        }
+                        // Grand total = subtotal + service charge (tax already in subtotal)
+                        grandTotal = subtotal + serviceChargeAmount;
+                    } else {
+                        // Exclusive (default): Tax is added on top
+                        if (taxEnabled && taxPercentage > 0) {
+                            taxAmount = subtotal * (taxPercentage / 100);
+                        }
+                        // Grand total = subtotal + tax + service charge
+                        grandTotal = subtotal + taxAmount + serviceChargeAmount;
+                    }
 
                     this.totals.subtotal = subtotal;
-                    this.totals.tax_amount = taxAmount;
+                    this.totals.tax_amount = Math.ceil(taxAmount);
+                    this.totals.service_charge_amount = Math.ceil(serviceChargeAmount);
                     this.totals.grand_total = Math.round(grandTotal);
                     this.paymentAmount = this.totals.grand_total;
                 },

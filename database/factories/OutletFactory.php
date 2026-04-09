@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Outlet;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Outlet>
+ * @extends Factory<Outlet>
  */
 class OutletFactory extends Factory
 {
@@ -32,7 +33,9 @@ class OutletFactory extends Factory
             'opening_time' => '08:00',
             'closing_time' => '22:00',
             'tax_percentage' => null,
+            'tax_enabled' => null,
             'service_charge_percentage' => null,
+            'service_charge_enabled' => null,
             'receipt_header' => null,
             'receipt_footer' => 'Terima kasih atas kunjungan Anda!',
             'receipt_show_logo' => true,

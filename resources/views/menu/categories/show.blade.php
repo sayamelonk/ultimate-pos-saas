@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="title">{{ $category->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Category Details')
+    @section('page-title', __('products.category_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <x-button href="{{ route('menu.categories.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                    Back
+                    {{ __('products.back') }}
                 </x-button>
                 <div>
                     <h2 class="text-2xl font-bold text-text">{{ $category->name }}</h2>
@@ -16,7 +16,7 @@
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('menu.categories.edit', $category) }}" icon="pencil">
-                    Edit
+                    {{ __('products.edit') }}
                 </x-button>
             </div>
         </div>
@@ -24,14 +24,14 @@
 
     <div class="grid grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
-            <x-card title="Category Information">
+            <x-card title="{{ __('products.category_information') }}">
                 <dl class="grid grid-cols-2 gap-4">
                     <div>
-                        <dt class="text-sm text-muted">Name</dt>
+                        <dt class="text-sm text-muted">{{ __('products.name') }}</dt>
                         <dd class="mt-1 font-medium">{{ $category->name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Code</dt>
+                        <dt class="text-sm text-muted">{{ __('products.code') }}</dt>
                         <dd class="mt-1">
                             @if($category->code)
                                 <code class="px-2 py-1 bg-secondary-100 rounded text-sm">{{ $category->code }}</code>
@@ -41,22 +41,22 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Parent Category</dt>
-                        <dd class="mt-1">{{ $category->parent->name ?? 'None (Root)' }}</dd>
+                        <dt class="text-sm text-muted">{{ __('products.parent_category') }}</dt>
+                        <dd class="mt-1">{{ $category->parent->name ?? __('products.none_root') }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-muted">Status</dt>
+                        <dt class="text-sm text-muted">{{ __('products.status') }}</dt>
                         <dd class="mt-1">
                             @if($category->is_active)
-                                <x-badge type="success">Active</x-badge>
+                                <x-badge type="success">{{ __('products.active') }}</x-badge>
                             @else
-                                <x-badge type="danger">Inactive</x-badge>
+                                <x-badge type="danger">{{ __('products.inactive') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     @if($category->description)
                         <div class="col-span-2">
-                            <dt class="text-sm text-muted">Description</dt>
+                            <dt class="text-sm text-muted">{{ __('products.description') }}</dt>
                             <dd class="mt-1">{{ $category->description }}</dd>
                         </div>
                     @endif
@@ -64,7 +64,7 @@
             </x-card>
 
             @if($category->products->count() > 0)
-                <x-card title="Products in this Category">
+                <x-card title="{{ __('products.products_in_category') }}">
                     <div class="space-y-2">
                         @foreach($category->products as $product)
                             <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
@@ -84,7 +84,7 @@
                     @if($category->products->count() >= 10)
                         <div class="mt-4 text-center">
                             <x-button href="{{ route('menu.products.index', ['category_id' => $category->id]) }}" variant="outline-secondary" size="sm">
-                                View All Products
+                                {{ __('products.view_all_products') }}
                             </x-button>
                         </div>
                     @endif
@@ -92,7 +92,7 @@
             @endif
 
             @if($category->children->count() > 0)
-                <x-card title="Subcategories">
+                <x-card title="{{ __('products.subcategories') }}">
                     <div class="grid grid-cols-2 gap-3">
                         @foreach($category->children as $child)
                             <a href="{{ route('menu.categories.show', $child) }}" class="flex items-center gap-3 p-3 bg-secondary-50 rounded-lg hover:bg-secondary-100 transition-colors">
@@ -101,7 +101,7 @@
                                 </div>
                                 <div>
                                     <p class="font-medium">{{ $child->name }}</p>
-                                    <p class="text-xs text-muted">{{ $child->products_count ?? 0 }} products</p>
+                                    <p class="text-xs text-muted">{{ __('products.n_products', ['count' => $child->products_count ?? 0]) }}</p>
                                 </div>
                             </a>
                         @endforeach
@@ -111,50 +111,50 @@
         </div>
 
         <div class="space-y-6">
-            <x-card title="Display Settings">
+            <x-card title="{{ __('products.display_settings') }}">
                 <dl class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Color</dt>
+                        <dt class="text-muted">{{ __('products.color') }}</dt>
                         <dd class="flex items-center gap-2">
                             <div class="w-6 h-6 rounded" style="background-color: {{ $category->color ?? '#e5e7eb' }};"></div>
                             <code class="text-xs">{{ $category->color ?? '-' }}</code>
                         </dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Sort Order</dt>
+                        <dt class="text-muted">{{ __('products.sort_order') }}</dt>
                         <dd class="font-medium">{{ $category->sort_order }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Show in POS</dt>
+                        <dt class="text-muted">{{ __('products.show_in_pos') }}</dt>
                         <dd>
                             @if($category->show_in_pos)
-                                <x-badge type="success" size="sm">Yes</x-badge>
+                                <x-badge type="success" size="sm">{{ __('products.yes') }}</x-badge>
                             @else
-                                <x-badge type="secondary" size="sm">No</x-badge>
+                                <x-badge type="secondary" size="sm">{{ __('products.no') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Show in Menu</dt>
+                        <dt class="text-muted">{{ __('products.show_in_menu') }}</dt>
                         <dd>
                             @if($category->show_in_menu)
-                                <x-badge type="success" size="sm">Yes</x-badge>
+                                <x-badge type="success" size="sm">{{ __('products.yes') }}</x-badge>
                             @else
-                                <x-badge type="secondary" size="sm">No</x-badge>
+                                <x-badge type="secondary" size="sm">{{ __('products.no') }}</x-badge>
                             @endif
                         </dd>
                     </div>
                 </dl>
             </x-card>
 
-            <x-card title="Statistics">
+            <x-card title="{{ __('products.statistics') }}">
                 <dl class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Total Products</dt>
+                        <dt class="text-muted">{{ __('products.total_products_count') }}</dt>
                         <dd class="font-bold text-lg">{{ $category->products->count() }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
-                        <dt class="text-muted">Subcategories</dt>
+                        <dt class="text-muted">{{ __('products.subcategories_count') }}</dt>
                         <dd class="font-bold text-lg">{{ $category->children->count() }}</dd>
                     </div>
                 </dl>

@@ -7,6 +7,8 @@ use App\Models\HeldOrder;
 use App\Services\PosSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class HeldOrderController extends Controller
 {
@@ -36,7 +38,6 @@ class HeldOrderController extends Controller
 
         $heldOrders = $query->get()->map(fn ($order) => [
             'id' => $order->id,
-            'uuid' => $order->uuid,
             'hold_number' => $order->hold_number,
             'reference' => $order->reference,
             'table_number' => $order->table_number,
@@ -69,73 +70,127 @@ class HeldOrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.inventory_item_id' => ['required'],
-            'items.*.name' => ['required', 'string'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'discounts' => ['nullable', 'array'],
-            'customer_id' => ['nullable', 'exists:customers,id'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'table_number' => ['nullable', 'string', 'max:50'],
-            'notes' => ['nullable', 'string', 'max:500'],
-            'subtotal' => ['required', 'numeric', 'min:0'],
-            'discount_amount' => ['nullable', 'numeric', 'min:0'],
-            'tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'service_charge_amount' => ['nullable', 'numeric', 'min:0'],
-            'grand_total' => ['required', 'numeric', 'min:0'],
+        Log::info('HeldOrder store - Request received', [
+            'user_id' => auth()->id(),
+            'outlet_header' => $request->header('X-Outlet-Id'),
+            'items_count' => count($request->items ?? []),
+            'request_data' => $request->all(),
         ]);
 
-        $user = auth()->user();
-        $outletId = $request->header('X-Outlet-Id') ?? $user->defaultOutlet()?->id;
+        try {
+            $request->validate([
+                'items' => ['required', 'array', 'min:1'],
+                'items.*.product_id' => ['required'],
+                'items.*.name' => ['required', 'string'],
+                'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
+                'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+                'discounts' => ['nullable', 'array'],
+                'customer_id' => ['nullable', 'exists:customers,id'],
+                'reference' => ['nullable', 'string', 'max:100'],
+                'table_number' => ['nullable', 'string', 'max:50'],
+                'notes' => ['nullable', 'string', 'max:500'],
+                'subtotal' => ['required', 'numeric', 'min:0'],
+                'discount_amount' => ['nullable', 'numeric', 'min:0'],
+                'tax_amount' => ['nullable', 'numeric', 'min:0'],
+                'service_charge_amount' => ['nullable', 'numeric', 'min:0'],
+                'grand_total' => ['required', 'numeric', 'min:0'],
+            ]);
 
-        if (! $outletId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No outlet selected.',
-            ], 400);
-        }
+            Log::info('HeldOrder store - Validation passed');
 
-        $session = $this->sessionService->getOpenSession($user->id, $outletId);
+            $user = auth()->user();
+            $outletId = $request->header('X-Outlet-Id') ?? $user->defaultOutlet()?->id;
 
-        if (! $session) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No open session. Please open a session first.',
-            ], 400);
-        }
+            Log::info('HeldOrder store - User and outlet', [
+                'user_id' => $user->id,
+                'tenant_id' => $user->tenant_id,
+                'outlet_id' => $outletId,
+            ]);
 
-        $heldOrder = HeldOrder::create([
-            'tenant_id' => $user->tenant_id,
-            'outlet_id' => $outletId,
-            'pos_session_id' => $session->id,
-            'user_id' => $user->id,
-            'customer_id' => $request->customer_id,
-            'hold_number' => HeldOrder::generateHoldNumber($outletId),
-            'reference' => $request->reference,
-            'table_number' => $request->table_number,
-            'items' => $request->items,
-            'discounts' => $request->discounts,
-            'subtotal' => $request->subtotal,
-            'discount_amount' => $request->discount_amount ?? 0,
-            'tax_amount' => $request->tax_amount ?? 0,
-            'service_charge_amount' => $request->service_charge_amount ?? 0,
-            'grand_total' => $request->grand_total,
-            'notes' => $request->notes,
-            'expires_at' => now()->addHours(24),
-        ]);
+            if (! $outletId) {
+                Log::warning('HeldOrder store - No outlet selected');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Order held successfully.',
-            'held_order' => [
-                'id' => $heldOrder->id,
-                'uuid' => $heldOrder->uuid,
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No outlet selected.',
+                ], 400);
+            }
+
+            $session = $this->sessionService->getOpenSession($user->id, $outletId);
+
+            Log::info('HeldOrder store - Session check', [
+                'session_found' => $session ? true : false,
+                'session_id' => $session?->id,
+            ]);
+
+            if (! $session) {
+                Log::warning('HeldOrder store - No open session');
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No open session. Please open a session first.',
+                ], 400);
+            }
+
+            $holdNumber = HeldOrder::generateHoldNumber($outletId);
+            Log::info('HeldOrder store - Generated hold number', ['hold_number' => $holdNumber]);
+
+            $heldOrderData = [
+                'tenant_id' => $user->tenant_id,
+                'outlet_id' => $outletId,
+                'pos_session_id' => $session->id,
+                'user_id' => $user->id,
+                'customer_id' => $request->customer_id,
+                'hold_number' => $holdNumber,
+                'reference' => $request->reference,
+                'table_number' => $request->table_number,
+                'items' => $request->items,
+                'discounts' => $request->discounts,
+                'subtotal' => $request->subtotal,
+                'discount_amount' => $request->discount_amount ?? 0,
+                'tax_amount' => $request->tax_amount ?? 0,
+                'service_charge_amount' => $request->service_charge_amount ?? 0,
+                'grand_total' => $request->grand_total,
+                'notes' => $request->notes,
+                'expires_at' => now()->addHours(24),
+            ];
+
+            Log::info('HeldOrder store - Creating held order', ['data' => $heldOrderData]);
+
+            $heldOrder = HeldOrder::create($heldOrderData);
+
+            Log::info('HeldOrder store - Created successfully', [
+                'held_order_id' => $heldOrder->id,
                 'hold_number' => $heldOrder->hold_number,
-                'display_name' => $heldOrder->getDisplayName(),
-            ],
-        ]);
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order held successfully.',
+                'held_order' => [
+                    'id' => $heldOrder->id,
+                    'hold_number' => $heldOrder->hold_number,
+                    'display_name' => $heldOrder->getDisplayName(),
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            Log::error('HeldOrder store - Validation failed', [
+                'errors' => $e->errors(),
+            ]);
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('HeldOrder store - Exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     public function show(HeldOrder $heldOrder): JsonResponse
@@ -149,7 +204,6 @@ class HeldOrderController extends Controller
         return response()->json([
             'held_order' => [
                 'id' => $heldOrder->id,
-                'uuid' => $heldOrder->uuid,
                 'hold_number' => $heldOrder->hold_number,
                 'reference' => $heldOrder->reference,
                 'table_number' => $heldOrder->table_number,
@@ -235,7 +289,6 @@ class HeldOrderController extends Controller
 
         $data = [
             'id' => $heldOrder->id,
-            'uuid' => $heldOrder->uuid,
             'hold_number' => $heldOrder->hold_number,
             'reference' => $heldOrder->reference,
             'table_number' => $heldOrder->table_number,

@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit {{ $item->name }} - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.edit_item') }} {{ $item->name }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit Item')
+    @section('page-title', __('inventory.edit_item'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.items.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit Inventory Item</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.edit_item') }}</h2>
                 <p class="text-muted mt-1">{{ $item->name }}</p>
             </div>
         </div>
@@ -20,35 +20,35 @@
             @csrf
             @method('PUT')
 
-            <x-card title="Basic Information">
+            <x-card title="{{ __('inventory.basic_information') }}">
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <x-input
                             name="sku"
-                            label="SKU"
-                            placeholder="e.g., RAW-BEEF-001"
+                            label="{{ __('inventory.sku') }}"
+                            placeholder="{{ __('inventory.sku_placeholder') }}"
                             :value="$item->sku"
                             required
                         />
                         <x-input
                             name="barcode"
-                            label="Barcode"
-                            placeholder="e.g., 8991234567890"
+                            label="{{ __('inventory.barcode') }}"
+                            placeholder="{{ __('inventory.barcode_placeholder') }}"
                             :value="$item->barcode"
                         />
                     </div>
 
                     <x-input
                         name="name"
-                        label="Item Name"
-                        placeholder="e.g., Beef Sirloin"
+                        label="{{ __('inventory.item_name') }}"
+                        placeholder="{{ __('inventory.item_name_placeholder') }}"
                         :value="$item->name"
                         required
                     />
 
                     <div class="grid grid-cols-2 gap-4">
-                        <x-select name="category_id" label="Category" required>
-                            <option value="">Select Category</option>
+                        <x-select name="category_id" label="{{ __('inventory.category') }}" required>
+                            <option value="">{{ __('inventory.select_item') }}</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" @selected(old('category_id', $item->category_id) == $category->id)>
                                     {{ $category->name }}
@@ -56,8 +56,8 @@
                             @endforeach
                         </x-select>
 
-                        <x-select name="unit_id" label="Unit of Measure" required>
-                            <option value="">Select Unit</option>
+                        <x-select name="unit_id" label="{{ __('inventory.unit') }}" required>
+                            <option value="">{{ __('inventory.select_item') }}</option>
                             @foreach($units as $unit)
                                 <option value="{{ $unit->id }}" @selected(old('unit_id', $item->unit_id) == $unit->id)>
                                     {{ $unit->name }} ({{ $unit->abbreviation }})
@@ -67,12 +67,12 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <x-select name="type" label="Type" required>
-                            <option value="">Select Type</option>
-                            <option value="raw_material" @selected(old('type', $item->type) == 'raw_material')>Raw Material</option>
-                            <option value="finished_good" @selected(old('type', $item->type) == 'finished_good')>Finished Good</option>
-                            <option value="consumable" @selected(old('type', $item->type) == 'consumable')>Consumable</option>
-                            <option value="packaging" @selected(old('type', $item->type) == 'packaging')>Packaging</option>
+                        <x-select name="type" label="{{ __('inventory.item_type') }}" required>
+                            <option value="">{{ __('inventory.select_item') }}</option>
+                            <option value="raw_material" @selected(old('type', $item->type) == 'raw_material')>{{ __('inventory.raw_material') }}</option>
+                            <option value="finished_good" @selected(old('type', $item->type) == 'finished_good')>{{ __('inventory.finished_good') }}</option>
+                            <option value="consumable" @selected(old('type', $item->type) == 'consumable')>{{ __('inventory.consumable') }}</option>
+                            <option value="packaging" @selected(old('type', $item->type) == 'packaging')>{{ __('inventory.packaging') }}</option>
                         </x-select>
 
                         <div x-data="{
@@ -94,7 +94,7 @@
                             }
                         }">
                             <label class="block text-sm font-medium text-text mb-1">
-                                Cost Price (Rp) <span class="text-danger-500">*</span>
+                                {{ __('inventory.cost_price') }} (Rp) <span class="text-danger-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -113,43 +113,40 @@
 
                     <x-textarea
                         name="description"
-                        label="Description"
-                        placeholder="Item description..."
+                        label="{{ __('inventory.description') }}"
+                        placeholder="{{ __('inventory.description_placeholder') }}"
                         :value="$item->description"
                         rows="2"
                     />
                 </div>
             </x-card>
 
-            <x-card title="Stock Settings">
+            <x-card title="{{ __('inventory.stock_settings') }}">
                 <div class="space-y-4">
                     <div class="grid grid-cols-3 gap-4">
                         <x-input
                             type="number"
                             step="1"
                             name="reorder_level"
-                            label="Reorder Level"
+                            label="{{ __('inventory.reorder_level') }}"
                             placeholder="e.g., 10"
                             :value="old('reorder_level', $item->reorder_point ? (int) $item->reorder_point : '')"
-                            hint="Alert when stock falls below"
                         />
                         <x-input
                             type="number"
                             step="1"
                             name="reorder_quantity"
-                            label="Reorder Quantity"
+                            label="{{ __('inventory.reorder_quantity') }}"
                             placeholder="e.g., 50"
                             :value="old('reorder_quantity', $item->reorder_qty ? (int) $item->reorder_qty : '')"
-                            hint="Suggested order quantity"
                         />
                         <x-input
                             type="number"
                             step="1"
                             name="max_stock_level"
-                            label="Max Stock Level"
+                            label="{{ __('inventory.max_stock_level') }}"
                             placeholder="e.g., 200"
                             :value="old('max_stock_level', $item->max_stock ? (int) $item->max_stock : '')"
-                            hint="Maximum stock to keep"
                         />
                     </div>
 
@@ -157,13 +154,13 @@
                         <x-input
                             type="number"
                             name="shelf_life_days"
-                            label="Shelf Life (Days)"
+                            label="{{ __('inventory.shelf_life_days') }}"
                             placeholder="e.g., 7"
                             :value="old('shelf_life_days', $item->shelf_life_days)"
                         />
                         <x-input
                             name="storage_location"
-                            label="Storage Location"
+                            label="{{ __('inventory.storage_location') }}"
                             placeholder="e.g., Cold Storage A"
                             :value="old('storage_location', $item->storage_location)"
                         />
@@ -172,14 +169,12 @@
                     <div class="flex gap-6">
                         <x-checkbox
                             name="is_perishable"
-                            label="Perishable"
-                            hint="This item can expire"
+                            label="{{ __('inventory.is_perishable') }}"
                             :checked="old('is_perishable', $item->is_perishable)"
                         />
                         <x-checkbox
                             name="track_batches"
-                            label="Track Batches"
-                            hint="Enable batch/lot tracking"
+                            label="{{ __('inventory.track_batches') }}"
                             :checked="old('track_batches', $item->track_batches)"
                         />
                     </div>
@@ -189,17 +184,16 @@
             <x-card>
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive items won't appear in selections"
+                    label="{{ __('inventory.active') }}"
                     :checked="old('is_active', $item->is_active)"
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-border">
                     <x-button href="{{ route('inventory.items.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('inventory.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Update Item
+                        {{ __('inventory.update_item') }}
                     </x-button>
                 </div>
             </x-card>

@@ -1,16 +1,16 @@
 <x-app-layout>
     <x-slot name="title">Tenants - Ultimate POS</x-slot>
 
-    @section('page-title', 'Tenants')
+    @section('page-title', __('admin.tenants'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Tenant Management</h2>
-                <p class="text-muted mt-1">Manage all tenants in the system</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.tenant_management') }}</h2>
+                <p class="text-muted mt-1">{{ __('admin.manage_all_tenants') }}</p>
             </div>
             <x-button href="{{ route('admin.tenants.create') }}" icon="plus">
-                Add Tenant
+                {{ __('admin.add_tenant') }}
             </x-button>
         </div>
     </x-slot>
@@ -21,14 +21,14 @@
             <div class="flex items-center gap-3">
                 <x-icon name="building" class="w-5 h-5 text-primary" />
                 <div>
-                    <p class="text-sm text-primary-700">Currently managing:</p>
+                    <p class="text-sm text-primary-700">{{ __('admin.currently_managing') }}</p>
                     <p class="font-semibold text-primary-900">{{ session('current_tenant_name') }}</p>
                 </div>
             </div>
             <form action="{{ route('admin.tenants.clear') }}" method="POST">
                 @csrf
                 <x-button type="submit" variant="outline-secondary" size="sm">
-                    Clear Selection
+                    {{ __('admin.clear_selection') }}
                 </x-button>
             </form>
         </div>
@@ -40,18 +40,18 @@
             <x-input
                 type="search"
                 name="search"
-                placeholder="Search tenants..."
+                placeholder="{{ __('admin.search_tenants') }}"
                 :value="request('search')"
                 class="w-64"
             />
-            <x-select name="status" class="w-40" placeholder="All Status">
-                <option value="">All Status</option>
-                <option value="active" @selected(request('status') === 'active')>Active</option>
-                <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+            <x-select name="status" class="w-40" placeholder="{{ __('admin.all_status') }}">
+                <option value="">{{ __('admin.all_status') }}</option>
+                <option value="active" @selected(request('status') === 'active')>{{ __('admin.active') }}</option>
+                <option value="inactive" @selected(request('status') === 'inactive')>{{ __('admin.inactive') }}</option>
             </x-select>
-            <x-button type="submit" variant="secondary">Filter</x-button>
+            <x-button type="submit" variant="secondary">{{ __('admin.filter') }}</x-button>
             @if(request()->hasAny(['search', 'status']))
-                <x-button href="{{ route('admin.tenants.index') }}" variant="ghost">Clear</x-button>
+                <x-button href="{{ route('admin.tenants.index') }}" variant="ghost">{{ __('admin.clear') }}</x-button>
             @endif
         </form>
 
@@ -59,13 +59,13 @@
         @if($tenants->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Tenant</x-th>
-                    <x-th>Contact</x-th>
-                    <x-th align="center">Outlets</x-th>
-                    <x-th align="center">Users</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="center">Created</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('admin.tenant') }}</x-th>
+                    <x-th>{{ __('admin.contact') }}</x-th>
+                    <x-th align="center">{{ __('admin.outlets') }}</x-th>
+                    <x-th align="center">{{ __('admin.users') }}</x-th>
+                    <x-th align="center">{{ __('admin.status') }}</x-th>
+                    <x-th align="center">{{ __('admin.created') }}</x-th>
+                    <x-th align="right">{{ __('admin.action') }}</x-th>
                 </x-slot>
 
                 @foreach($tenants as $tenant)
@@ -104,9 +104,9 @@
                         </x-td>
                         <x-td align="center">
                             @if($tenant->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('admin.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('admin.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="center">
@@ -118,18 +118,18 @@
                                     @csrf
                                     <button type="submit"
                                             class="p-2 text-primary hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors {{ session('current_tenant_id') === $tenant->id ? 'bg-primary-100' : '' }}"
-                                            title="Manage this Tenant">
+                                            title="{{ __('admin.manage_tenant') }}">
                                         <x-icon name="cog" class="w-4 h-4" />
                                     </button>
                                 </form>
                                 <a href="{{ route('admin.tenants.show', $tenant) }}"
                                    class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
-                                   title="View Details">
+                                   title="{{ __('admin.view_details') }}">
                                     <x-icon name="eye" class="w-4 h-4" />
                                 </a>
                                 <a href="{{ route('admin.tenants.edit', $tenant) }}"
                                    class="p-2 text-muted hover:text-text hover:bg-secondary-100 rounded-lg transition-colors"
-                                   title="Edit">
+                                   title="{{ __('admin.edit') }}">
                                     <x-icon name="pencil" class="w-4 h-4" />
                                 </a>
                                 <form x-ref="deleteTenant{{ $loop->index }}" action="{{ route('admin.tenants.destroy', $tenant) }}" method="POST" class="inline">
@@ -137,12 +137,12 @@
                                     @method('DELETE')
                                     <button type="button"
                                             class="p-2 text-danger-500 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-colors"
-                                            title="Delete"
+                                            title="{{ __('admin.delete') }}"
                                             x-on:click="$dispatch('confirm', {
-                                                title: 'Delete Tenant',
-                                                message: 'Are you sure you want to delete {{ $tenant->name }}? All associated outlets, users, and data will be permanently deleted.',
-                                                confirmText: 'Yes, Delete',
-                                                cancelText: 'Cancel',
+                                                title: '{{ __('admin.delete_tenant') }}',
+                                                message: '{{ __('admin.confirm_delete_tenant', ['name' => $tenant->name]) }}',
+                                                confirmText: '{{ __('admin.yes_delete') }}',
+                                                cancelText: '{{ __('admin.cancel') }}',
                                                 variant: 'danger',
                                                 onConfirm: () => $refs.deleteTenant{{ $loop->index }}.submit()
                                             })">
@@ -160,12 +160,12 @@
             </div>
         @else
             <x-empty-state
-                title="No tenants found"
-                description="Get started by creating your first tenant."
+                title="{{ __('admin.no_tenants_found') }}"
+                description="{{ __('admin.no_tenants_desc') }}"
                 icon="building"
             >
                 <x-button href="{{ route('admin.tenants.create') }}" icon="plus">
-                    Add Tenant
+                    {{ __('admin.add_tenant') }}
                 </x-button>
             </x-empty-state>
         @endif

@@ -5,8 +5,15 @@ return [
     'dashboard' => 'Dashboard',
     'pos' => 'POS',
     'open_pos' => 'Open POS',
+    'cashier_sessions' => 'Cashier Sessions',
     'transactions' => 'Transactions',
     'transaction_history' => 'Transaction History',
+    'settings' => 'Settings',
+    'subscription' => 'Subscription',
+    'subscription_management' => 'Subscriptions',
+    'subscription_plans' => 'Subscription Plans',
+    'subscriptions' => 'All Subscriptions',
+    'invoices' => 'Invoices',
 
     // Admin Section
     'admin' => 'Admin',

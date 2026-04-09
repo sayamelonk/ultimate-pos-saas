@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Create Unit - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.create_unit') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Create Unit')
+    @section('page-title', __('inventory.create_unit'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.units.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Create Unit</h2>
-                <p class="text-muted mt-1">Add a new unit of measure</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.add_unit_title') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.create_new_unit') }}</p>
             </div>
         </div>
     </x-slot>
@@ -23,26 +23,24 @@
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         name="name"
-                        label="Unit Name"
-                        placeholder="e.g., Kilogram"
+                        label="{{ __('inventory.unit_name') }}"
+                        placeholder="{{ __('inventory.unit_name_placeholder') }}"
                         required
                     />
 
                     <x-input
                         name="abbreviation"
-                        label="Abbreviation"
-                        placeholder="e.g., kg"
-                        hint="Short code for this unit"
+                        label="{{ __('inventory.abbreviation') }}"
+                        placeholder="{{ __('inventory.abbreviation_placeholder') }}"
                         required
                     />
                 </div>
 
                 <x-select
                     name="base_unit_id"
-                    label="Base Unit (Optional)"
-                    hint="Select if this is a derived unit"
+                    label="{{ __('inventory.base_unit') }}"
                 >
-                    <option value="">None (This is a base unit)</option>
+                    <option value="">{{ __('inventory.is_base_unit') }}</option>
                     @foreach($baseUnits as $baseUnit)
                         <option value="{{ $baseUnit->id }}" @selected(old('base_unit_id') == $baseUnit->id)>
                             {{ $baseUnit->name }} ({{ $baseUnit->abbreviation }})
@@ -54,25 +52,24 @@
                     type="number"
                     step="any"
                     name="conversion_factor"
-                    label="Conversion Factor"
+                    label="{{ __('inventory.conversion_factor') }}"
                     placeholder="e.g., 1000"
                     :value="old('conversion_factor', 1)"
-                    hint="How many base units equal 1 of this unit (e.g., 1 kg = 1000 g, so conversion for g is 0.001)"
+                    hint="{{ __('inventory.conversion_factor_hint') }}"
                 />
 
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive units won't appear in selections"
+                    label="{{ __('inventory.active') }}"
                     checked
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('inventory.units.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('inventory.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Create Unit
+                        {{ __('inventory.create_unit') }}
                     </x-button>
                 </div>
             </form>

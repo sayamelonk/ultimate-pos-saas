@@ -1,20 +1,20 @@
 <x-app-layout>
     <x-slot name="title">Food Cost Report - Ultimate POS</x-slot>
 
-    @section('page-title', 'Food Cost')
+    @section('page-title', __('inventory.food_cost_report'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Food Cost Analysis Report</h2>
-                <p class="text-muted mt-1">Analyze food cost percentages and profitability</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.food_cost_report') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.analyze_food_cost') }}</p>
             </div>
             <div class="flex gap-2">
                 <x-button href="{{ route('inventory.reports.cogs') }}" variant="outline-secondary" icon="calculator">
-                    COGS Report
+                    {{ __('inventory.cogs_report') }}
                 </x-button>
                 <x-button href="{{ route('inventory.recipes.cost-analysis') }}" variant="outline-secondary" icon="beaker">
-                    Recipe Analysis
+                    {{ __('inventory.cost_analysis') }}
                 </x-button>
             </div>
         </div>
@@ -37,7 +37,7 @@
                     class="w-40"
                 />
                 <x-button type="submit" variant="secondary">
-                    Generate Report
+                    {{ __('inventory.generate_report') }}
                 </x-button>
             </form>
         </x-card>
@@ -65,14 +65,14 @@
             <x-card>
                 <div class="text-center">
                     <p class="text-4xl font-bold text-danger-600">Rp {{ number_format($wasteTotal ?? 0, 0, ',', '.') }}</p>
-                    <p class="text-sm text-muted mt-2">Waste Value</p>
+                    <p class="text-sm text-muted mt-2">{{ __('inventory.waste_value') }}</p>
                     <p class="text-xs text-muted">{{ $dateFrom }} - {{ $dateTo }}</p>
                 </div>
             </x-card>
             <x-card>
                 <div class="text-center">
                     <p class="text-4xl font-bold text-text">Rp {{ number_format($purchaseTotal ?? 0, 0, ',', '.') }}</p>
-                    <p class="text-sm text-muted mt-2">Purchases</p>
+                    <p class="text-sm text-muted mt-2">{{ __('inventory.purchases') }}</p>
                     <p class="text-xs text-muted">{{ $dateFrom }} - {{ $dateTo }}</p>
                 </div>
             </x-card>
@@ -108,14 +108,14 @@
 
         <div class="grid grid-cols-2 gap-6">
             <!-- Food Cost by Category -->
-            <x-card title="Food Cost by Category">
+            <x-card title="Food Cost {{ __('inventory.category') }}">
                 @if($costByCategory->count() > 0)
                     <div class="space-y-4">
                         @foreach($costByCategory as $category => $data)
                             <div class="p-4 bg-secondary-50 rounded-lg">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="font-medium">{{ $category }}</span>
-                                    <span class="text-sm text-muted">{{ $data['count'] }} recipes</span>
+                                    <span class="text-sm text-muted">{{ $data['count'] }} {{ __('inventory.recipes') }}</span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4 mt-3">
                                     <div>
@@ -136,15 +136,15 @@
                     </div>
                 @else
                     <x-empty-state
-                        title="No data"
-                        description="No recipes with pricing found."
+                        title="{{ __('inventory.no_data_for_period') }}"
+                        description="{{ __('inventory.no_recipes_found') }}"
                         icon="chart-pie"
                     />
                 @endif
             </x-card>
 
             <!-- High Cost Alert -->
-            <x-card title="High Food Cost Items (>35%)" class="border-warning-300">
+            <x-card title="High Food Cost {{ __('inventory.items') }} (>35%)" class="border-warning-300">
                 @if($highCostItems->count() > 0)
                     <div class="space-y-3">
                         @foreach($highCostItems->sortByDesc('food_cost_percent')->take(10) as $item)
@@ -154,8 +154,8 @@
                                         {{ $item['recipe']->name }}
                                     </a>
                                     <p class="text-xs text-warning-600">
-                                        Cost: Rp {{ number_format($item['unit_cost'], 0, ',', '.') }} |
-                                        Price: Rp {{ number_format($item['selling_price'], 0, ',', '.') }}
+                                        {{ __('inventory.cost_per_unit') }}: Rp {{ number_format($item['unit_cost'], 0, ',', '.') }} |
+                                        {{ __('inventory.suggested_price') }}: Rp {{ number_format($item['selling_price'], 0, ',', '.') }}
                                     </p>
                                 </div>
                                 <span class="text-lg font-bold text-danger-600">{{ number_format($item['food_cost_percent'], 1) }}%</span>
@@ -163,14 +163,14 @@
                         @endforeach
                     </div>
                     @if($highCostItems->count() > 10)
-                        <p class="mt-4 text-sm text-muted text-center">{{ $highCostItems->count() - 10 }} more items with high food cost</p>
+                        <p class="mt-4 text-sm text-muted text-center">{{ $highCostItems->count() - 10 }} {{ __('inventory.items') }} with high food cost</p>
                     @endif
                 @else
                     <div class="flex items-center gap-3 p-4 bg-success-50 rounded-lg">
                         <x-icon name="check-circle" class="w-6 h-6 text-success-600" />
                         <div>
-                            <p class="font-medium text-success-700">All recipes within target!</p>
-                            <p class="text-sm text-success-600">No recipes exceed 35% food cost.</p>
+                            <p class="font-medium text-success-700">{{ __('inventory.all_categories') }} {{ __('inventory.recipes') }} within target!</p>
+                            <p class="text-sm text-success-600">{{ __('inventory.no_recipes_found') }} exceed 35% food cost.</p>
                         </div>
                     </div>
                 @endif
@@ -178,14 +178,14 @@
         </div>
 
         <!-- Recipe Analysis Table -->
-        <x-card title="Recipe Food Cost Analysis">
+        <x-card title="{{ __('inventory.recipe') }} Food Cost {{ __('inventory.cost_analysis') }}">
             @if($recipeAnalysis->count() > 0)
                 <x-table>
                     <x-slot name="head">
-                        <x-th>Recipe</x-th>
-                        <x-th>Category</x-th>
-                        <x-th align="right">Unit Cost</x-th>
-                        <x-th align="right">Selling Price</x-th>
+                        <x-th>{{ __('inventory.recipe') }}</x-th>
+                        <x-th>{{ __('inventory.category') }}</x-th>
+                        <x-th align="right">{{ __('inventory.unit_cost') }}</x-th>
+                        <x-th align="right">{{ __('inventory.suggested_price') }}</x-th>
                         <x-th align="right">Gross Profit</x-th>
                         <x-th align="right">Food Cost %</x-th>
                         <x-th align="right">Margin %</x-th>
@@ -221,8 +221,8 @@
                 </x-table>
             @else
                 <x-empty-state
-                    title="No recipes found"
-                    description="Create recipes and link them to products to see food cost analysis."
+                    title="{{ __('inventory.no_recipes_found') }}"
+                    description="{{ __('inventory.create_recipes_for_analysis') }}"
                     icon="beaker"
                 />
             @endif

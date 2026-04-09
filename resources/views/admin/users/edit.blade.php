@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="title">Edit User - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.edit_user') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Edit User')
+    @section('page-title', __('admin.edit_user'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('admin.users.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('app.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Edit User</h2>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.edit_user') }}</h2>
                 <p class="text-muted mt-1">{{ $user->name }}</p>
             </div>
         </div>
@@ -23,8 +23,8 @@
 
                 <x-input
                     name="name"
-                    label="Full Name"
-                    placeholder="Enter full name"
+                    label="{{ __('admin.full_name') }}"
+                    placeholder="{{ __('admin.enter_full_name') }}"
                     :value="$user->name"
                     required
                 />
@@ -33,8 +33,8 @@
                     <x-input
                         type="email"
                         name="email"
-                        label="Email Address"
-                        placeholder="Enter email"
+                        label="{{ __('admin.email') }}"
+                        placeholder="{{ __('admin.enter_email') }}"
                         :value="$user->email"
                         required
                     />
@@ -42,8 +42,8 @@
                     <x-input
                         type="tel"
                         name="phone"
-                        label="Phone Number"
-                        placeholder="Enter phone number"
+                        label="{{ __('admin.phone') }}"
+                        placeholder="{{ __('admin.enter_phone') }}"
                         :value="$user->phone"
                     />
                 </div>
@@ -51,7 +51,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-text mb-1.5">
-                            New Password
+                            {{ __('admin.new_password') }}
                         </label>
                         <input type="password"
                                name="password"
@@ -59,7 +59,7 @@
                                class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
                                       focus:ring-2 focus:ring-accent/20 focus:border-accent
                                       placeholder:text-muted transition-colors"
-                               placeholder="Leave blank to keep current">
+                               placeholder="{{ __('admin.leave_blank') }}">
                         @error('password')
                             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
                         @enderror
@@ -67,7 +67,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-text mb-1.5">
-                            Confirm Password
+                            {{ __('admin.confirm_password') }}
                         </label>
                         <input type="password"
                                name="password_confirmation"
@@ -75,14 +75,14 @@
                                class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
                                       focus:ring-2 focus:ring-accent/20 focus:border-accent
                                       placeholder:text-muted transition-colors"
-                               placeholder="Confirm new password">
+                               placeholder="{{ __('admin.confirm_new_password') }}">
                     </div>
                 </div>
 
                 <!-- Roles -->
                 <div>
                     <label class="block text-sm font-medium text-text mb-2">
-                        Roles <span class="text-danger">*</span>
+                        {{ __('admin.roles') }} <span class="text-danger">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
                         @foreach($roles as $role)
@@ -110,7 +110,7 @@
                 @if($outlets->count() > 0)
                     <div>
                         <label class="block text-sm font-medium text-text mb-2">
-                            Assigned Outlets
+                            {{ __('admin.assigned_outlets') }}
                         </label>
                         <div class="grid grid-cols-2 gap-2">
                             @foreach($outlets as $outlet)
@@ -127,23 +127,23 @@
                                 </label>
                             @endforeach
                         </div>
-                        <p class="mt-1.5 text-sm text-muted">First selected outlet will be the default.</p>
+                        <p class="mt-1.5 text-sm text-muted">{{ __('admin.first_outlet_default') }}</p>
                     </div>
                 @endif
 
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive users cannot log in"
+                    label="{{ __('app.active') }}"
+                    hint="{{ __('admin.inactive_cannot_login') }}"
                     :checked="$user->is_active"
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('admin.users.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('app.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Update User
+                        {{ __('admin.update_user') }}
                     </x-button>
                 </div>
             </form>

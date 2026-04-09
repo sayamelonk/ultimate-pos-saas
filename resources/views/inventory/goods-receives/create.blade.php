@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">New Goods Receive - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.create_gr') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'New GR')
+    @section('page-title', __('inventory.create_gr'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('inventory.goods-receives.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('inventory.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">New Goods Receive</h2>
-                <p class="text-muted mt-1">Receive inventory from purchase orders</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('inventory.add_gr_title') }}</h2>
+                <p class="text-muted mt-1">{{ __('inventory.create_new_gr') }}</p>
             </div>
         </div>
     </x-slot>
@@ -19,9 +19,9 @@
         @csrf
 
         <div class="max-w-4xl space-y-6">
-            <x-card title="Purchase Order">
-                <x-select name="purchase_order_id" label="Select Purchase Order" x-model="selectedPO" @change="loadPOItems()" required>
-                    <option value="">Select a Purchase Order</option>
+            <x-card :title="__('inventory.purchase_order')">
+                <x-select name="purchase_order_id" :label="__('inventory.select_po')" x-model="selectedPO" @change="loadPOItems()" required>
+                    <option value="">{{ __('inventory.select_po') }}</option>
                     @foreach($purchaseOrders as $po)
                         <option value="{{ $po->id }}" @selected($selectedPO?->id == $po->id)>
                             {{ $po->po_number }} - {{ $po->supplier->name }} ({{ $po->outlet->name }})
@@ -30,26 +30,26 @@
                 </x-select>
             </x-card>
 
-            <x-card title="Receive Details">
+            <x-card :title="__('inventory.receive_information')">
                 <div class="grid grid-cols-2 gap-4">
                     <x-input
                         type="date"
                         name="receive_date"
-                        label="Receive Date"
+                        :label="__('inventory.receive_date')"
                         :value="old('receive_date', date('Y-m-d'))"
                         required
                     />
                     <x-input
                         name="invoice_number"
-                        label="Supplier Invoice Number"
+                        :label="__('inventory.invoice_number')"
                         placeholder="e.g., INV-2024-001"
                     />
                 </div>
 
                 <x-textarea
                     name="notes"
-                    label="Notes"
-                    placeholder="Additional notes..."
+                    :label="__('inventory.notes')"
+                    :placeholder="__('inventory.optional_notes')"
                     rows="2"
                     class="mt-4"
                 />
@@ -58,22 +58,22 @@
             @if($selectedPO)
                 <x-card>
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-lg">Items to Receive</h3>
+                        <h3 class="font-semibold text-lg">{{ __('inventory.gr_items_title') }}</h3>
                         <div class="flex items-center gap-2 text-sm text-muted">
                             <span class="inline-flex items-center gap-1">
                                 <span class="w-2 h-2 rounded-full bg-primary"></span>
-                                Batch Tracked
+                                {{ __('inventory.batch_tracking') }}
                             </span>
                         </div>
                     </div>
 
                     <x-table>
                         <x-slot name="head">
-                            <x-th>Item</x-th>
-                            <x-th align="right">Ordered</x-th>
-                            <x-th align="right">Received</x-th>
-                            <x-th align="right">Qty to Receive</x-th>
-                            <x-th>Batch Info</x-th>
+                            <x-th>{{ __('inventory.item') }}</x-th>
+                            <x-th align="right">{{ __('inventory.qty_ordered') }}</x-th>
+                            <x-th align="right">{{ __('inventory.qty_received') }}</x-th>
+                            <x-th align="right">{{ __('inventory.receiving') }}</x-th>
+                            <x-th>{{ __('inventory.batch_number') }}</x-th>
                         </x-slot>
 
                         @foreach($selectedPO->items as $index => $item)
@@ -116,7 +116,7 @@
                                         <input
                                             type="text"
                                             name="items[{{ $index }}][batch_number]"
-                                            placeholder="{{ $trackBatches ? 'Batch No.' : 'Optional' }}"
+                                            :placeholder="$trackBatches ? __('inventory.batch_number') : __('inventory.optional_notes')"
                                             class="w-28 px-2 py-1 border border-border rounded text-sm focus:ring-1 focus:ring-primary focus:border-primary {{ $trackBatches ? 'border-primary/50' : '' }}"
                                             {{ $trackBatches ? 'required' : '' }}
                                         >
@@ -124,12 +124,12 @@
                                             type="date"
                                             name="items[{{ $index }}][expiry_date]"
                                             class="w-36 px-2 py-1 border border-border rounded text-sm focus:ring-1 focus:ring-primary focus:border-primary {{ $trackBatches ? 'border-primary/50' : '' }}"
-                                            title="Expiry Date"
+                                            :title="__('inventory.expiry_date')"
                                         >
                                     </div>
                                     @if($trackBatches && $item->inventoryItem->shelf_life_days)
                                         <p class="text-xs text-muted mt-1">
-                                            Shelf life: {{ $item->inventoryItem->shelf_life_days }} days
+                                            {{ __('inventory.shelf_life_days') }}: {{ $item->inventoryItem->shelf_life_days }} {{ __('app.days') }}
                                         </p>
                                     @endif
                                 </x-td>
@@ -140,15 +140,15 @@
                     <div class="mt-4 p-3 bg-info/10 border border-info/20 rounded-lg">
                         <p class="text-sm text-info-700">
                             <x-icon name="information-circle" class="w-4 h-4 inline mr-1" />
-                            Items with <span class="w-2 h-2 rounded-full bg-primary inline-block"></span> indicator require batch tracking. Batch number will be auto-generated if left empty.
+                            {{ __('inventory.batch_number_auto') }}
                         </p>
                     </div>
                 </x-card>
             @else
                 <x-card>
                     <x-empty-state
-                        title="Select a Purchase Order"
-                        description="Please select a purchase order above to see items available for receiving."
+                        :title="__('inventory.select_po')"
+                        :description="__('inventory.no_pending_po')"
                         icon="document-text"
                     />
                 </x-card>
@@ -156,10 +156,10 @@
 
             <div class="flex items-center justify-end gap-3">
                 <x-button href="{{ route('inventory.goods-receives.index') }}" variant="outline-secondary">
-                    Cancel
+                    {{ __('inventory.cancel') }}
                 </x-button>
                 <x-button type="submit" :disabled="!$selectedPO">
-                    Create Goods Receive
+                    {{ __('inventory.create_gr') }}
                 </x-button>
             </div>
         </div>

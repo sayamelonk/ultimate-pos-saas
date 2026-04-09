@@ -7,7 +7,7 @@ use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\PaymentMethod>
+ * @extends Factory<PaymentMethod>
  */
 class PaymentMethodFactory extends Factory
 {
@@ -27,11 +27,12 @@ class PaymentMethodFactory extends Factory
 
         $type = fake()->randomElement(array_keys($types));
         $config = $types[$type];
+        $uniqueSuffix = fake()->unique()->numberBetween(100, 9999);
 
         return [
             'tenant_id' => Tenant::factory(),
-            'code' => $config['code'],
-            'name' => $config['name'],
+            'code' => $config['code'].$uniqueSuffix,
+            'name' => $config['name'].' '.$uniqueSuffix,
             'type' => $type,
             'provider' => null,
             'icon' => null,
@@ -53,15 +54,36 @@ class PaymentMethodFactory extends Factory
 
     public function cash(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'code' => 'CASH',
-            'name' => 'Cash',
-            'type' => PaymentMethod::TYPE_CASH,
-            'charge_percentage' => 0,
-            'charge_fixed' => 0,
-            'requires_reference' => false,
-            'opens_cash_drawer' => true,
-        ]);
+        return $this->state(function (array $attributes) {
+            $uniqueSuffix = fake()->unique()->numberBetween(1000, 99999);
+
+            return [
+                'code' => 'CASH'.$uniqueSuffix,
+                'name' => 'Cash',
+                'type' => PaymentMethod::TYPE_CASH,
+                'charge_percentage' => 0,
+                'charge_fixed' => 0,
+                'requires_reference' => false,
+                'opens_cash_drawer' => true,
+            ];
+        });
+    }
+
+    public function card(): static
+    {
+        return $this->state(function (array $attributes) {
+            $uniqueSuffix = fake()->unique()->numberBetween(1000, 99999);
+
+            return [
+                'code' => 'CARD'.$uniqueSuffix,
+                'name' => 'Credit/Debit Card',
+                'type' => PaymentMethod::TYPE_CARD,
+                'charge_percentage' => 2.5,
+                'charge_fixed' => 0,
+                'requires_reference' => true,
+                'opens_cash_drawer' => false,
+            ];
+        });
     }
 
     public function qris(): static

@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">Transaction {{ $transaction->transaction_number }} - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('transactions.transaction') }} {{ $transaction->transaction_number }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Transaction Details')
+    @section('page-title', __('transactions.transaction_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -10,17 +10,17 @@
                     <x-icon name="arrow-left" class="w-4 h-4" />
                 </x-button>
                 <div>
-                    <h2 class="text-2xl font-bold text-text">Transaction Details</h2>
+                    <h2 class="text-2xl font-bold text-text">{{ __('transactions.transaction_details') }}</h2>
                     <p class="text-muted mt-1">{{ $transaction->transaction_number }}</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
                 <x-button href="{{ route('pos.receipt', $transaction) }}" target="_blank" variant="secondary" icon="printer">
-                    Print Receipt
+                    {{ __('transactions.print_receipt') }}
                 </x-button>
                 @if($transaction->canRefund())
                     <x-button href="{{ route('transactions.refund', $transaction) }}" variant="warning">
-                        Refund
+                        {{ __('transactions.refund') }}
                     </x-button>
                 @endif
                 @if($transaction->canVoid())
@@ -30,7 +30,7 @@
                         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-danger rounded-lg hover:bg-danger-600 transition-colors"
                     >
                         <x-icon name="x-circle" class="w-4 h-4" />
-                        Void
+                        {{ __('transactions.void') }}
                     </button>
                 @endif
             </div>
@@ -40,14 +40,14 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
             <!-- Transaction Items -->
-            <x-card title="Items">
+            <x-card :title="__('transactions.items')">
                 <x-table>
                     <x-slot name="head">
-                        <x-th>Item</x-th>
-                        <x-th align="center">Qty</x-th>
-                        <x-th align="right">Unit Price</x-th>
-                        <x-th align="right">Discount</x-th>
-                        <x-th align="right">Subtotal</x-th>
+                        <x-th>{{ __('transactions.item') }}</x-th>
+                        <x-th align="center">{{ __('transactions.qty') }}</x-th>
+                        <x-th align="right">{{ __('transactions.unit_price') }}</x-th>
+                        <x-th align="right">{{ __('transactions.discount') }}</x-th>
+                        <x-th align="right">{{ __('transactions.subtotal') }}</x-th>
                     </x-slot>
 
                     @foreach($transaction->items as $item)
@@ -80,13 +80,13 @@
             </x-card>
 
             <!-- Payment Information -->
-            <x-card title="Payments">
+            <x-card :title="__('transactions.payments')">
                 <x-table>
                     <x-slot name="head">
-                        <x-th>Method</x-th>
-                        <x-th>Reference</x-th>
-                        <x-th align="right">Amount</x-th>
-                        <x-th align="right">Charges</x-th>
+                        <x-th>{{ __('transactions.method') }}</x-th>
+                        <x-th>{{ __('transactions.reference') }}</x-th>
+                        <x-th align="right">{{ __('transactions.amount') }}</x-th>
+                        <x-th align="right">{{ __('transactions.charges') }}</x-th>
                     </x-slot>
 
                     @foreach($transaction->payments as $payment)
@@ -118,13 +118,13 @@
 
             <!-- Applied Discounts -->
             @if($transaction->discounts->count() > 0)
-                <x-card title="Applied Discounts">
+                <x-card :title="__('transactions.applied_discounts')">
                     <x-table>
                         <x-slot name="head">
-                            <x-th>Discount</x-th>
-                            <x-th>Type</x-th>
-                            <x-th>Item</x-th>
-                            <x-th align="right">Amount</x-th>
+                            <x-th>{{ __('transactions.discount') }}</x-th>
+                            <x-th>{{ __('transactions.type') }}</x-th>
+                            <x-th>{{ __('transactions.item') }}</x-th>
+                            <x-th align="right">{{ __('transactions.amount') }}</x-th>
                         </x-slot>
 
                         @foreach($transaction->discounts as $discount)
@@ -132,14 +132,14 @@
                                 <x-td class="font-medium">{{ $discount->discount_name }}</x-td>
                                 <x-td>
                                     <x-badge type="secondary">
-                                        {{ $discount->type === 'percentage' ? $discount->value . '%' : 'Fixed' }}
+                                        {{ $discount->type === 'percentage' ? $discount->value . '%' : __('transactions.fixed') }}
                                     </x-badge>
                                 </x-td>
                                 <x-td>
                                     @if($discount->transactionItem)
                                         {{ $discount->transactionItem->item_name }}
                                     @else
-                                        <span class="text-muted">Order Level</span>
+                                        <span class="text-muted">{{ __('transactions.order_level') }}</span>
                                     @endif
                                 </x-td>
                                 <x-td align="right" class="font-medium text-danger">
@@ -155,53 +155,63 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Transaction Summary -->
-            <x-card title="Summary">
+            <x-card :title="__('transactions.summary')">
                 <dl class="space-y-3">
                     <div class="flex justify-between">
-                        <span class="text-muted">Status</span>
+                        <span class="text-muted">{{ __('transactions.status') }}</span>
                         @php
                             $statusColors = [
                                 'completed' => 'success',
                                 'pending' => 'warning',
                                 'voided' => 'danger',
                             ];
+                            $statusLabels = [
+                                'completed' => __('transactions.completed'),
+                                'pending' => __('transactions.pending'),
+                                'voided' => __('transactions.voided'),
+                            ];
                         @endphp
                         <x-badge type="{{ $statusColors[$transaction->status] ?? 'secondary' }}" dot>
-                            {{ ucfirst($transaction->status) }}
+                            {{ $statusLabels[$transaction->status] ?? ucfirst($transaction->status) }}
                         </x-badge>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-muted">Type</span>
+                        <span class="text-muted">{{ __('transactions.type') }}</span>
                         @php
                             $typeColors = [
                                 'sale' => 'success',
                                 'refund' => 'warning',
                                 'void' => 'danger',
                             ];
+                            $typeLabels = [
+                                'sale' => __('transactions.sale'),
+                                'refund' => __('transactions.refund'),
+                                'void' => __('transactions.void'),
+                            ];
                         @endphp
                         <x-badge type="{{ $typeColors[$transaction->type] ?? 'secondary' }}">
-                            {{ ucfirst($transaction->type) }}
+                            {{ $typeLabels[$transaction->type] ?? ucfirst($transaction->type) }}
                         </x-badge>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-muted">Date</span>
+                        <span class="text-muted">{{ __('transactions.date') }}</span>
                         <span class="font-medium">{{ $transaction->created_at->format('d M Y') }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-muted">Time</span>
+                        <span class="text-muted">{{ __('transactions.time') }}</span>
                         <span class="font-medium">{{ $transaction->created_at->format('H:i:s') }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-muted">Outlet</span>
+                        <span class="text-muted">{{ __('transactions.outlet') }}</span>
                         <span class="font-medium">{{ $transaction->outlet->name }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-muted">Cashier</span>
+                        <span class="text-muted">{{ __('transactions.cashier') }}</span>
                         <span class="font-medium">{{ $transaction->user->name }}</span>
                     </div>
                     @if($transaction->posSession)
                         <div class="flex justify-between">
-                            <span class="text-muted">Session</span>
+                            <span class="text-muted">{{ __('transactions.session') }}</span>
                             <a href="{{ route('pos.sessions.report', $transaction->posSession) }}" class="text-primary hover:underline">
                                 {{ $transaction->posSession->session_number }}
                             </a>
@@ -212,7 +222,7 @@
 
             <!-- Customer Info -->
             @if($transaction->customer)
-                <x-card title="Customer">
+                <x-card :title="__('transactions.customer')">
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-lg">
                             {{ strtoupper(substr($transaction->customer->name, 0, 1)) }}
@@ -225,25 +235,25 @@
                     <dl class="space-y-2 text-sm">
                         @if($transaction->customer->phone)
                             <div class="flex justify-between">
-                                <span class="text-muted">Phone</span>
+                                <span class="text-muted">{{ __('transactions.phone') }}</span>
                                 <span>{{ $transaction->customer->phone }}</span>
                             </div>
                         @endif
                         @if($transaction->customer->email)
                             <div class="flex justify-between">
-                                <span class="text-muted">Email</span>
+                                <span class="text-muted">{{ __('transactions.email') }}</span>
                                 <span>{{ $transaction->customer->email }}</span>
                             </div>
                         @endif
                         @if($transaction->points_earned > 0)
                             <div class="flex justify-between">
-                                <span class="text-muted">Points Earned</span>
+                                <span class="text-muted">{{ __('transactions.points_earned') }}</span>
                                 <span class="text-success font-medium">+{{ number_format($transaction->points_earned) }}</span>
                             </div>
                         @endif
                         @if($transaction->points_redeemed > 0)
                             <div class="flex justify-between">
-                                <span class="text-muted">Points Redeemed</span>
+                                <span class="text-muted">{{ __('transactions.points_redeemed') }}</span>
                                 <span class="text-danger font-medium">-{{ number_format($transaction->points_redeemed) }}</span>
                             </div>
                         @endif
@@ -252,47 +262,47 @@
             @endif
 
             <!-- Totals -->
-            <x-card title="Totals">
+            <x-card :title="__('transactions.totals')">
                 <dl class="space-y-3">
                     <div class="flex justify-between">
-                        <span class="text-muted">Subtotal</span>
+                        <span class="text-muted">{{ __('transactions.subtotal') }}</span>
                         <span>Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
                     </div>
                     @if($transaction->discount_amount > 0)
                         <div class="flex justify-between text-danger">
-                            <span>Discount</span>
+                            <span>{{ __('transactions.discount') }}</span>
                             <span>-Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     @if($transaction->tax_amount > 0)
                         <div class="flex justify-between">
-                            <span class="text-muted">Tax ({{ $transaction->tax_percentage }}%)</span>
+                            <span class="text-muted">{{ __('transactions.tax') }} ({{ $transaction->tax_percentage }}%)</span>
                             <span>Rp {{ number_format($transaction->tax_amount, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     @if($transaction->service_charge_amount > 0)
                         <div class="flex justify-between">
-                            <span class="text-muted">Service ({{ $transaction->service_charge_percentage }}%)</span>
+                            <span class="text-muted">{{ __('transactions.service') }} ({{ $transaction->service_charge_percentage }}%)</span>
                             <span>Rp {{ number_format($transaction->service_charge_amount, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     @if($transaction->rounding != 0)
                         <div class="flex justify-between">
-                            <span class="text-muted">Rounding</span>
+                            <span class="text-muted">{{ __('transactions.rounding') }}</span>
                             <span>Rp {{ number_format($transaction->rounding, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     <div class="flex justify-between text-lg font-bold pt-2 border-t border-border">
-                        <span>Grand Total</span>
+                        <span>{{ __('transactions.grand_total') }}</span>
                         <span class="text-primary">Rp {{ number_format($transaction->grand_total, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-muted">Payment</span>
+                        <span class="text-muted">{{ __('transactions.payment_amount') }}</span>
                         <span>Rp {{ number_format($transaction->payment_amount, 0, ',', '.') }}</span>
                     </div>
                     @if($transaction->change_amount > 0)
                         <div class="flex justify-between text-success">
-                            <span>Change</span>
+                            <span>{{ __('transactions.change') }}</span>
                             <span class="font-medium">Rp {{ number_format($transaction->change_amount, 0, ',', '.') }}</span>
                         </div>
                     @endif
@@ -301,14 +311,14 @@
 
             <!-- Notes -->
             @if($transaction->notes)
-                <x-card title="Notes">
+                <x-card :title="__('transactions.notes')">
                     <p class="text-muted">{{ $transaction->notes }}</p>
                 </x-card>
             @endif
 
             <!-- Original Transaction (for refunds) -->
             @if($transaction->originalTransaction)
-                <x-card title="Original Transaction">
+                <x-card :title="__('transactions.original_transaction')">
                     <a href="{{ route('transactions.show', $transaction->originalTransaction) }}" class="text-primary hover:underline">
                         {{ $transaction->originalTransaction->transaction_number }}
                     </a>
@@ -317,7 +327,7 @@
 
             <!-- Refund Transactions -->
             @if($transaction->refundTransactions->count() > 0)
-                <x-card title="Refund History">
+                <x-card :title="__('transactions.refund_history')">
                     <div class="space-y-2">
                         @foreach($transaction->refundTransactions as $refund)
                             <a href="{{ route('transactions.show', $refund) }}" class="block p-3 border border-border rounded-lg hover:border-primary/50 transition-colors">
@@ -343,7 +353,7 @@
         <dialog id="voidModal" class="rounded-xl p-0 backdrop:bg-black/50 max-w-md w-full">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-text">Void Transaction</h3>
+                    <h3 class="text-lg font-bold text-text">{{ __('transactions.void_transaction') }}</h3>
                     <button type="button" onclick="document.getElementById('voidModal').close()" class="text-muted hover:text-text">
                         <x-icon name="x" class="w-5 h-5" />
                     </button>
@@ -352,20 +362,20 @@
                 <div class="p-4 bg-danger-50 border border-danger-200 rounded-lg mb-4">
                     <div class="flex items-center gap-2 text-danger-700">
                         <x-icon name="exclamation-triangle" class="w-5 h-5" />
-                        <span class="font-medium">This action cannot be undone</span>
+                        <span class="font-medium">{{ __('transactions.void_warning') }}</span>
                     </div>
                     <p class="text-sm text-danger-600 mt-1">
-                        Voiding this transaction will mark it as void and return stock to inventory.
+                        {{ __('transactions.void_description') }}
                     </p>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-text mb-2">Reason for Void</label>
+                    <label class="block text-sm font-medium text-text mb-2">{{ __('transactions.reason_for_void') }}</label>
                     <textarea
                         x-model="reason"
                         rows="3"
                         required
-                        placeholder="Please provide a reason for voiding this transaction..."
+                        placeholder="{{ __('transactions.void_reason_placeholder') }}"
                         class="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                     ></textarea>
                 </div>
@@ -376,7 +386,7 @@
                         onclick="document.getElementById('voidModal').close()"
                         class="flex-1 px-4 py-2.5 bg-secondary-100 text-secondary-700 font-medium rounded-lg hover:bg-secondary-200"
                     >
-                        Cancel
+                        {{ __('transactions.cancel') }}
                     </button>
                     <button
                         type="button"
@@ -384,7 +394,7 @@
                         :disabled="!reason.trim()"
                         class="flex-1 px-4 py-2.5 bg-danger text-white font-medium rounded-lg hover:bg-danger-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Continue
+                        {{ __('transactions.continue') }}
                     </button>
                 </div>
             </div>
@@ -399,7 +409,7 @@
     </div>
 
     <!-- PIN Authorization Modal -->
-    <x-pin-modal id="void-pin-modal" title="Authorization Required" />
+    <x-pin-modal id="void-pin-modal" :title="__('transactions.authorization_required')" />
 
     <script>
     function voidTransaction() {
@@ -431,8 +441,8 @@
                 window.dispatchEvent(new CustomEvent('open-pin-modal', {
                     detail: {
                         id: 'void-pin-modal',
-                        title: 'Void Authorization',
-                        subtitle: 'Enter supervisor PIN to void this transaction',
+                        title: '{{ __('transactions.void_authorization') }}',
+                        subtitle: '{{ __('transactions.void_pin_subtitle') }}',
                         action: 'void',
                         outletId: '{{ $transaction->outlet_id }}',
                         referenceType: 'transaction',

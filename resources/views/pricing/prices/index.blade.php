@@ -1,16 +1,16 @@
 <x-app-layout>
     <x-slot name="title">Prices - Ultimate POS</x-slot>
 
-    @section('page-title', 'Price Management')
+    @section('page-title', __('pricing.price_management'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Price Management</h2>
-                <p class="text-muted mt-1">Set selling prices per outlet</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('pricing.price_management') }}</h2>
+                <p class="text-muted mt-1">{{ __('pricing.set_selling_prices_per_outlet') }}</p>
             </div>
             <x-button href="{{ route('pricing.prices.bulk-edit', ['outlet_id' => $selectedOutletId]) }}" variant="secondary" icon="pencil">
-                Bulk Edit
+                {{ __('pricing.bulk_edit') }}
             </x-button>
         </div>
     </x-slot>
@@ -30,24 +30,24 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search items..."
+                        :placeholder="__('pricing.search_items')"
                         :value="request('search')"
                     />
                 </div>
-                <x-button type="submit" variant="secondary">Filter</x-button>
+                <x-button type="submit" variant="secondary">{{ __('pricing.filter') }}</x-button>
             </form>
         </div>
 
         @if($items->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Item</x-th>
-                    <x-th>SKU</x-th>
-                    <x-th>Category</x-th>
-                    <x-th align="right">Cost Price</x-th>
-                    <x-th align="right">Selling Price</x-th>
-                    <x-th align="right">Member Price</x-th>
-                    <x-th align="center">Margin</x-th>
+                    <x-th>{{ __('pricing.item') }}</x-th>
+                    <x-th>{{ __('pricing.sku') }}</x-th>
+                    <x-th>{{ __('pricing.category') }}</x-th>
+                    <x-th align="right">{{ __('pricing.cost_price') }}</x-th>
+                    <x-th align="right">{{ __('pricing.selling_price') }}</x-th>
+                    <x-th align="right">{{ __('pricing.member_price') }}</x-th>
+                    <x-th align="center">{{ __('pricing.margin') }}</x-th>
                 </x-slot>
 
                 @foreach($items as $item)
@@ -79,7 +79,7 @@
                             @if($sellingPrice)
                                 <span class="font-medium">Rp {{ number_format($sellingPrice, 0, ',', '.') }}</span>
                             @else
-                                <span class="text-warning">Not set</span>
+                                <span class="text-warning">{{ __('pricing.not_set') }}</span>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -107,8 +107,8 @@
             </div>
         @else
             <x-empty-state
-                title="No items found"
-                description="No inventory items available for pricing."
+                :title="__('pricing.no_items_found')"
+                :description="__('pricing.no_items_available_for_pricing')"
                 icon="cube"
             />
         @endif

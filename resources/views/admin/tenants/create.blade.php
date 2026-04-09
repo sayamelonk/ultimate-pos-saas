@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Create Tenant - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('admin.create_tenant') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Create Tenant')
+    @section('page-title', __('admin.create_tenant'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('admin.tenants.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('admin.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Create Tenant</h2>
-                <p class="text-muted mt-1">Add a new tenant to the system</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('admin.create_tenant') }}</h2>
+                <p class="text-muted mt-1">{{ __('admin.add_new_tenant') }}</p>
             </div>
         </div>
     </x-slot>
@@ -22,8 +22,8 @@
 
                 <x-input
                     name="name"
-                    label="Tenant Name"
-                    placeholder="Enter tenant/business name"
+                    label="{{ __('admin.tenant_name') }}"
+                    placeholder="{{ __('admin.tenant_name_placeholder') }}"
                     required
                 />
 
@@ -31,30 +31,30 @@
                     <x-input
                         type="email"
                         name="email"
-                        label="Email"
-                        placeholder="contact@business.com"
+                        label="{{ __('admin.email') }}"
+                        placeholder="{{ __('admin.email_placeholder') }}"
                     />
 
                     <x-input
                         name="phone"
-                        label="Phone"
-                        placeholder="08123456789"
+                        label="{{ __('admin.phone') }}"
+                        placeholder="{{ __('admin.phone_placeholder') }}"
                     />
                 </div>
 
                 <x-checkbox
                     name="is_active"
-                    label="Active"
-                    hint="Inactive tenants cannot access the system"
+                    label="{{ __('admin.active_label') }}"
+                    hint="{{ __('admin.inactive_hint') }}"
                     checked
                 />
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <x-button href="{{ route('admin.tenants.index') }}" variant="outline-secondary">
-                        Cancel
+                        {{ __('admin.cancel') }}
                     </x-button>
                     <x-button type="submit">
-                        Create Tenant
+                        {{ __('admin.create_tenant') }}
                     </x-button>
                 </div>
             </form>

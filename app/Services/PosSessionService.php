@@ -7,6 +7,7 @@ use App\Models\PaymentMethod;
 use App\Models\PosSession;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 
 class PosSessionService
 {
@@ -20,9 +21,11 @@ class PosSessionService
             throw new \RuntimeException('User already has an open session at this outlet');
         }
 
+        $outlet = Outlet::findOrFail($outletId);
         $sessionNumber = $this->generateSessionNumber($outletId, $userId);
 
         return PosSession::create([
+            'tenant_id' => $outlet->tenant_id,
             'outlet_id' => $outletId,
             'user_id' => $userId,
             'session_number' => $sessionNumber,
@@ -155,7 +158,7 @@ class PosSessionService
         return "{$outletCode}-{$date}-{$userInitial}-{$sequence}";
     }
 
-    public function getRecentSessions(string $outletId, int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    public function getRecentSessions(string $outletId, int $limit = 10): Collection
     {
         return PosSession::where('outlet_id', $outletId)
             ->with(['user', 'closedByUser'])
@@ -168,7 +171,7 @@ class PosSessionService
         string $outletId,
         \DateTimeInterface $startDate,
         \DateTimeInterface $endDate
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         return PosSession::where('outlet_id', $outletId)
             ->whereBetween('opened_at', [$startDate, $endDate])
             ->with(['user', 'closedByUser'])

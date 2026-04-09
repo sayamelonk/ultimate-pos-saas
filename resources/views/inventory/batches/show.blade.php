@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">Batch {{ $batch->batch_number }} - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.batch') }} {{ $batch->batch_number }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Batch Details')
+    @section('page-title', __('inventory.batch_details'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -17,19 +17,19 @@
             @if($batch->status === 'active')
                 <div class="flex items-center gap-2">
                     <form action="{{ route('inventory.batches.mark-expired', $batch) }}" method="POST"
-                          onsubmit="return confirm('Mark this batch as expired? This will set quantity to 0.')">
+                          onsubmit="return confirm('{{ __('inventory.confirm_delete_batch') }}')">
                         @csrf
                         @method('PATCH')
                         <x-button type="submit" variant="danger" icon="x-circle">
-                            Mark Expired
+                            {{ __('inventory.expired') }}
                         </x-button>
                     </form>
                     <form action="{{ route('inventory.batches.dispose', $batch) }}" method="POST"
-                          onsubmit="return confirm('Dispose this batch? This will set quantity to 0.')">
+                          onsubmit="return confirm('{{ __('inventory.confirm_delete_batch') }}')">
                         @csrf
                         @method('PATCH')
                         <x-button type="submit" variant="warning" icon="trash">
-                            Dispose
+                            {{ __('inventory.dispose_batch') }}
                         </x-button>
                     </form>
                 </div>
@@ -46,30 +46,30 @@
                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <x-icon name="cube" class="w-5 h-5 text-primary" />
                     </div>
-                    <h3 class="font-semibold text-lg">Batch Information</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.batch_details') }}</h3>
                 </div>
 
                 <dl class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
-                        <dt class="text-xs text-muted uppercase tracking-wide">Batch Number</dt>
+                        <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.batch_number') }}</dt>
                         <dd class="font-semibold text-lg mt-0.5">{{ $batch->batch_number }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-muted uppercase tracking-wide">Item</dt>
+                        <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.item') }}</dt>
                         <dd class="font-medium mt-0.5">{{ $batch->inventoryItem->name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-muted uppercase tracking-wide">Outlet</dt>
+                        <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.outlet') }}</dt>
                         <dd class="font-medium mt-0.5">{{ $batch->outlet->name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-muted uppercase tracking-wide">Production Date</dt>
+                        <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.production_date') }}</dt>
                         <dd class="font-medium mt-0.5">
                             {{ $batch->production_date ? $batch->production_date->format('d M Y') : '-' }}
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-muted uppercase tracking-wide">Expiry Date</dt>
+                        <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.expiry_date') }}</dt>
                         <dd class="mt-0.5">
                             @if($batch->expiry_date)
                                 <span class="font-medium {{ $batch->isExpired() ? 'text-danger' : '' }}">
@@ -78,20 +78,20 @@
                                 <x-badge type="{{ $batch->getExpiryBadgeType() }}" class="ml-1">
                                     @php $days = $batch->daysUntilExpiry(); @endphp
                                     @if($days < 0)
-                                        Expired
+                                        {{ __('inventory.expired') }}
                                     @elseif($days === 0)
-                                        Today
+                                        {{ __('inventory.date') }}
                                     @else
-                                        {{ $days }} days
+                                        {{ $days }} {{ __('inventory.days_until_expiry') }}
                                     @endif
                                 </x-badge>
                             @else
-                                <span class="text-muted">No expiry</span>
+                                <span class="text-muted">{{ __('inventory.none') }}</span>
                             @endif
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-muted uppercase tracking-wide">Status</dt>
+                        <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.status') }}</dt>
                         <dd class="mt-0.5">
                             @php
                                 $statusColors = [
@@ -108,17 +108,17 @@
                     </div>
                     @if($batch->supplier_batch_number)
                         <div>
-                            <dt class="text-xs text-muted uppercase tracking-wide">Supplier Batch</dt>
+                            <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.supplier_batch_number') }}</dt>
                             <dd class="font-medium mt-0.5">{{ $batch->supplier_batch_number }}</dd>
                         </div>
                     @endif
                     @if($batch->goodsReceiveItem)
                         <div>
-                            <dt class="text-xs text-muted uppercase tracking-wide">Goods Receive</dt>
+                            <dt class="text-xs text-muted uppercase tracking-wide">{{ __('inventory.goods_receive') }}</dt>
                             <dd class="mt-0.5">
                                 <a href="{{ route('inventory.goods-receives.show', $batch->goodsReceiveItem->goods_receive_id) }}"
                                    class="text-primary hover:underline">
-                                    {{ $batch->goodsReceiveItem->goodsReceive->gr_number ?? 'View' }}
+                                    {{ $batch->goodsReceiveItem->goodsReceive->gr_number ?? __('inventory.view_details') }}
                                 </a>
                             </dd>
                         </div>
@@ -127,7 +127,7 @@
 
                 @if($batch->notes)
                     <div class="mt-4 pt-4 border-t border-border">
-                        <dt class="text-xs text-muted uppercase tracking-wide mb-1">Notes</dt>
+                        <dt class="text-xs text-muted uppercase tracking-wide mb-1">{{ __('inventory.notes') }}</dt>
                         <dd class="text-sm bg-secondary-50 rounded-lg p-3">{{ $batch->notes }}</dd>
                     </div>
                 @endif
@@ -139,19 +139,19 @@
                     <div class="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
                         <x-icon name="arrows-right-left" class="w-5 h-5 text-info" />
                     </div>
-                    <h3 class="font-semibold text-lg">Movement History</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.stock_history') }}</h3>
                 </div>
 
                 @if($movements->count() > 0)
                     <div class="overflow-x-auto">
                         <x-table>
                             <x-slot name="head">
-                                <x-th>Date</x-th>
-                                <x-th>Type</x-th>
-                                <x-th align="right">Quantity</x-th>
-                                <x-th align="right">Balance</x-th>
-                                <x-th>Reference</x-th>
-                                <x-th>User</x-th>
+                                <x-th>{{ __('inventory.date') }}</x-th>
+                                <x-th>{{ __('inventory.movement_type') }}</x-th>
+                                <x-th align="right">{{ __('inventory.quantity') }}</x-th>
+                                <x-th align="right">{{ __('inventory.available') }}</x-th>
+                                <x-th>{{ __('inventory.reference') }}</x-th>
+                                <x-th>{{ __('admin.user') }}</x-th>
                             </x-slot>
 
                             @foreach($movements as $movement)
@@ -197,7 +197,7 @@
                         <x-pagination :paginator="$movements" />
                     </div>
                 @else
-                    <p class="text-muted text-center py-6">No movement history yet.</p>
+                    <p class="text-muted text-center py-6">{{ __('inventory.no_movements_yet') }}</p>
                 @endif
             </x-card>
         </div>
@@ -210,25 +210,25 @@
                     <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
                         <x-icon name="archive-box" class="w-5 h-5 text-success" />
                     </div>
-                    <h3 class="font-semibold text-lg">Quantity</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.quantity') }}</h3>
                 </div>
 
                 <dl class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <span class="text-muted">Initial</span>
+                        <span class="text-muted">{{ __('inventory.initial_quantity') }}</span>
                         <span class="font-medium">{{ number_format($batch->initial_quantity, 2) }} {{ $batch->inventoryItem->unit->abbreviation }}</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-muted">Current</span>
+                        <span class="text-muted">{{ __('inventory.current_stock') }}</span>
                         <span class="font-bold text-xl">{{ number_format($batch->current_quantity, 2) }} {{ $batch->inventoryItem->unit->abbreviation }}</span>
                     </div>
                     @if($batch->reserved_quantity > 0)
                         <div class="flex justify-between items-center">
-                            <span class="text-muted">Reserved</span>
+                            <span class="text-muted">{{ __('inventory.reserved') }}</span>
                             <span class="font-medium text-warning">{{ number_format($batch->reserved_quantity, 2) }} {{ $batch->inventoryItem->unit->abbreviation }}</span>
                         </div>
                         <div class="flex justify-between items-center pt-2 border-t border-border">
-                            <span class="font-medium">Available</span>
+                            <span class="font-medium">{{ __('inventory.available') }}</span>
                             <span class="font-bold text-success">{{ number_format($batch->getAvailableQuantity(), 2) }} {{ $batch->inventoryItem->unit->abbreviation }}</span>
                         </div>
                     @endif
@@ -241,16 +241,16 @@
                     <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
                         <x-icon name="currency-dollar" class="w-5 h-5 text-warning" />
                     </div>
-                    <h3 class="font-semibold text-lg">Cost</h3>
+                    <h3 class="font-semibold text-lg">{{ __('inventory.cost_per_unit') }}</h3>
                 </div>
 
                 <dl class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <span class="text-muted">Unit Cost</span>
+                        <span class="text-muted">{{ __('inventory.unit_cost') }}</span>
                         <span class="font-medium">Rp {{ number_format($batch->unit_cost, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between items-center pt-2 border-t border-border">
-                        <span class="font-medium">Total Value</span>
+                        <span class="font-medium">{{ __('inventory.total_value') }}</span>
                         <span class="font-bold text-lg">Rp {{ number_format($batch->current_quantity * $batch->unit_cost, 0, ',', '.') }}</span>
                     </div>
                 </dl>
@@ -263,7 +263,7 @@
                         <div class="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
                             <x-icon name="adjustments-horizontal" class="w-5 h-5 text-secondary-600" />
                         </div>
-                        <h3 class="font-semibold text-lg">Adjust Quantity</h3>
+                        <h3 class="font-semibold text-lg">{{ __('inventory.adjust_stock') }}</h3>
                     </div>
 
                     <form action="{{ route('inventory.batches.adjust', $batch) }}" method="POST">
@@ -272,31 +272,31 @@
 
                         <div class="space-y-3">
                             <div>
-                                <label class="block text-sm font-medium text-text mb-1">Type</label>
+                                <label class="block text-sm font-medium text-text mb-1">{{ __('inventory.adjustment_type') }}</label>
                                 <x-select name="adjustment_type" required>
-                                    <option value="add">Add (+)</option>
-                                    <option value="subtract">Subtract (-)</option>
+                                    <option value="add">{{ __('inventory.addition_increase') }}</option>
+                                    <option value="subtract">{{ __('inventory.subtraction_decrease') }}</option>
                                 </x-select>
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-text mb-1">Quantity</label>
+                                <label class="block text-sm font-medium text-text mb-1">{{ __('inventory.quantity') }}</label>
                                 <x-input type="number" name="quantity" step="0.01" min="0.01" required placeholder="0.00" />
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-text mb-1">Reason</label>
+                                <label class="block text-sm font-medium text-text mb-1">{{ __('inventory.reason') }}</label>
                                 <textarea
                                     name="reason"
                                     rows="2"
                                     required
-                                    placeholder="Reason for adjustment..."
+                                    :placeholder="__('inventory.reason_placeholder')"
                                     class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                                 ></textarea>
                             </div>
 
                             <x-button type="submit" class="w-full">
-                                Apply Adjustment
+                                {{ __('inventory.approve_adjustment') }}
                             </x-button>
                         </div>
                     </form>

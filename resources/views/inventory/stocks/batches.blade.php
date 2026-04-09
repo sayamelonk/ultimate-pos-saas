@@ -1,12 +1,12 @@
 <x-app-layout>
-    <x-slot name="title">Stock Batches - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('inventory.batches') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Stock Batches')
+    @section('page-title', __('inventory.batches'))
 
     <x-slot name="header">
         <div>
-            <h2 class="text-2xl font-bold text-text">Stock Batches</h2>
-            <p class="text-muted mt-1">Track inventory by batch/lot number</p>
+            <h2 class="text-2xl font-bold text-text">{{ __('inventory.batches') }}</h2>
+            <p class="text-muted mt-1">{{ __('inventory.manage_batches') }}</p>
         </div>
     </x-slot>
 
@@ -18,12 +18,12 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search batch or item..."
+                        :placeholder="__('inventory.search_batches')"
                         :value="request('search')"
                     />
                 </div>
                 <x-select name="outlet_id" class="w-48">
-                    <option value="">All Outlets</option>
+                    <option value="">{{ __('inventory.all_outlets') }}</option>
                     @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" @selected(request('outlet_id') == $outlet->id)>
                             {{ $outlet->name }}
@@ -31,16 +31,16 @@
                     @endforeach
                 </x-select>
                 <x-select name="expiry_status" class="w-40">
-                    <option value="">All Batches</option>
-                    <option value="expired" @selected(request('expiry_status') === 'expired')>Expired</option>
-                    <option value="expiring_soon" @selected(request('expiry_status') === 'expiring_soon')>Expiring Soon</option>
+                    <option value="">{{ __('inventory.all_expiry') }}</option>
+                    <option value="expired" @selected(request('expiry_status') === 'expired')>{{ __('inventory.expired') }}</option>
+                    <option value="expiring_soon" @selected(request('expiry_status') === 'expiring_soon')>{{ __('inventory.expiring_soon') }}</option>
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Filter
+                    {{ __('inventory.filter') }}
                 </x-button>
                 @if(request()->hasAny(['search', 'outlet_id', 'expiry_status']))
                     <x-button href="{{ route('inventory.stocks.batches') }}" variant="ghost">
-                        Clear
+                        {{ __('inventory.cancel') }}
                     </x-button>
                 @endif
             </form>
@@ -50,13 +50,13 @@
         @if($batches->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Batch Number</x-th>
-                    <x-th>Item</x-th>
-                    <x-th>Outlet</x-th>
-                    <x-th align="right">Original Qty</x-th>
-                    <x-th align="right">Remaining</x-th>
-                    <x-th>Expiry Date</x-th>
-                    <x-th align="right">Cost Price</x-th>
+                    <x-th>{{ __('inventory.batch_number') }}</x-th>
+                    <x-th>{{ __('inventory.item') }}</x-th>
+                    <x-th>{{ __('inventory.outlet') }}</x-th>
+                    <x-th align="right">{{ __('inventory.initial_quantity') }}</x-th>
+                    <x-th align="right">{{ __('inventory.remaining_quantity') }}</x-th>
+                    <x-th>{{ __('inventory.expiry_date') }}</x-th>
+                    <x-th align="right">{{ __('inventory.cost_price') }}</x-th>
                 </x-slot>
 
                 @foreach($batches as $batch)
@@ -76,7 +76,7 @@
                         <x-td>
                             @if($batch->expiry_date)
                                 @if($batch->expiry_date->isPast())
-                                    <x-badge type="danger">{{ $batch->expiry_date->format('M d, Y') }} - Expired</x-badge>
+                                    <x-badge type="danger">{{ $batch->expiry_date->format('M d, Y') }} - {{ __('inventory.expired') }}</x-badge>
                                 @elseif($batch->expiry_date->diffInDays(now()) <= 30)
                                     <x-badge type="warning">{{ $batch->expiry_date->format('M d, Y') }}</x-badge>
                                 @else
@@ -86,7 +86,7 @@
                                 -
                             @endif
                         </x-td>
-                        <x-td align="right">Rp {{ number_format($batch->cost_price, 0, ',', '.') }}</x-td>
+                        <x-td align="right">Rp {{ number_format($batch->unit_cost, 0, ',', '.') }}</x-td>
                     </tr>
                 @endforeach
             </x-table>
@@ -96,8 +96,8 @@
             </div>
         @else
             <x-empty-state
-                title="No batches found"
-                description="Batch records will appear here for items with batch tracking enabled."
+                :title="__('inventory.no_batches_found')"
+                :description="__('inventory.batches_description')"
                 icon="collection"
             />
         @endif

@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">POS Sessions - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('pos.pos_sessions') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'POS Sessions')
+    @section('page-title', __('pos.pos_sessions'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">POS Sessions</h2>
-                <p class="text-muted mt-1">Manage cashier shifts and sessions</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('pos.pos_sessions') }}</h2>
+                <p class="text-muted mt-1">{{ __('pos.manage_sessions') }}</p>
             </div>
             <x-button href="{{ route('pos.sessions.open') }}" icon="plus">
-                Open Session
+                {{ __('pos.open_session') }}
             </x-button>
         </div>
     </x-slot>
@@ -19,12 +19,12 @@
         @if($sessions->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Session / Outlet</x-th>
-                    <x-th>Cashier</x-th>
-                    <x-th>Period</x-th>
-                    <x-th align="right">Cash</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="center">Actions</x-th>
+                    <x-th>{{ __('pos.session_outlet') }}</x-th>
+                    <x-th>{{ __('pos.cashier') }}</x-th>
+                    <x-th>{{ __('pos.period') }}</x-th>
+                    <x-th align="right">{{ __('pos.cash') }}</x-th>
+                    <x-th align="center">{{ __('pos.status') }}</x-th>
+                    <x-th align="center">{{ __('pos.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($sessions as $session)
@@ -58,20 +58,20 @@
                         </x-td>
                         <x-td align="center">
                             @if($session->isOpen())
-                                <x-badge type="success" dot>Open</x-badge>
+                                <x-badge type="success" dot>{{ __('pos.open') }}</x-badge>
                             @else
-                                <x-badge type="secondary" dot>Closed</x-badge>
+                                <x-badge type="secondary" dot>{{ __('pos.closed') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="center">
                             <div class="flex items-center justify-center gap-1">
                                 @if($session->isOpen())
                                     <x-button href="{{ route('pos.sessions.close', $session) }}" size="sm" variant="warning">
-                                        Close
+                                        {{ __('pos.close') }}
                                     </x-button>
                                 @endif
                                 <x-button href="{{ route('pos.sessions.report', $session) }}" size="sm" variant="ghost">
-                                    Report
+                                    {{ __('pos.report') }}
                                 </x-button>
                             </div>
                         </x-td>
@@ -84,12 +84,12 @@
             </div>
         @else
             <x-empty-state
-                title="No sessions found"
-                description="Open a session to start selling."
+                title="{{ __('pos.no_sessions') }}"
+                description="{{ __('pos.no_sessions_desc') }}"
                 icon="receipt"
             >
                 <x-button href="{{ route('pos.sessions.open') }}" icon="plus">
-                    Open Session
+                    {{ __('pos.open_session') }}
                 </x-button>
             </x-empty-state>
         @endif

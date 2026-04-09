@@ -14,8 +14,10 @@
 
     $variants = [
         'primary' => 'bg-primary text-white hover:bg-primary-600 focus:ring-primary-500',
+        'primary-gradient' => 'text-white focus:ring-primary-500 hover:opacity-90',
         'secondary' => 'bg-secondary-100 text-secondary-700 hover:bg-secondary-200 focus:ring-secondary-500',
         'accent' => 'bg-accent text-white hover:bg-accent-600 focus:ring-accent-500',
+        'accent-gradient' => 'text-white focus:ring-accent-500 hover:opacity-90',
         'success' => 'bg-success text-white hover:bg-success-600 focus:ring-success-500',
         'warning' => 'bg-warning text-white hover:bg-warning-600 focus:ring-warning-500',
         'danger' => 'bg-danger text-white hover:bg-danger-600 focus:ring-danger-500',
@@ -23,6 +25,11 @@
         'outline-secondary' => 'border border-border text-secondary-700 hover:bg-secondary-50 focus:ring-secondary-500',
         'ghost' => 'text-secondary-600 hover:bg-secondary-100 focus:ring-secondary-500',
         'link' => 'text-primary hover:text-primary-600 hover:underline focus:ring-primary-500',
+    ];
+
+    $gradientStyles = [
+        'primary-gradient' => 'background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.4);',
+        'accent-gradient' => 'background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.4);',
     ];
 
     $sizes = [
@@ -47,6 +54,7 @@
 @if($href)
     <a href="{{ $href }}"
        {{ $attributes->merge(['class' => $classes]) }}
+       @if(isset($gradientStyles[$variant])) style="{{ $gradientStyles[$variant] }}" @endif
        @if($disabled) aria-disabled="true" @endif>
         @if($loading)
             <svg class="animate-spin {{ $iconSizes[$size] ?? 'w-5 h-5' }}" fill="none" viewBox="0 0 24 24">
@@ -66,6 +74,7 @@
 @else
     <button type="{{ $type }}"
             {{ $attributes->merge(['class' => $classes]) }}
+            @if(isset($gradientStyles[$variant])) style="{{ $gradientStyles[$variant] }}" @endif
             @if($disabled) disabled @endif
             @if($loading) disabled @endif>
         @if($loading)

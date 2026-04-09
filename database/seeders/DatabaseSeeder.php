@@ -52,6 +52,20 @@ class DatabaseSeeder extends Seeder
 
             // Phase 6 - Discounts
             DiscountSeeder::class,
+
+            // Phase 7 - Table Management
+            FloorSeeder::class,
+            TableSeeder::class,
+
+            // Phase 8 - Demo Users per Subscription Plan (for testing feature gating)
+            DemoUserSeeder::class,
+
+            // Phase 9 - KDS (Kitchen Display System)
+            KitchenSeeder::class,
+            KDSStaffSeeder::class,
+
+            // Phase 10 - Waiter App
+            WaiterStaffSeeder::class,
         ]);
     }
 }

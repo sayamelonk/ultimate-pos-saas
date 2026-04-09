@@ -70,12 +70,22 @@ class PosController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        // Get tax and service charge settings for the outlet
+        $taxSettings = [
+            'tax_enabled' => $defaultOutlet->isTaxEnabled(),
+            'tax_mode' => $defaultOutlet->getTaxMode(),
+            'tax_percentage' => $defaultOutlet->getEffectiveTaxPercentage(),
+            'service_charge_enabled' => $defaultOutlet->isServiceChargeEnabled(),
+            'service_charge_percentage' => $defaultOutlet->getEffectiveServiceChargePercentage(),
+        ];
+
         return view('pos.index', [
             'outlets' => $outlets,
             'currentOutlet' => $defaultOutlet,
             'session' => $session,
             'categories' => $categories,
             'paymentMethods' => $paymentMethods,
+            'taxSettings' => $taxSettings,
         ]);
     }
 
@@ -87,6 +97,11 @@ class PosController extends Controller
         $query = Product::where('tenant_id', $user->tenant_id)
             ->where('is_active', true)
             ->where('show_in_pos', true)
+            // Only show products assigned to this outlet
+            ->whereHas('productOutlets', function ($q) use ($outletId) {
+                $q->where('outlet_id', $outletId)
+                    ->where('is_available', true);
+            })
             ->with([
                 'category',
                 'variants' => fn ($q) => $q->where('is_active', true),
@@ -112,11 +127,7 @@ class PosController extends Controller
         $products = $query->orderBy('sort_order')->orderBy('name')->limit(50)->get();
 
         $productsData = $products->map(function ($product) {
-            // Check availability at outlet
             $productOutlet = $product->productOutlets->first();
-            if ($productOutlet && ! $productOutlet->is_available) {
-                return null; // Skip unavailable products
-            }
 
             // Get price (custom price for outlet or base price)
             $sellingPrice = $productOutlet?->custom_price ?? $product->base_price;

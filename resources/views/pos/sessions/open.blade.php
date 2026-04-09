@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="title">Open Session - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('pos.open_session') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Open Session')
+    @section('page-title', __('pos.open_session'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
@@ -9,20 +9,20 @@
                 <x-icon name="arrow-left" class="w-4 h-4" />
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Open Session</h2>
-                <p class="text-muted mt-1">Start a new cashier shift</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('pos.open_session') }}</h2>
+                <p class="text-muted mt-1">{{ __('pos.start_new_shift') }}</p>
             </div>
         </div>
     </x-slot>
 
     <div class="max-w-lg mx-auto">
-        <x-card title="Session Details">
+        <x-card title="{{ __('pos.session_details') }}">
             <form method="POST" action="{{ route('pos.sessions.store') }}">
                 @csrf
 
                 <div class="space-y-4">
-                    <x-select label="Outlet" name="outlet_id" required>
-                        <option value="">Select Outlet</option>
+                    <x-select label="{{ __('pos.outlet') }}" name="outlet_id" required>
+                        <option value="">{{ __('pos.select_outlet') }}</option>
                         @foreach($outlets as $outlet)
                             <option value="{{ $outlet->id }}" @selected(old('outlet_id') === $outlet->id)>
                                 {{ $outlet->name }}
@@ -41,7 +41,7 @@
                         }
                     }">
                         <label class="block text-sm font-medium text-text mb-1.5">
-                            Opening Cash (Rp) <span class="text-danger">*</span>
+                            {{ __('pos.opening_cash') }} (Rp) <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">Rp</span>
@@ -60,15 +60,15 @@
                     </div>
 
                     <x-textarea
-                        label="Notes"
+                        label="{{ __('pos.notes') }}"
                         name="opening_notes"
                         rows="3"
-                        placeholder="Optional notes for this session..."
+                        placeholder="{{ __('pos.notes_placeholder') }}"
                     >{{ old('opening_notes') }}</x-textarea>
 
                     <div class="pt-4">
                         <x-button type="submit" class="w-full">
-                            Open Session
+                            {{ __('pos.open_session') }}
                         </x-button>
                     </div>
                 </div>

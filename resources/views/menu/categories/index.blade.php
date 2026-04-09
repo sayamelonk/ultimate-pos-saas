@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Menu Categories - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('products.menu_categories') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Menu Categories')
+    @section('page-title', __('products.menu_categories'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Menu Categories</h2>
-                <p class="text-muted mt-1">Organize your menu items</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('products.menu_categories') }}</h2>
+                <p class="text-muted mt-1">{{ __('products.manage_categories') }}</p>
             </div>
             <x-button href="{{ route('menu.categories.create') }}" icon="plus">
-                Add Category
+                {{ __('products.add_category') }}
             </x-button>
         </div>
     </x-slot>
@@ -21,13 +21,13 @@
             <x-input
                 type="search"
                 name="search"
-                placeholder="Search categories..."
+                placeholder="{{ __('products.search_categories') }}"
                 :value="request('search')"
                 class="w-64"
             />
             <x-select name="parent_id" class="w-48">
-                <option value="">All Categories</option>
-                <option value="root" @selected(request('parent_id') === 'root')>Root Only</option>
+                <option value="">{{ __('products.all_categories') }}</option>
+                <option value="root" @selected(request('parent_id') === 'root')>{{ __('products.root_only') }}</option>
                 @foreach($parentCategories as $parent)
                     <option value="{{ $parent->id }}" @selected(request('parent_id') == $parent->id)>
                         {{ $parent->name }}
@@ -35,13 +35,13 @@
                 @endforeach
             </x-select>
             <x-select name="status" class="w-32">
-                <option value="">All Status</option>
-                <option value="active" @selected(request('status') === 'active')>Active</option>
-                <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                <option value="">{{ __('products.all_status') }}</option>
+                <option value="active" @selected(request('status') === 'active')>{{ __('products.active') }}</option>
+                <option value="inactive" @selected(request('status') === 'inactive')>{{ __('products.inactive') }}</option>
             </x-select>
-            <x-button type="submit" variant="secondary">Filter</x-button>
+            <x-button type="submit" variant="secondary">{{ __('products.filter') }}</x-button>
             @if(request()->hasAny(['search', 'parent_id', 'status']))
-                <x-button href="{{ route('menu.categories.index') }}" variant="ghost">Clear</x-button>
+                <x-button href="{{ route('menu.categories.index') }}" variant="ghost">{{ __('products.clear') }}</x-button>
             @endif
         </form>
 
@@ -49,13 +49,13 @@
         @if($categories->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Category</x-th>
-                    <x-th>Code</x-th>
-                    <x-th>Parent</x-th>
-                    <x-th align="right">Products</x-th>
-                    <x-th align="center">POS</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('products.category') }}</x-th>
+                    <x-th>{{ __('products.code') }}</x-th>
+                    <x-th>{{ __('products.parent') }}</x-th>
+                    <x-th align="right">{{ __('products.products') }}</x-th>
+                    <x-th align="center">{{ __('products.pos') }}</x-th>
+                    <x-th align="center">{{ __('products.status') }}</x-th>
+                    <x-th align="right">{{ __('products.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($categories as $category)
@@ -88,16 +88,16 @@
                         <x-td align="right">{{ $category->products_count }}</x-td>
                         <x-td align="center">
                             @if($category->show_in_pos)
-                                <x-badge type="success" size="sm">Yes</x-badge>
+                                <x-badge type="success" size="sm">{{ __('products.yes') }}</x-badge>
                             @else
-                                <x-badge type="secondary" size="sm">No</x-badge>
+                                <x-badge type="secondary" size="sm">{{ __('products.no') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="center">
                             @if($category->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('products.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('products.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -111,25 +111,25 @@
 
                                     <x-dropdown-item href="{{ route('menu.categories.show', $category) }}">
                                         <x-icon name="eye" class="w-4 h-4" />
-                                        View Details
+                                        {{ __('products.view_details') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item href="{{ route('menu.categories.edit', $category) }}">
                                         <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                        {{ __('products.edit') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item
                                         type="button"
                                         danger
                                         @click="$dispatch('confirm', {
-                                            title: 'Delete Category',
-                                            message: 'Are you sure you want to delete {{ $category->name }}? This action cannot be undone.',
-                                            confirmText: 'Delete',
+                                            title: '{{ __('products.delete_category') }}',
+                                            message: '{{ __('products.confirm_delete', ['name' => $category->name]) }}',
+                                            confirmText: '{{ __('products.delete') }}',
                                             variant: 'danger',
                                             onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
                                         })"
                                     >
                                         <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
+                                        {{ __('products.delete') }}
                                     </x-dropdown-item>
                                 </x-dropdown>
                                 <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('menu.categories.destroy', $category) }}" method="POST" class="hidden">
@@ -147,12 +147,12 @@
             </div>
         @else
             <x-empty-state
-                title="No categories found"
-                description="Get started by creating your first menu category."
+                title="{{ __('products.no_categories') }}"
+                description="{{ __('products.no_categories_desc') }}"
                 icon="squares-2x2"
             >
                 <x-button href="{{ route('menu.categories.create') }}" icon="plus">
-                    Add Category
+                    {{ __('products.add_category') }}
                 </x-button>
             </x-empty-state>
         @endif

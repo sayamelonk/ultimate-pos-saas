@@ -39,6 +39,9 @@ return [
     'send' => 'Send',
     'receive' => 'Receive',
     'complete' => 'Complete',
+    'my_profile' => 'My Profile',
+    'logout' => 'Logout',
+    'no_outlet' => 'No Outlet',
 
     // Common labels
     'name' => 'Name',
@@ -157,4 +160,20 @@ return [
     'language_changed' => 'Language changed successfully.',
     'invalid_language' => 'Invalid language selected.',
     'select_language' => 'Select Language',
+
+    // Additional labels
+    'total_records' => 'Total Records',
+    'total_value_lost' => 'Total Value Lost',
+    'total_qty_wasted' => 'Total Qty Wasted',
+    'top_reason' => 'Top Reason',
+    'value_impact' => 'Value Impact',
+    'audit_information' => 'Audit Information',
+    'last_updated' => 'Last Updated',
+    'records' => 'records',
+    'waste_by_reason' => 'Waste by Reason',
+    'avg_daily_loss' => 'Avg Daily Loss',
+    'items_affected' => 'Items Affected',
+    'daily_waste_trend' => 'Daily Waste Trend',
+    'top_wasted_items' => 'Top Wasted Items',
+    'optional' => 'Optional',
 ];

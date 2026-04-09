@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Add Variant Group - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('products.add_variant_title') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Add Variant Group')
+    @section('page-title', __('products.add_variant_title'))
 
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <x-button href="{{ route('menu.variant-groups.index') }}" variant="ghost" icon="arrow-left" size="sm">
-                Back
+                {{ __('products.back') }}
             </x-button>
             <div>
-                <h2 class="text-2xl font-bold text-text">Add Variant Group</h2>
-                <p class="text-muted mt-1">Create a new variant group with options</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('products.add_variant_title') }}</h2>
+                <p class="text-muted mt-1">{{ __('products.add_variant_options') }}</p>
             </div>
         </div>
     </x-slot>
@@ -21,37 +21,37 @@
         <div class="grid grid-cols-3 gap-6">
             <div class="col-span-2 space-y-6">
                 <!-- Basic Information -->
-                <x-card title="Group Information">
+                <x-card title="{{ __('products.group_information') }}">
                     <div class="space-y-4">
-                        <x-form-group label="Group Name" name="name" required>
+                        <x-form-group label="{{ __('products.group_name') }}" name="name" required>
                             <x-input
                                 name="name"
                                 :value="old('name')"
-                                placeholder="e.g., Size, Ice Level, Sugar Level"
+                                placeholder="{{ __('products.variant_name_placeholder') }}"
                                 required
                             />
                         </x-form-group>
 
-                        <x-form-group label="Description" name="description">
+                        <x-form-group label="{{ __('products.description') }}" name="description">
                             <x-textarea
                                 name="description"
                                 :value="old('description')"
-                                placeholder="Optional description..."
+                                placeholder="{{ __('products.description_placeholder') }}"
                                 rows="2"
                             />
                         </x-form-group>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <x-form-group label="Display Type" name="display_type">
+                            <x-form-group label="{{ __('products.display_type') }}" name="display_type">
                                 <x-select name="display_type" x-model="displayType">
-                                    <option value="button">Button</option>
-                                    <option value="dropdown">Dropdown</option>
-                                    <option value="color">Color Swatch</option>
-                                    <option value="image">Image</option>
+                                    <option value="button">{{ __('products.display_button') }}</option>
+                                    <option value="dropdown">{{ __('products.display_dropdown') }}</option>
+                                    <option value="color">{{ __('products.display_color') }}</option>
+                                    <option value="image">{{ __('products.display_image') }}</option>
                                 </x-select>
                             </x-form-group>
 
-                            <x-form-group label="Sort Order" name="sort_order">
+                            <x-form-group label="{{ __('products.sort_order') }}" name="sort_order">
                                 <x-input
                                     type="number"
                                     name="sort_order"
@@ -71,33 +71,33 @@
                                     {{ old('is_active', true) ? 'checked' : '' }}
                                     class="rounded border-border text-accent focus:ring-accent"
                                 >
-                                <span class="text-sm font-medium text-text">Active</span>
+                                <span class="text-sm font-medium text-text">{{ __('products.active') }}</span>
                             </label>
                         </x-form-group>
                     </div>
                 </x-card>
 
                 <!-- Options -->
-                <x-card title="Variant Options">
-                    <p class="text-muted mb-4">Add options for this variant group (e.g., Small, Medium, Large for Size)</p>
+                <x-card title="{{ __('products.variant_options') }}">
+                    <p class="text-muted mb-4">{{ __('products.add_variant_options') }}</p>
 
                     <div class="space-y-3" x-ref="optionsContainer">
                         <template x-for="(option, index) in options" :key="index">
                             <div class="flex items-start gap-3 p-4 bg-secondary-50 rounded-lg">
                                 <div class="flex-1 grid grid-cols-3 gap-3">
                                     <div>
-                                        <label class="block text-xs text-muted mb-1">Option Name *</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.option_name_required') }}</label>
                                         <input
                                             type="text"
                                             :name="`options[${index}][name]`"
                                             x-model="option.name"
-                                            placeholder="e.g., Small"
+                                            placeholder="{{ __('products.option_placeholder') }}"
                                             class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                                             required
                                         >
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-muted mb-1">Price Adjustment</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.price_adjustment') }}</label>
                                         <div class="relative">
                                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">Rp</span>
                                             <input
@@ -111,7 +111,7 @@
                                         </div>
                                     </div>
                                     <div x-show="displayType === 'color'">
-                                        <label class="block text-xs text-muted mb-1">Color</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.color') }}</label>
                                         <input
                                             type="color"
                                             :name="`options[${index}][color_code]`"
@@ -120,7 +120,7 @@
                                         >
                                     </div>
                                     <div x-show="displayType !== 'color'">
-                                        <label class="block text-xs text-muted mb-1">Sort Order</label>
+                                        <label class="block text-xs text-muted mb-1">{{ __('products.sort_order') }}</label>
                                         <input
                                             type="number"
                                             :name="`options[${index}][sort_order]`"
@@ -144,7 +144,7 @@
                     </div>
 
                     <x-button type="button" variant="outline-secondary" size="sm" icon="plus" @click="addOption()" class="mt-4">
-                        Add Option
+                        {{ __('products.add_option') }}
                     </x-button>
                 </x-card>
             </div>
@@ -152,15 +152,15 @@
             <!-- Sidebar -->
             <div class="space-y-6">
                 <!-- Preview -->
-                <x-card title="Preview">
+                <x-card title="{{ __('products.preview') }}">
                     <div class="space-y-3">
-                        <p class="text-sm text-muted">How options will appear:</p>
+                        <p class="text-sm text-muted">{{ __('products.how_options_appear') }}</p>
 
                         <!-- Button Preview -->
                         <div x-show="displayType === 'button'" class="flex flex-wrap gap-2">
                             <template x-for="(option, index) in options" :key="index">
                                 <button type="button" class="px-4 py-2 border-2 border-border rounded-lg hover:border-accent transition-colors" :class="index === 0 ? 'border-accent bg-accent/5' : ''">
-                                    <span x-text="option.name || 'Option ' + (index + 1)"></span>
+                                    <span x-text="option.name || '{{ __('products.option') }} ' + (index + 1)"></span>
                                     <span x-show="option.price_adjustment && option.price_adjustment != 0" class="text-xs text-muted ml-1">
                                         (<span x-text="option.price_adjustment > 0 ? '+' : ''"></span>Rp <span x-text="Number(option.price_adjustment || 0).toLocaleString('id-ID')"></span>)
                                     </span>
@@ -172,7 +172,7 @@
                         <div x-show="displayType === 'dropdown'">
                             <select class="w-full px-3 py-2 border border-border rounded-lg">
                                 <template x-for="(option, index) in options" :key="index">
-                                    <option x-text="(option.name || 'Option ' + (index + 1)) + (option.price_adjustment && option.price_adjustment != 0 ? ' (+Rp ' + Number(option.price_adjustment).toLocaleString('id-ID') + ')' : '')"></option>
+                                    <option x-text="(option.name || '{{ __('products.option') }} ' + (index + 1)) + (option.price_adjustment && option.price_adjustment != 0 ? ' (+Rp ' + Number(option.price_adjustment).toLocaleString('id-ID') + ')' : '')"></option>
                                 </template>
                             </select>
                         </div>
@@ -196,22 +196,22 @@
                 </x-card>
 
                 <!-- Help -->
-                <x-card title="Tips">
+                <x-card title="{{ __('products.tips') }}">
                     <div class="space-y-3 text-sm text-muted">
-                        <p><strong>Size variants:</strong> Small, Medium, Large with price adjustments</p>
-                        <p><strong>Ice Level:</strong> No Ice, Less Ice, Normal Ice, Extra Ice</p>
-                        <p><strong>Sugar Level:</strong> 0%, 25%, 50%, 75%, 100%</p>
-                        <p><strong>Temperature:</strong> Hot, Iced</p>
+                        <p><strong>{{ __('products.size_variants_tip') }}</strong></p>
+                        <p><strong>{{ __('products.ice_level_tip') }}</strong></p>
+                        <p><strong>{{ __('products.sugar_level_tip') }}</strong></p>
+                        <p><strong>{{ __('products.temperature_tip') }}</strong></p>
                     </div>
                 </x-card>
 
                 <!-- Actions -->
                 <div class="flex flex-col gap-3">
                     <x-button type="submit" icon="check" class="w-full">
-                        Create Variant Group
+                        {{ __('products.create_variant_group') }}
                     </x-button>
                     <x-button href="{{ route('menu.variant-groups.index') }}" variant="ghost" class="w-full">
-                        Cancel
+                        {{ __('products.cancel') }}
                     </x-button>
                 </div>
             </div>

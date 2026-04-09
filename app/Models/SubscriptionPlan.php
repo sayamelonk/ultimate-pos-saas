@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubscriptionPlan extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',
@@ -15,6 +18,7 @@ class SubscriptionPlan extends Model
         'price_yearly',
         'max_outlets',
         'max_users',
+        'max_products',
         'features',
         'is_active',
         'sort_order',
@@ -27,6 +31,7 @@ class SubscriptionPlan extends Model
             'price_yearly' => 'decimal:2',
             'max_outlets' => 'integer',
             'max_users' => 'integer',
+            'max_products' => 'integer',
             'features' => 'array',
             'is_active' => 'boolean',
             'sort_order' => 'integer',

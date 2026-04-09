@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Transaction extends Model
 {
@@ -24,12 +25,23 @@ class Transaction extends Model
 
     public const STATUS_VOIDED = 'voided';
 
+    public const ORDER_TYPE_DINE_IN = 'dine_in';
+
+    public const ORDER_TYPE_TAKEAWAY = 'takeaway';
+
+    public const ORDER_TYPE_DELIVERY = 'delivery';
+
     protected $fillable = [
         'tenant_id',
         'outlet_id',
         'pos_session_id',
+        'table_id',
+        'table_session_id',
+        'order_type',
         'customer_id',
+        'customer_name',
         'user_id',
+        'waiter_id',
         'transaction_number',
         'type',
         'original_transaction_id',
@@ -42,6 +54,7 @@ class Transaction extends Model
         'payment_amount',
         'change_amount',
         'tax_percentage',
+        'tax_mode',
         'service_charge_percentage',
         'points_earned',
         'points_redeemed',
@@ -84,6 +97,16 @@ class Transaction extends Model
         return $this->belongsTo(PosSession::class);
     }
 
+    public function table(): BelongsTo
+    {
+        return $this->belongsTo(Table::class);
+    }
+
+    public function tableSession(): BelongsTo
+    {
+        return $this->belongsTo(TableSession::class);
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
@@ -118,6 +141,11 @@ class Transaction extends Model
     public function discounts(): HasMany
     {
         return $this->hasMany(TransactionDiscount::class);
+    }
+
+    public function kitchenOrder(): HasOne
+    {
+        return $this->hasOne(KitchenOrder::class);
     }
 
     public function isCompleted(): bool
@@ -190,5 +218,29 @@ class Transaction extends Model
             self::STATUS_COMPLETED => 'Completed',
             self::STATUS_VOIDED => 'Voided',
         ];
+    }
+
+    public static function getOrderTypes(): array
+    {
+        return [
+            self::ORDER_TYPE_DINE_IN => 'Dine In',
+            self::ORDER_TYPE_TAKEAWAY => 'Takeaway',
+            self::ORDER_TYPE_DELIVERY => 'Delivery',
+        ];
+    }
+
+    public function isDineIn(): bool
+    {
+        return $this->order_type === self::ORDER_TYPE_DINE_IN;
+    }
+
+    public function isTakeaway(): bool
+    {
+        return $this->order_type === self::ORDER_TYPE_TAKEAWAY;
+    }
+
+    public function isDelivery(): bool
+    {
+        return $this->order_type === self::ORDER_TYPE_DELIVERY;
     }
 }

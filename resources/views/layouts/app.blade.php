@@ -28,6 +28,28 @@
 
             <!-- Page Content -->
             <main class="flex-1 p-6">
+                {{-- Frozen Mode Alert (global) --}}
+                @auth
+                    @if(!auth()->user()->isSuperAdmin() && auth()->user()->tenant?->isFrozen())
+                        <div class="mb-6 bg-danger-600 text-white rounded-xl p-4 shadow-lg">
+                            <div class="flex items-center gap-4">
+                                <div class="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold">Akun dalam mode Frozen</p>
+                                    <p class="text-sm text-white/80">Anda hanya bisa melihat data. Pilih paket untuk melanjutkan.</p>
+                                </div>
+                                <a href="{{ route('subscription.plans') }}" class="px-4 py-2 bg-white text-danger-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors">
+                                    Pilih Paket
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                @endauth
+
                 <!-- Page Header -->
                 @if(isset($header))
                     <div class="mb-6">

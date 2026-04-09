@@ -85,9 +85,16 @@ class UserPinController extends Controller
     /**
      * Set own PIN (for current user)
      */
-    public function editOwn(): View
+    public function editOwn(): View|RedirectResponse
     {
         $user = auth()->user();
+
+        // Super Admin doesn't need PIN
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('admin.dashboard')
+                ->with('info', __('admin.super_admin_no_pin'));
+        }
+
         $settings = AuthorizationSetting::getForTenant($user->tenant_id);
         $hasPin = $user->hasPin();
 
@@ -100,6 +107,13 @@ class UserPinController extends Controller
     public function updateOwn(Request $request): RedirectResponse
     {
         $user = auth()->user();
+
+        // Super Admin doesn't need PIN
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('admin.dashboard')
+                ->with('info', __('admin.super_admin_no_pin'));
+        }
+
         $settings = AuthorizationSetting::getForTenant($user->tenant_id);
 
         $rules = [

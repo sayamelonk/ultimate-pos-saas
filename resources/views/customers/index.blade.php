@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot name="title">Customers - Ultimate POS</x-slot>
+    <x-slot name="title">{{ __('customers.customers') }} - Ultimate POS</x-slot>
 
-    @section('page-title', 'Customers')
+    @section('page-title', __('customers.customers'))
 
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-text">Customers</h2>
-                <p class="text-muted mt-1">Manage your customer database and memberships</p>
+                <h2 class="text-2xl font-bold text-text">{{ __('customers.customers') }}</h2>
+                <p class="text-muted mt-1">{{ __('customers.manage_customers_desc') }}</p>
             </div>
             <x-button href="{{ route('customers.create') }}" icon="plus">
-                Add Customer
+                {{ __('customers.add_customer') }}
             </x-button>
         </div>
     </x-slot>
@@ -23,12 +23,12 @@
                     <x-input
                         type="search"
                         name="search"
-                        placeholder="Search by name, code, phone, email..."
+                        placeholder="{{ __('customers.search_placeholder') }}"
                         :value="request('search')"
                     />
                 </div>
                 <x-select name="membership_level" class="w-40">
-                    <option value="">All Levels</option>
+                    <option value="">{{ __('customers.all_levels') }}</option>
                     @foreach($membershipLevels as $value => $label)
                         <option value="{{ $value }}" @selected(request('membership_level') === $value)>
                             {{ $label }}
@@ -36,16 +36,16 @@
                     @endforeach
                 </x-select>
                 <x-select name="status" class="w-36">
-                    <option value="">All Status</option>
-                    <option value="active" @selected(request('status') === 'active')>Active</option>
-                    <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                    <option value="">{{ __('customers.all_status') }}</option>
+                    <option value="active" @selected(request('status') === 'active')>{{ __('customers.active') }}</option>
+                    <option value="inactive" @selected(request('status') === 'inactive')>{{ __('customers.inactive') }}</option>
                 </x-select>
                 <x-button type="submit" variant="secondary">
-                    Filter
+                    {{ __('customers.filter') }}
                 </x-button>
                 @if(request()->hasAny(['search', 'membership_level', 'status']))
                     <x-button href="{{ route('customers.index') }}" variant="ghost">
-                        Clear
+                        {{ __('customers.clear') }}
                     </x-button>
                 @endif
             </form>
@@ -55,14 +55,14 @@
         @if($customers->count() > 0)
             <x-table>
                 <x-slot name="head">
-                    <x-th>Customer</x-th>
-                    <x-th>Code</x-th>
-                    <x-th>Contact</x-th>
-                    <x-th align="center">Membership</x-th>
-                    <x-th align="right">Points</x-th>
-                    <x-th align="right">Total Spent</x-th>
-                    <x-th align="center">Status</x-th>
-                    <x-th align="right">Actions</x-th>
+                    <x-th>{{ __('customers.customer') }}</x-th>
+                    <x-th>{{ __('customers.code') }}</x-th>
+                    <x-th>{{ __('customers.contact') }}</x-th>
+                    <x-th align="center">{{ __('customers.membership') }}</x-th>
+                    <x-th align="right">{{ __('customers.points') }}</x-th>
+                    <x-th align="right">{{ __('customers.total_spent') }}</x-th>
+                    <x-th align="center">{{ __('customers.status') }}</x-th>
+                    <x-th align="right">{{ __('customers.actions') }}</x-th>
                 </x-slot>
 
                 @foreach($customers as $customer)
@@ -112,9 +112,9 @@
                         </x-td>
                         <x-td align="center">
                             @if($customer->is_active)
-                                <x-badge type="success" dot>Active</x-badge>
+                                <x-badge type="success" dot>{{ __('customers.active') }}</x-badge>
                             @else
-                                <x-badge type="danger" dot>Inactive</x-badge>
+                                <x-badge type="danger" dot>{{ __('customers.inactive') }}</x-badge>
                             @endif
                         </x-td>
                         <x-td align="right">
@@ -128,25 +128,25 @@
 
                                     <x-dropdown-item href="{{ route('customers.show', $customer) }}">
                                         <x-icon name="eye" class="w-4 h-4" />
-                                        View Details
+                                        {{ __('customers.view_details') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item href="{{ route('customers.edit', $customer) }}">
                                         <x-icon name="pencil" class="w-4 h-4" />
-                                        Edit
+                                        {{ __('customers.edit') }}
                                     </x-dropdown-item>
                                     <x-dropdown-item
                                         type="button"
                                         danger
                                         @click="$dispatch('confirm', {
-                                            title: 'Delete Customer',
-                                            message: 'Are you sure you want to delete {{ $customer->name }}? This action cannot be undone.',
-                                            confirmText: 'Delete',
+                                            title: '{{ __('customers.delete_customer') }}',
+                                            message: '{{ __('customers.confirm_delete', ['name' => $customer->name]) }}',
+                                            confirmText: '{{ __('customers.delete') }}',
                                             variant: 'danger',
                                             onConfirm: () => $refs.deleteForm{{ $loop->index }}.submit()
                                         })"
                                     >
                                         <x-icon name="trash" class="w-4 h-4" />
-                                        Delete
+                                        {{ __('customers.delete') }}
                                     </x-dropdown-item>
                                 </x-dropdown>
                                 <form x-ref="deleteForm{{ $loop->index }}" action="{{ route('customers.destroy', $customer) }}" method="POST" class="hidden">
@@ -164,12 +164,12 @@
             </div>
         @else
             <x-empty-state
-                title="No customers found"
-                description="Get started by adding your first customer."
+                title="{{ __('customers.no_customers') }}"
+                description="{{ __('customers.no_customers_desc') }}"
                 icon="users"
             >
                 <x-button href="{{ route('customers.create') }}" icon="plus">
-                    Add Customer
+                    {{ __('customers.add_customer') }}
                 </x-button>
             </x-empty-state>
         @endif
