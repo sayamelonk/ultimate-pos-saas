@@ -64,7 +64,7 @@ class RegisterController extends Controller
                 'is_active' => true,
             ]);
 
-            // Create user
+            // Create user (auto-verified for now - email verification disabled temporarily)
             $user = User::create([
                 'tenant_id' => $tenant->id,
                 'name' => $validated['name'],
@@ -72,6 +72,7 @@ class RegisterController extends Controller
                 'password' => Hash::make($validated['password']),
                 'phone' => $validated['phone'] ?? null,
                 'is_active' => true,
+                'email_verified_at' => now(),
             ]);
 
             // Assign tenant-owner role
@@ -96,7 +97,7 @@ class RegisterController extends Controller
 
         Auth::login($user);
 
-        // Redirect to email verification, then onboarding
-        return redirect()->route('verification.notice');
+        // Redirect directly to onboarding (email verification disabled temporarily)
+        return redirect()->route('onboarding.index');
     }
 }

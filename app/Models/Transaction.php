@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Transaction extends Model
 {
@@ -38,7 +39,9 @@ class Transaction extends Model
         'table_session_id',
         'order_type',
         'customer_id',
+        'customer_name',
         'user_id',
+        'waiter_id',
         'transaction_number',
         'type',
         'original_transaction_id',
@@ -138,6 +141,11 @@ class Transaction extends Model
     public function discounts(): HasMany
     {
         return $this->hasMany(TransactionDiscount::class);
+    }
+
+    public function kitchenOrder(): HasOne
+    {
+        return $this->hasOne(KitchenOrder::class);
     }
 
     public function isCompleted(): bool

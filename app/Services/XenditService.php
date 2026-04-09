@@ -249,4 +249,95 @@ class XenditService
 
         return hash_equals($webhookToken, $callbackToken);
     }
+
+    /**
+     * Create an upgrade invoice with proration.
+     */
+    public function createUpgradeInvoice(
+        Tenant $tenant,
+        SubscriptionPlan $plan,
+        string $billingCycle = 'monthly',
+        ?Subscription $currentSubscription = null,
+        ?array $proration = null
+    ): SubscriptionInvoice {
+        // Use proration amount if available, otherwise full price
+        $amount = $proration['total_to_pay'] ?? $plan->getPrice($billingCycle);
+
+        // Minimum amount for Xendit is 1000 IDR
+        if ($amount < 1000) {
+            $amount = 1000;
+        }
+
+        $invoiceNumber = SubscriptionInvoice::generateInvoiceNumber();
+
+        $description = "Upgrade to {$plan->name} - ".ucfirst($billingCycle);
+        if ($proration && ($proration['credit_amount'] ?? 0) > 0) {
+            $description .= ' (Proration dengan kredit Rp '.number_format($proration['credit_amount'], 0, ',', '.').')';
+        }
+
+        $createInvoiceRequest = new CreateInvoiceRequest([
+            'external_id' => $invoiceNumber,
+            'amount' => $amount,
+            'payer_email' => $tenant->email,
+            'description' => $description,
+            'invoice_duration' => config('xendit.invoice.invoice_duration', 86400),
+            'currency' => config('xendit.invoice.currency', 'IDR'),
+            'reminder_time' => config('xendit.invoice.reminder_time', 1),
+            'success_redirect_url' => url(config('xendit.invoice.success_redirect_url')),
+            'failure_redirect_url' => url(config('xendit.invoice.failure_redirect_url')),
+            'customer' => [
+                'given_names' => $tenant->name,
+                'email' => $tenant->email,
+                'mobile_number' => $tenant->phone,
+            ],
+            'items' => [
+                [
+                    'name' => "Upgrade to {$plan->name}",
+                    'quantity' => 1,
+                    'price' => $amount,
+                ],
+            ],
+            'metadata' => [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'billing_cycle' => $billingCycle,
+                'subscription_id' => $currentSubscription?->id,
+                'is_upgrade' => true,
+                'proration' => $proration,
+            ],
+        ]);
+
+        try {
+            $invoice = $this->invoiceApi->createInvoice($createInvoiceRequest);
+
+            $subscriptionInvoice = SubscriptionInvoice::create([
+                'tenant_id' => $tenant->id,
+                'subscription_id' => $currentSubscription?->id,
+                'subscription_plan_id' => $plan->id,
+                'invoice_number' => $invoiceNumber,
+                'xendit_invoice_id' => $invoice->getId(),
+                'xendit_invoice_url' => $invoice->getInvoiceUrl(),
+                'amount' => $amount,
+                'tax_amount' => 0,
+                'total_amount' => $amount,
+                'currency' => config('xendit.invoice.currency', 'IDR'),
+                'billing_cycle' => $billingCycle,
+                'status' => 'pending',
+                'expired_at' => now()->addSeconds(config('xendit.invoice.invoice_duration', 86400)),
+                'xendit_response' => json_decode(json_encode($invoice), true),
+                'notes' => $proration ? json_encode($proration) : null,
+            ]);
+
+            return $subscriptionInvoice;
+        } catch (Exception $e) {
+            Log::error('Xendit create upgrade invoice error', [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'proration' => $proration,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
 }

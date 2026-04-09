@@ -9,6 +9,7 @@ use App\Models\ProductVariant;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\TransactionPayment;
+use App\Services\KitchenOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -285,6 +286,7 @@ class TransactionController extends Controller
                         'item_name' => $item['name'],
                         'item_sku' => $item['sku'],
                         'quantity' => $item['quantity'],
+                        'unit_name' => $item['unit_name'] ?? 'pcs',
                         'unit_price' => $item['unit_price'],
                         'base_price' => $item['base_price'],
                         'variant_price_adjustment' => $item['variant_price_adjustment'] ?? 0,
@@ -313,6 +315,10 @@ class TransactionController extends Controller
 
                 // Complete transaction
                 $transaction->complete();
+
+                // Create kitchen order for KDS (dine_in and takeaway orders)
+                $kitchenOrderService = app(KitchenOrderService::class);
+                $kitchenOrderService->createFromTransaction($transaction);
 
                 return $transaction;
             });

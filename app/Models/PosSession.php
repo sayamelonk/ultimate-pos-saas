@@ -17,6 +17,7 @@ class PosSession extends Model
     public const STATUS_CLOSED = 'closed';
 
     protected $fillable = [
+        'tenant_id',
         'outlet_id',
         'user_id',
         'session_number',

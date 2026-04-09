@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Api\V2;
 
-use App\Models\CashDrawerLog;
 use App\Models\PosSession;
-use App\Models\Transaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +11,8 @@ use OpenApi\Attributes as OA;
 class SessionController extends Controller
 {
     #[OA\Get(
-        path: '/sessions/current',
-        summary: 'Get current active POS session',
+        path: '/v2/sessions/current',
+        summary: 'Get current active POS session for authenticated user',
         security: [['sanctum' => []]],
         tags: ['Sessions'],
         parameters: [
@@ -49,7 +47,7 @@ class SessionController extends Controller
     }
 
     #[OA\Post(
-        path: '/sessions/open',
+        path: '/v2/sessions/open',
         summary: 'Open new POS session',
         security: [['sanctum' => []]],
         tags: ['Sessions'],
@@ -98,8 +96,10 @@ class SessionController extends Controller
 
         $session = DB::transaction(function () use ($outletId, $validated) {
             $sessionNumber = $this->generateSessionNumber($outletId);
+            $tenantId = $this->tenantId();
 
-            $session = PosSession::create([
+            return PosSession::create([
+                'tenant_id' => $tenantId,
                 'outlet_id' => $outletId,
                 'user_id' => $this->user()->id,
                 'session_number' => $sessionNumber,
@@ -108,28 +108,13 @@ class SessionController extends Controller
                 'opened_at' => now(),
                 'status' => PosSession::STATUS_OPEN,
             ]);
-
-            // Create opening cash log
-            CashDrawerLog::create([
-                'tenant_id' => $this->tenantId(),
-                'outlet_id' => $outletId,
-                'pos_session_id' => $session->id,
-                'user_id' => $this->user()->id,
-                'type' => CashDrawerLog::TYPE_OPENING,
-                'amount' => $validated['opening_cash'],
-                'balance_before' => 0,
-                'balance_after' => $validated['opening_cash'],
-                'reason' => 'Opening cash',
-            ]);
-
-            return $session;
         });
 
         return $this->created($this->formatSession($session), 'Session opened successfully');
     }
 
     #[OA\Post(
-        path: '/sessions/close',
+        path: '/v2/sessions/close',
         summary: 'Close current POS session',
         security: [['sanctum' => []]],
         tags: ['Sessions'],
@@ -189,19 +174,18 @@ class SessionController extends Controller
     }
 
     #[OA\Get(
-        path: '/sessions/history',
-        summary: 'Get session history for outlet',
+        path: '/v2/sessions/history',
+        summary: 'Get session history for the outlet',
         security: [['sanctum' => []]],
         tags: ['Sessions'],
         parameters: [
             new OA\Parameter(name: 'X-Outlet-Id', in: 'header', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-            new OA\Parameter(name: 'date', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
-            new OA\Parameter(name: 'from', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
-            new OA\Parameter(name: 'to', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
-            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', default: 20)),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['open', 'closed'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of sessions'),
+            new OA\Response(response: 200, description: 'Session history'),
+            new OA\Response(response: 400, description: 'No outlet selected'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -210,31 +194,63 @@ class SessionController extends Controller
         $outletId = $this->currentOutletId($request);
 
         if (! $outletId) {
-            return $this->success([]);
+            return $this->error('No outlet selected. Please set X-Outlet-Id header.', 400);
         }
+
+        $perPage = $request->input('per_page', 15);
+        $status = $request->input('status');
 
         $query = PosSession::query()
             ->where('outlet_id', $outletId)
-            ->with('user:id,name')
+            ->with(['user:id,name', 'closedByUser:id,name'])
             ->orderByDesc('opened_at');
 
-        // Filter by date
-        if ($request->has('date')) {
-            $query->whereDate('opened_at', $request->input('date'));
-        } elseif ($request->has('from') && $request->has('to')) {
-            $query->whereBetween('opened_at', [$request->input('from'), $request->input('to')]);
+        if ($status) {
+            $query->where('status', $status);
         }
 
-        $perPage = min($request->input('per_page', 20), 100);
         $sessions = $query->paginate($perPage);
 
-        $data = $sessions->map(fn ($session) => $this->formatSession($session));
-
-        return $this->successWithPagination($data, $this->paginationMeta($sessions));
+        return $this->success($sessions);
     }
 
     #[OA\Get(
-        path: '/sessions/{session}/report',
+        path: '/v2/sessions/active-any',
+        summary: 'Check if any session is active at the outlet (regardless of user)',
+        security: [['sanctum' => []]],
+        tags: ['Sessions'],
+        parameters: [
+            new OA\Parameter(name: 'X-Outlet-Id', in: 'header', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Active session status'),
+            new OA\Response(response: 400, description: 'No outlet selected'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
+    public function activeAny(Request $request): JsonResponse
+    {
+        $outletId = $this->currentOutletId($request);
+
+        if (! $outletId) {
+            return $this->error('No outlet selected. Please set X-Outlet-Id header.', 400);
+        }
+
+        $session = PosSession::query()
+            ->where('outlet_id', $outletId)
+            ->where('status', PosSession::STATUS_OPEN)
+            ->with(['user:id,name'])
+            ->latest('opened_at')
+            ->first();
+
+        return $this->success([
+            'has_active_session' => $session !== null,
+            'session' => $session ? $this->formatSession($session, withStats: true) : null,
+        ]);
+    }
+
+    #[OA\Get(
+        path: '/v2/sessions/{session}/report',
         summary: 'Get comprehensive session report',
         security: [['sanctum' => []]],
         tags: ['Sessions'],
@@ -259,48 +275,6 @@ class SessionController extends Controller
         $report = $this->generateReport($session);
 
         return $this->success($report);
-    }
-
-    #[OA\Get(
-        path: '/sessions/active-any',
-        summary: 'Check if any session is active at outlet',
-        security: [['sanctum' => []]],
-        tags: ['Sessions'],
-        parameters: [
-            new OA\Parameter(name: 'X-Outlet-Id', in: 'header', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Active session status'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-        ]
-    )]
-    public function activeAny(Request $request): JsonResponse
-    {
-        $outletId = $this->currentOutletId($request);
-
-        if (! $outletId) {
-            return $this->success([
-                'has_active_session' => false,
-                'session' => null,
-            ]);
-        }
-
-        $session = PosSession::query()
-            ->where('outlet_id', $outletId)
-            ->where('status', PosSession::STATUS_OPEN)
-            ->with('user:id,name')
-            ->latest('opened_at')
-            ->first();
-
-        return $this->success([
-            'has_active_session' => $session !== null,
-            'session' => $session ? [
-                'id' => $session->id,
-                'session_number' => $session->session_number,
-                'user_name' => $session->user?->name,
-                'opened_at' => $session->opened_at?->toIso8601String(),
-            ] : null,
-        ]);
     }
 
     /**
@@ -370,7 +344,7 @@ class SessionController extends Controller
                 'total_sales' => (float) $session->getTotalSales(),
                 'cash_sales' => (float) $session->getCashSales(),
                 'transaction_count' => $session->getTransactionCount(),
-                'expected_cash' => (float) $session->getExpectedCash(),
+                'expected_cash_now' => (float) $session->getExpectedCash(),
             ];
         }
 
@@ -387,12 +361,12 @@ class SessionController extends Controller
             ->get();
 
         // Group by transaction type
-        $salesTransactions = $transactions->where('type', Transaction::TYPE_SALE);
-        $refundTransactions = $transactions->where('type', Transaction::TYPE_REFUND);
+        $salesTransactions = $transactions->where('type', 'sale');
+        $refundTransactions = $transactions->where('type', 'refund');
 
         // Group by payment method
         $paymentSummary = [];
-        foreach ($transactions->where('status', Transaction::STATUS_COMPLETED) as $transaction) {
+        foreach ($transactions->where('status', 'completed') as $transaction) {
             foreach ($transaction->payments as $payment) {
                 $methodName = $payment->paymentMethod->name ?? 'Unknown';
                 $methodType = $payment->paymentMethod->type ?? 'unknown';
@@ -423,12 +397,12 @@ class SessionController extends Controller
                 'total_transactions' => $transactions->count(),
                 'sales_count' => $salesTransactions->count(),
                 'refund_count' => $refundTransactions->count(),
-                'gross_sales' => (float) $salesTransactions->where('status', Transaction::STATUS_COMPLETED)->sum('grand_total'),
-                'total_refunds' => (float) $refundTransactions->where('status', Transaction::STATUS_COMPLETED)->sum('grand_total'),
-                'net_sales' => (float) ($salesTransactions->where('status', Transaction::STATUS_COMPLETED)->sum('grand_total') - $refundTransactions->where('status', Transaction::STATUS_COMPLETED)->sum('grand_total')),
-                'total_discount' => (float) $transactions->where('status', Transaction::STATUS_COMPLETED)->sum('discount_amount'),
-                'total_tax' => (float) $transactions->where('status', Transaction::STATUS_COMPLETED)->sum('tax_amount'),
-                'total_service_charge' => (float) $transactions->where('status', Transaction::STATUS_COMPLETED)->sum('service_charge_amount'),
+                'gross_sales' => (float) $salesTransactions->where('status', 'completed')->sum('grand_total'),
+                'total_refunds' => (float) $refundTransactions->where('status', 'completed')->sum('grand_total'),
+                'net_sales' => (float) ($salesTransactions->where('status', 'completed')->sum('grand_total') - $refundTransactions->where('status', 'completed')->sum('grand_total')),
+                'total_discount' => (float) $transactions->where('status', 'completed')->sum('discount_amount'),
+                'total_tax' => (float) $transactions->where('status', 'completed')->sum('tax_amount'),
+                'total_service_charge' => (float) $transactions->where('status', 'completed')->sum('service_charge_amount'),
             ],
             'cash_summary' => [
                 'opening_cash' => (float) $session->opening_cash,

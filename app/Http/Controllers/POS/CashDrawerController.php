@@ -4,6 +4,7 @@ namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
 use App\Models\CashDrawerLog;
+use App\Models\PosSession;
 use App\Services\PosSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -177,7 +178,7 @@ class CashDrawerController extends Controller
         $user = auth()->user();
         $sessionId = $request->session_id;
 
-        $session = \App\Models\PosSession::where('id', $sessionId)
+        $session = PosSession::where('id', $sessionId)
             ->where('outlet_id', function ($query) use ($user) {
                 $query->select('id')
                     ->from('outlets')
@@ -208,7 +209,7 @@ class CashDrawerController extends Controller
         ]);
     }
 
-    private function calculateCurrentBalance(int $sessionId): float
+    private function calculateCurrentBalance(string $sessionId): float
     {
         $lastLog = CashDrawerLog::where('pos_session_id', $sessionId)
             ->orderBy('created_at', 'desc')
@@ -218,7 +219,7 @@ class CashDrawerController extends Controller
             return (float) $lastLog->balance_after;
         }
 
-        $session = \App\Models\PosSession::find($sessionId);
+        $session = PosSession::find($sessionId);
 
         return $session ? (float) $session->opening_cash : 0;
     }

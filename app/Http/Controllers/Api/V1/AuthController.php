@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Outlet;
+use App\Models\Role;
+use App\Models\Subscription;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
@@ -349,5 +353,127 @@ class AuthController extends Controller
             ->unique()
             ->values()
             ->toArray();
+    }
+
+    #[OA\Post(
+        path: '/auth/register',
+        summary: 'Register new user with trial subscription',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name', 'email', 'password', 'password_confirmation', 'business_name', 'device_name'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', example: 'John Doe'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
+                    new OA\Property(property: 'password', type: 'string', minLength: 8, example: 'password123'),
+                    new OA\Property(property: 'password_confirmation', type: 'string', example: 'password123'),
+                    new OA\Property(property: 'business_name', type: 'string', example: 'John Restaurant'),
+                    new OA\Property(property: 'phone', type: 'string', example: '081234567890'),
+                    new OA\Property(property: 'device_name', type: 'string', example: 'POS Terminal 1'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Registration successful',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Registration successful'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'user', type: 'object'),
+                                new OA\Property(property: 'token', type: 'string'),
+                                new OA\Property(property: 'token_type', type: 'string', example: 'Bearer'),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function register(Request $request): JsonResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'business_name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'device_name' => 'required|string|max:255',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            // 1. Create Tenant
+            $tenant = Tenant::create([
+                'code' => strtoupper('TNT-'.uniqid()),
+                'name' => $request->business_name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'currency' => 'IDR',
+                'timezone' => 'Asia/Jakarta',
+                'tax_percentage' => 11.00,
+                'tax_enabled' => true,
+                'tax_mode' => 'exclusive',
+                'service_charge_percentage' => 0,
+                'service_charge_enabled' => false,
+                'max_outlets' => 10,
+                'is_active' => true,
+            ]);
+
+            // 2. Create User (owner)
+            $user = User::create([
+                'tenant_id' => $tenant->id,
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'phone' => $request->phone,
+                'is_active' => true,
+                'locale' => 'id',
+                'email_verified_at' => now(),
+            ]);
+
+            // 3. Assign owner role
+            $ownerRole = Role::where('slug', 'tenant-owner')->first();
+            if ($ownerRole) {
+                $user->roles()->attach($ownerRole);
+            }
+
+            // 4. Create trial subscription
+            Subscription::createTrial($tenant);
+
+            // 5. Create default outlet
+            $outlet = Outlet::create([
+                'tenant_id' => $tenant->id,
+                'code' => 'MAIN',
+                'name' => $request->business_name,
+                'address' => null,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'tax_percentage' => 11.00,
+                'service_charge_percentage' => 0,
+                'is_active' => true,
+            ]);
+
+            // 6. Assign user to outlet as default
+            $user->outlets()->attach($outlet->id, ['is_default' => true]);
+
+            // Reload user with relationships
+            $user->load(['roles', 'outlets']);
+
+            // 7. Create token
+            $token = $user->createToken($request->device_name)->plainTextToken;
+
+            return $this->success([
+                'user' => $this->formatUserData($user, $outlet),
+                'token' => $token,
+                'token_type' => 'Bearer',
+            ], 'Registration successful', 201);
+        });
     }
 }

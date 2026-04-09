@@ -97,8 +97,10 @@ class SessionController extends Controller
         $session = DB::transaction(function () use ($outletId, $validated) {
             // Generate session number
             $sessionNumber = $this->generateSessionNumber($outletId);
+            $tenantId = $this->tenantId();
 
             return PosSession::create([
+                'tenant_id' => $tenantId,
                 'outlet_id' => $outletId,
                 'user_id' => $this->user()->id,
                 'session_number' => $sessionNumber,

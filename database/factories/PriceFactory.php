@@ -4,11 +4,12 @@ namespace Database\Factories;
 
 use App\Models\InventoryItem;
 use App\Models\Outlet;
+use App\Models\Price;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Price>
+ * @extends Factory<Price>
  */
 class PriceFactory extends Factory
 {
@@ -38,6 +39,34 @@ class PriceFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_active' => false,
+        ]);
+    }
+
+    public function withSellingPrice(float $price): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'selling_price' => $price,
+        ]);
+    }
+
+    public function withMemberPrice(float $price): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'member_price' => $price,
+        ]);
+    }
+
+    public function withMinSellingPrice(float $price): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'min_selling_price' => $price,
+        ]);
+    }
+
+    public function noMemberPrice(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'member_price' => null,
         ]);
     }
 }

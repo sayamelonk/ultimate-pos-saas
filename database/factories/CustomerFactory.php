@@ -7,7 +7,7 @@ use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Customer>
+ * @extends Factory<Customer>
  */
 class CustomerFactory extends Factory
 {
@@ -75,6 +75,57 @@ class CustomerFactory extends Factory
             'total_points' => fake()->numberBetween(100, 5000),
             'total_spent' => fake()->numberBetween(100000, 10000000),
             'total_visits' => fake()->numberBetween(5, 100),
+        ]);
+    }
+
+    public function withPoints(float $points): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'total_points' => $points,
+        ]);
+    }
+
+    public function withSpent(float $spent): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'total_spent' => $spent,
+        ]);
+    }
+
+    public function withVisits(int $visits): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'total_visits' => $visits,
+        ]);
+    }
+
+    public function expiredMembership(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'membership_level' => Customer::LEVEL_SILVER,
+            'membership_expires_at' => now()->subDays(30),
+        ]);
+    }
+
+    public function memberWithNoExpiry(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'membership_level' => Customer::LEVEL_GOLD,
+            'membership_expires_at' => null,
+        ]);
+    }
+
+    public function male(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'gender' => 'male',
+        ]);
+    }
+
+    public function female(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'gender' => 'female',
         ]);
     }
 }

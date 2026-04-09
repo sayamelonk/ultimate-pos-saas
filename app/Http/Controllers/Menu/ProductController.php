@@ -16,6 +16,7 @@ use App\Models\VariantGroup;
 use App\Services\Menu\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -150,9 +151,16 @@ class ProductController extends Controller
             'outlets.*.custom_price' => ['nullable', 'numeric', 'min:0'],
             // Combo items validation
             'combo_items' => ['nullable', 'array'],
-            'combo_items.*.product_id' => ['required_with:combo_items', 'exists:products,id'],
-            'combo_items.*.quantity' => ['required_with:combo_items', 'integer', 'min:1'],
+            'combo_items.*.product_id' => ['nullable', 'exists:products,id'],
+            'combo_items.*.quantity' => ['nullable', 'integer', 'min:1'],
+            // Image validation
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('products', 'public');
+        }
 
         $validated['tenant_id'] = $tenantId;
         $validated['slug'] = Str::slug($validated['name']);
@@ -346,7 +354,21 @@ class ProductController extends Controller
         $this->authorizeProduct($product);
         $tenantId = $this->getTenantId();
 
-        $validated = $request->validate([
+        // Debug logging
+        \Log::info('=== Product Update Debug ===');
+        \Log::info('Has file image: '.($request->hasFile('image') ? 'YES' : 'NO'));
+        \Log::info('All files: ', $request->allFiles());
+        \Log::info('Request has image key: '.($request->has('image') ? 'YES' : 'NO'));
+        if ($request->hasFile('image')) {
+            \Log::info('File details: ', [
+                'name' => $request->file('image')->getClientOriginalName(),
+                'size' => $request->file('image')->getSize(),
+                'mime' => $request->file('image')->getMimeType(),
+                'valid' => $request->file('image')->isValid(),
+            ]);
+        }
+
+        $validator = \Validator::make($request->all(), [
             'sku' => ['required', 'string', 'max:50'],
             'barcode' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
@@ -372,9 +394,34 @@ class ProductController extends Controller
             'outlets' => ['nullable', 'array'],
             // Combo items validation
             'combo_items' => ['nullable', 'array'],
-            'combo_items.*.product_id' => ['required_with:combo_items', 'exists:products,id'],
-            'combo_items.*.quantity' => ['required_with:combo_items', 'integer', 'min:1'],
+            'combo_items.*.product_id' => ['nullable', 'exists:products,id'],
+            'combo_items.*.quantity' => ['nullable', 'integer', 'min:1'],
+            // Image validation
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
+
+        if ($validator->fails()) {
+            \Log::error('Validation failed: ', $validator->errors()->toArray());
+
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
+
+        // Handle image upload
+        \Log::info('After validation - checking hasFile again: '.($request->hasFile('image') ? 'YES' : 'NO'));
+        if ($request->hasFile('image')) {
+            \Log::info('Processing image upload...');
+            // Delete old image if exists
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $path = $request->file('image')->store('products', 'public');
+            \Log::info('Image stored at: '.$path);
+            $validated['image'] = $path;
+        }
+
+        \Log::info('Validated data image key: '.(isset($validated['image']) ? $validated['image'] : 'NOT SET'));
 
         $validated['track_stock'] = $request->boolean('track_stock', true);
         $validated['is_active'] = $request->boolean('is_active');

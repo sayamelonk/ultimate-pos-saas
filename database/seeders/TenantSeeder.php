@@ -26,6 +26,7 @@ class TenantSeeder extends Seeder
             'pin' => '123456',
             'name' => 'Super Admin',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
         $superAdmin->roles()->attach($superAdminRole->id);
 
@@ -70,6 +71,7 @@ class TenantSeeder extends Seeder
             'pin' => '111111',
             'name' => 'Demo Owner',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
         $owner->roles()->attach($tenantOwnerRole->id);
         $owner->outlets()->attach($outlet->id, ['is_default' => true]);
@@ -84,6 +86,7 @@ class TenantSeeder extends Seeder
             'pin' => '222222',
             'name' => 'Demo Manager',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
         $manager->roles()->attach($managerRole->id);
         $manager->outlets()->attach($outlet->id, ['is_default' => true]);
@@ -98,6 +101,7 @@ class TenantSeeder extends Seeder
             'pin' => '333333',
             'name' => 'Demo Cashier',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
         $cashier->roles()->attach($cashierRole->id);
         $cashier->outlets()->attach($outlet->id, ['is_default' => true]);
@@ -112,6 +116,7 @@ class TenantSeeder extends Seeder
             'pin' => '444444',
             'name' => 'Demo Waiter',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
         $waiter->roles()->attach($waiterRole->id);
         $waiter->outlets()->attach($outlet->id, ['is_default' => true]);
@@ -126,6 +131,7 @@ class TenantSeeder extends Seeder
             'pin' => '555555',
             'name' => 'Demo Kitchen',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
         $kitchen->roles()->attach($kitchenRole->id);
         $kitchen->outlets()->attach($outlet->id, ['is_default' => true]);

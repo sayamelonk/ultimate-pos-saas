@@ -23,8 +23,12 @@ class TransactionService
         private StockService $stockService,
         private PriceService $priceService,
         private DiscountService $discountService,
-        private CustomerService $customerService
-    ) {}
+        private CustomerService $customerService,
+        private ?KitchenOrderService $kitchenOrderService = null
+    ) {
+        // Allow optional injection for backward compatibility
+        $this->kitchenOrderService ??= app(KitchenOrderService::class);
+    }
 
     public function calculateTransaction(
         string $outletId,
@@ -372,7 +376,10 @@ class TransactionService
 
             $transaction->complete();
 
-            return $transaction->fresh(['items', 'payments.paymentMethod', 'discounts', 'customer']);
+            // Create kitchen order for KDS
+            $this->kitchenOrderService->createFromTransaction($transaction);
+
+            return $transaction->fresh(['items', 'payments.paymentMethod', 'discounts', 'customer', 'kitchenOrder']);
         });
     }
 
@@ -383,6 +390,9 @@ class TransactionService
         }
 
         return DB::transaction(function () use ($transaction, $userId, $reason) {
+            // Cancel kitchen order if exists
+            $this->kitchenOrderService->cancelFromTransaction($transaction, $reason);
+
             $this->restoreStock($transaction, $userId);
 
             if ($transaction->customer_id) {

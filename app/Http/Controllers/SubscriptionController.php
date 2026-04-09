@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionPlan;
+use App\Services\ProrationService;
 use App\Services\XenditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,10 @@ use Illuminate\View\View;
 
 class SubscriptionController extends Controller
 {
-    public function __construct(protected XenditService $xenditService) {}
+    public function __construct(
+        protected XenditService $xenditService,
+        protected ProrationService $prorationService
+    ) {}
 
     /**
      * Display subscription plans.
@@ -24,6 +28,19 @@ class SubscriptionController extends Controller
         $currentSubscription = $tenant?->activeSubscription;
 
         return view('subscription.plans', compact('plans', 'tenant', 'currentSubscription'));
+    }
+
+    /**
+     * Display choose plan page (for trial/frozen users).
+     */
+    public function choosePlan(): View
+    {
+        $plans = SubscriptionPlan::active()->ordered()->get();
+        $tenant = auth()->user()->tenant;
+        $subscription = $tenant?->activeSubscription;
+        $currentPlan = $subscription?->plan;
+
+        return view('subscription.choose-plan', compact('plans', 'subscription', 'currentPlan'));
     }
 
     /**
@@ -145,5 +162,87 @@ class SubscriptionController extends Controller
         }
 
         return view('subscription.invoice', compact('invoice'));
+    }
+
+    /**
+     * Show upgrade preview with proration calculation.
+     */
+    public function upgradePreview(Request $request, SubscriptionPlan $plan): View|RedirectResponse
+    {
+        $tenant = auth()->user()->tenant;
+        $currentSubscription = $tenant?->activeSubscription;
+
+        if (! $currentSubscription) {
+            return redirect()->route('subscription.choose-plan')
+                ->with('error', 'Tidak ada subscription aktif.');
+        }
+
+        $billingCycle = $request->get('billing_cycle', $currentSubscription->billing_cycle ?? 'monthly');
+
+        // Check if it's actually an upgrade
+        $currentPlan = $currentSubscription->plan;
+        $isUpgrade = $this->prorationService->isUpgrade($currentPlan, $plan);
+        $isDowngrade = $this->prorationService->isDowngrade($currentPlan, $plan);
+
+        // Calculate proration
+        $proration = $this->prorationService->calculateUpgradeProration(
+            $currentSubscription,
+            $plan,
+            $billingCycle
+        );
+
+        $formattedProration = $this->prorationService->formatForDisplay($proration);
+
+        return view('subscription.upgrade-preview', compact(
+            'plan',
+            'currentSubscription',
+            'currentPlan',
+            'billingCycle',
+            'isUpgrade',
+            'isDowngrade',
+            'proration',
+            'formattedProration'
+        ));
+    }
+
+    /**
+     * Process upgrade with proration.
+     */
+    public function upgrade(Request $request, SubscriptionPlan $plan): RedirectResponse
+    {
+        $validated = $request->validate([
+            'billing_cycle' => 'required|in:monthly,yearly',
+        ]);
+
+        $tenant = auth()->user()->tenant;
+        $currentSubscription = $tenant?->activeSubscription;
+
+        if (! $tenant) {
+            return back()->with('error', 'Tenant tidak ditemukan.');
+        }
+
+        // Calculate proration
+        $proration = null;
+        if ($currentSubscription && ! $currentSubscription->isTrial() && ! $currentSubscription->isFrozen()) {
+            $proration = $this->prorationService->calculateUpgradeProration(
+                $currentSubscription,
+                $plan,
+                $validated['billing_cycle']
+            );
+        }
+
+        try {
+            $invoice = $this->xenditService->createUpgradeInvoice(
+                $tenant,
+                $plan,
+                $validated['billing_cycle'],
+                $currentSubscription,
+                $proration
+            );
+
+            return redirect($invoice->xendit_invoice_url);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal membuat invoice: '.$e->getMessage());
+        }
     }
 }

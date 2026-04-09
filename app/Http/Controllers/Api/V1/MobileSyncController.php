@@ -15,6 +15,7 @@ use App\Models\TransactionPayment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use OpenApi\Attributes as OA;
 
 class MobileSyncController extends Controller
@@ -36,13 +37,31 @@ class MobileSyncController extends Controller
     )]
     public function master(Request $request): JsonResponse
     {
+        Log::channel('daily')->info('═══════════════════════════════════════════════════════');
+        Log::channel('daily')->info('MOBILE SYNC MASTER - REQUEST RECEIVED');
+        Log::channel('daily')->info('═══════════════════════════════════════════════════════');
+        Log::channel('daily')->info('Headers:', [
+            'Authorization' => $request->header('Authorization') ? 'Bearer ***'.substr($request->header('Authorization'), -10) : 'MISSING',
+            'X-Outlet-Id' => $request->header('X-Outlet-Id') ?? 'MISSING',
+            'Accept' => $request->header('Accept'),
+        ]);
+        Log::channel('daily')->info('User:', [
+            'authenticated' => auth('sanctum')->check(),
+            'user_id' => auth('sanctum')->id(),
+            'user_email' => auth('sanctum')->user()?->email,
+        ]);
+
         $outletId = $this->currentOutletId($request);
+        Log::channel('daily')->info('Outlet ID from request: '.($outletId ?? 'NULL'));
 
         if (! $outletId) {
+            Log::channel('daily')->error('SYNC FAILED: No outlet selected');
+
             return $this->error('No outlet selected.', 400);
         }
 
         $outlet = $this->currentOutlet($request);
+        Log::channel('daily')->info('Outlet found: '.($outlet ? $outlet->name : 'NULL'));
 
         // Get categories
         $categories = ProductCategory::query()
@@ -154,6 +173,19 @@ class MobileSyncController extends Controller
             'receipt_show_logo' => (bool) $outlet->receipt_show_logo,
         ];
 
+        $counts = [
+            'categories' => $categories->count(),
+            'products' => $products->count(),
+            'payment_methods' => $paymentMethods->count(),
+            'floors' => $floors->count(),
+            'tables' => $floors->sum(fn ($f) => count($f['tables'])),
+        ];
+
+        Log::channel('daily')->info('═══════════════════════════════════════════════════════');
+        Log::channel('daily')->info('MOBILE SYNC MASTER - SUCCESS');
+        Log::channel('daily')->info('Counts:', $counts);
+        Log::channel('daily')->info('═══════════════════════════════════════════════════════');
+
         return $this->success([
             'categories' => $categories,
             'products' => $products,
@@ -161,13 +193,7 @@ class MobileSyncController extends Controller
             'floors' => $floors,
             'outlet' => $outletSettings,
             'sync_timestamp' => now()->toIso8601String(),
-            'counts' => [
-                'categories' => $categories->count(),
-                'products' => $products->count(),
-                'payment_methods' => $paymentMethods->count(),
-                'floors' => $floors->count(),
-                'tables' => $floors->sum(fn ($f) => count($f['tables'])),
-            ],
+            'counts' => $counts,
         ]);
     }
 

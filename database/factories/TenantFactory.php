@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Tenant>
+ * @extends Factory<Tenant>
  */
 class TenantFactory extends Factory
 {
@@ -25,7 +26,10 @@ class TenantFactory extends Factory
             'currency' => 'IDR',
             'timezone' => 'Asia/Jakarta',
             'tax_percentage' => 11.00,
+            'tax_enabled' => true,
+            'tax_mode' => 'exclusive',
             'service_charge_percentage' => fake()->randomElement([0, 5, 10]),
+            'service_charge_enabled' => false,
             'subscription_plan' => fake()->randomElement(['free', 'basic', 'premium']),
             'subscription_expires_at' => fake()->dateTimeBetween('+1 month', '+1 year'),
             'max_outlets' => fake()->randomElement([1, 3, 5, 10]),
