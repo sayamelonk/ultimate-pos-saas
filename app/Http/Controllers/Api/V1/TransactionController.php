@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\HeldOrder;
 use App\Models\PaymentMethod;
 use App\Models\PosSession;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Table;
+use App\Models\TableSession;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\TransactionPayment;
@@ -333,6 +336,224 @@ class TransactionController extends Controller
             return $this->created($this->formatTransactionDetail($transaction), 'Transaction completed successfully');
         } catch (\Exception $e) {
             return $this->error('Failed to create transaction: '.$e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Pay an existing pending transaction (e.g., waiter order).
+     */
+    public function pay(Request $request, Transaction $transaction): JsonResponse
+    {
+        if ($transaction->tenant_id !== $this->tenantId()) {
+            return $this->notFound('Transaction not found');
+        }
+
+        if ($transaction->status !== Transaction::STATUS_PENDING) {
+            return $this->error('Transaction is not pending.', 400);
+        }
+
+        $validated = $request->validate([
+            'payments' => 'required|array|min:1',
+            'payments.*.payment_method_id' => 'required|uuid',
+            'payments.*.amount' => 'required|numeric|min:0.01',
+            'payments.*.reference_number' => 'nullable|string|max:100',
+        ]);
+
+        $totalPayment = collect($validated['payments'])->sum('amount');
+        if ($totalPayment < $transaction->grand_total) {
+            return $this->error('Payment amount is less than grand total.', 422);
+        }
+
+        try {
+            DB::transaction(function () use ($validated, $transaction, $totalPayment) {
+                // Create payment records
+                foreach ($validated['payments'] as $payment) {
+                    $paymentMethod = PaymentMethod::find($payment['payment_method_id']);
+                    $chargeAmount = $paymentMethod ? $paymentMethod->calculateCharge($payment['amount']) : 0;
+
+                    TransactionPayment::create([
+                        'transaction_id' => $transaction->id,
+                        'payment_method_id' => $payment['payment_method_id'],
+                        'amount' => $payment['amount'],
+                        'charge_amount' => $chargeAmount,
+                        'reference_number' => $payment['reference_number'] ?? null,
+                    ]);
+                }
+
+                // Update payment amount and complete
+                $transaction->update([
+                    'payment_amount' => $totalPayment,
+                    'change_amount' => $totalPayment - $transaction->grand_total,
+                ]);
+                $transaction->complete();
+
+                // Close table session if dine-in
+                if ($transaction->table_id && $transaction->tableSession) {
+                    $session = $transaction->tableSession;
+                    // Check if there are other unpaid transactions on this session
+                    $otherPending = $session->transactions()
+                        ->where('id', '!=', $transaction->id)
+                        ->whereIn('status', ['pending', 'processing'])
+                        ->exists();
+
+                    if (! $otherPending) {
+                        $session->close($this->user()->id);
+                    }
+                }
+            });
+
+            $transaction->refresh()->load([
+                'items.product:id,name,image',
+                'payments.paymentMethod:id,name,type',
+                'customer:id,name,phone',
+                'user:id,name',
+            ]);
+
+            return $this->success($this->formatTransactionDetail($transaction), 'Payment completed successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to process payment: '.$e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Send held order to kitchen (creates pending transaction + kitchen order, no payment).
+     */
+    public function sendToKitchen(Request $request): JsonResponse
+    {
+        $outletId = $this->currentOutletId($request);
+
+        if (! $outletId) {
+            return $this->error('No outlet selected.', 400);
+        }
+
+        // Check active session
+        $session = PosSession::where('outlet_id', $outletId)
+            ->where('user_id', $this->user()->id)
+            ->where('status', PosSession::STATUS_OPEN)
+            ->first();
+
+        if (! $session) {
+            return $this->error('No active POS session. Please open a session first.', 400);
+        }
+
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|uuid',
+            'items.*.variant_id' => 'nullable|uuid',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.modifiers' => 'nullable|array',
+            'items.*.modifiers.*.id' => 'required_with:items.*.modifiers|uuid',
+            'items.*.modifiers.*.name' => 'nullable|string',
+            'items.*.modifiers.*.price' => 'nullable|numeric',
+            'items.*.modifiers.*.quantity' => 'nullable|numeric|min:1',
+            'items.*.discount_amount' => 'nullable|numeric|min:0',
+            'items.*.notes' => 'nullable|string|max:255',
+            'order_type' => ['required', Rule::in(array_keys(Transaction::getOrderTypes()))],
+            'table_id' => 'nullable|uuid',
+            'customer_id' => 'nullable|uuid',
+            'guest_count' => 'nullable|integer|min:1',
+            'notes' => 'nullable|string|max:500',
+            'held_order_id' => 'nullable|uuid',
+        ]);
+
+        $outlet = $this->currentOutlet($request);
+        $calculation = $this->calculateCart($validated, $outlet);
+
+        try {
+            $transaction = DB::transaction(function () use ($validated, $calculation, $session, $outlet) {
+                $transactionNumber = $this->generateTransactionNumber($outlet->id);
+
+                // Handle table session
+                $tableSessionId = null;
+                if (! empty($validated['table_id'])) {
+                    $table = Table::find($validated['table_id']);
+                    if ($table) {
+                        if (! $table->currentSession) {
+                            $tableSession = TableSession::openTable(
+                                $table,
+                                $validated['guest_count'] ?? 1,
+                                $this->user()->id
+                            );
+                        } else {
+                            $tableSession = $table->currentSession;
+                        }
+                        $tableSessionId = $tableSession->id;
+                    }
+                }
+
+                // Create transaction (pending - no payment yet)
+                $transaction = Transaction::create([
+                    'tenant_id' => $this->tenantId(),
+                    'outlet_id' => $outlet->id,
+                    'pos_session_id' => $session->id,
+                    'table_id' => $validated['table_id'] ?? null,
+                    'table_session_id' => $tableSessionId,
+                    'order_type' => $validated['order_type'],
+                    'customer_id' => $validated['customer_id'] ?? null,
+                    'user_id' => $this->user()->id,
+                    'transaction_number' => $transactionNumber,
+                    'type' => Transaction::TYPE_SALE,
+                    'subtotal' => $calculation['subtotal'],
+                    'discount_amount' => $calculation['discount_amount'],
+                    'tax_amount' => $calculation['tax_amount'],
+                    'service_charge_amount' => $calculation['service_charge_amount'],
+                    'rounding' => $calculation['rounding'],
+                    'grand_total' => $calculation['grand_total'],
+                    'payment_amount' => 0,
+                    'change_amount' => 0,
+                    'tax_percentage' => $outlet->tax_percentage ?? 0,
+                    'service_charge_percentage' => $outlet->service_charge_percentage ?? 0,
+                    'notes' => $validated['notes'] ?? null,
+                    'status' => Transaction::STATUS_PENDING,
+                ]);
+
+                // Create transaction items
+                foreach ($calculation['items'] as $item) {
+                    TransactionItem::create([
+                        'transaction_id' => $transaction->id,
+                        'product_id' => $item['product_id'],
+                        'product_variant_id' => $item['variant_id'] ?? null,
+                        'item_name' => $item['name'],
+                        'item_sku' => $item['sku'],
+                        'quantity' => $item['quantity'],
+                        'unit_name' => $item['unit_name'] ?? 'pcs',
+                        'unit_price' => $item['unit_price'],
+                        'base_price' => $item['base_price'],
+                        'variant_price_adjustment' => $item['variant_price_adjustment'] ?? 0,
+                        'modifiers_total' => $item['modifiers_total'] ?? 0,
+                        'cost_price' => $item['cost_price'] ?? 0,
+                        'discount_amount' => $item['discount_amount'] ?? 0,
+                        'subtotal' => $item['subtotal'],
+                        'modifiers' => $item['modifiers'] ?? null,
+                        'item_notes' => $item['notes'] ?? null,
+                    ]);
+                }
+
+                // Create kitchen order for KDS
+                $kitchenOrderService = app(KitchenOrderService::class);
+                $kitchenOrderService->createFromTransaction($transaction);
+
+                // Delete the held order if provided (it's now a real transaction)
+                if (! empty($validated['held_order_id'])) {
+                    HeldOrder::where('id', $validated['held_order_id'])
+                        ->where('tenant_id', $this->tenantId())
+                        ->delete();
+                }
+
+                return $transaction;
+            });
+
+            $transaction->load([
+                'items.product:id,name,image',
+                'customer:id,name,phone',
+                'user:id,name',
+                'table:id,number,name',
+                'kitchenOrder.items',
+            ]);
+
+            return $this->created($this->formatTransactionDetail($transaction), 'Order sent to kitchen successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to send to kitchen: '.$e->getMessage(), 500);
         }
     }
 

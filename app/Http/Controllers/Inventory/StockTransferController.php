@@ -8,6 +8,7 @@ use App\Models\InventoryStock;
 use App\Models\Outlet;
 use App\Models\StockTransfer;
 use App\Services\Inventory\StockTransferService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -255,7 +256,7 @@ class StockTransferController extends Controller
         }
     }
 
-    public function getSourceStock(Request $request): \Illuminate\Http\JsonResponse
+    public function getSourceStock(Request $request): JsonResponse
     {
         $tenantId = $this->getTenantId();
 

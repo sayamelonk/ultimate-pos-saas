@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Webhook;
 
 use App\Http\Controllers\Controller;
+use App\Models\QrOrder;
 use App\Services\XenditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,14 +35,21 @@ class XenditWebhookController extends Controller
         ]);
 
         try {
-            $invoice = $this->xenditService->handlePaymentCallback($payload);
+            $result = $this->xenditService->handlePaymentCallback($payload);
 
-            if ($invoice) {
-                return response()->json([
+            if ($result) {
+                $responseData = [
                     'success' => true,
                     'message' => 'Webhook processed',
-                    'invoice_id' => $invoice->id,
-                ]);
+                ];
+
+                if ($result instanceof QrOrder) {
+                    $responseData['qr_order_id'] = $result->id;
+                } else {
+                    $responseData['invoice_id'] = $result->id;
+                }
+
+                return response()->json($responseData);
             }
 
             return response()->json([

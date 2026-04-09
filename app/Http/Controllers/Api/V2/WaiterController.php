@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V2;
 use App\Http\Controllers\Controller;
 use App\Models\Floor;
 use App\Models\KitchenOrder;
+use App\Models\KitchenOrderItem;
+use App\Models\KitchenStation;
 use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -281,7 +283,7 @@ class WaiterController extends Controller
 
         $query = Product::where('tenant_id', $outlet->tenant_id)
             ->where('is_active', true)
-            ->with(['category', 'variants.options']);
+            ->with(['category', 'variantGroups.options']);
 
         // Filter by category
         if ($request->has('category_id')) {
@@ -304,12 +306,12 @@ class WaiterController extends Controller
                     'id' => $product->category->id,
                     'name' => $product->category->name,
                 ] : null,
-                'variants' => $product->variants->map(fn ($variant) => [
-                    'id' => $variant->id,
-                    'name' => $variant->name,
-                    'is_required' => $variant->is_required ?? false,
-                    'is_multiple' => $variant->is_multiple ?? false,
-                    'options' => $variant->options->map(fn ($opt) => [
+                'variants' => $product->variantGroups->map(fn ($group) => [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'is_required' => $group->pivot->is_required ?? $group->is_required ?? false,
+                    'is_multiple' => false,
+                    'options' => $group->options->map(fn ($opt) => [
                         'id' => $opt->id,
                         'name' => $opt->name,
                         'price_modifier' => $opt->price_modifier ?? 0,
@@ -344,6 +346,12 @@ class WaiterController extends Controller
 
     /**
      * List waiter's orders.
+     *
+     * Query params:
+     * - status: filter by transaction status (pending, completed, voided)
+     * - kitchen_status: filter by kitchen order status (pending, preparing, ready, served)
+     * - scope: 'outlet' to show all orders in outlet (not just this waiter's)
+     * - all: if present, don't filter by today's date
      */
     public function orders(Request $request): JsonResponse
     {
@@ -351,13 +359,24 @@ class WaiterController extends Controller
         $user = $request->user();
 
         $query = Transaction::where('outlet_id', $outlet->id)
-            ->where('waiter_id', $user->id)
-            ->with(['items', 'table', 'kitchenOrder'])
+            ->with(['items.product', 'table', 'kitchenOrder'])
             ->latest();
 
-        // Filter by status
+        // Scope: outlet-wide (for kitchen status) or waiter-only (for my orders)
+        if ($request->get('scope') !== 'outlet') {
+            $query->where('waiter_id', $user->id);
+        }
+
+        // Filter by transaction status
         if ($request->has('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter by kitchen order status (ready, preparing, etc.)
+        if ($request->has('kitchen_status')) {
+            $query->whereHas('kitchenOrder', function ($q) use ($request) {
+                $q->where('status', $request->kitchen_status);
+            });
         }
 
         // Filter by date (today by default)
@@ -427,7 +446,12 @@ class WaiterController extends Controller
                 ->with('currentSession')
                 ->firstOrFail();
 
-            $tableSession = $table->currentSession;
+            // Create table session if not exists → marks table as occupied
+            if (! $table->currentSession) {
+                $tableSession = TableSession::openTable($table, 1, $user->id);
+            } else {
+                $tableSession = $table->currentSession;
+            }
         }
 
         return DB::transaction(function () use ($request, $outlet, $user, $orderType, $table, $tableSession) {
@@ -582,7 +606,7 @@ class WaiterController extends Controller
     }
 
     /**
-     * Send order to kitchen (create KitchenOrder).
+     * Send order to kitchen (create KitchenOrder or add new items to existing).
      */
     public function sendToKitchen(Request $request, string $id): JsonResponse
     {
@@ -590,17 +614,66 @@ class WaiterController extends Controller
 
         $transaction = Transaction::where('outlet_id', $outlet->id)
             ->where('id', $id)
-            ->with('items')
+            ->with(['items', 'kitchenOrder.items'])
             ->firstOrFail();
 
-        // Check if already sent
+        // If kitchen order already exists, add any new items
         if ($transaction->kitchenOrder) {
+            $kitchenOrder = $transaction->kitchenOrder;
+
+            // Find transaction items that don't have a kitchen_order_item yet
+            $existingTransactionItemIds = $kitchenOrder->items
+                ->pluck('transaction_item_id')
+                ->toArray();
+
+            $newItems = $transaction->items
+                ->whereNotIn('id', $existingTransactionItemIds);
+
+            if ($newItems->isEmpty()) {
+                $transaction->refresh()->load(['items', 'table', 'kitchenOrder']);
+
+                return response()->json([
+                    'data' => $this->formatOrder($transaction),
+                    'message' => 'No new items to send',
+                ]);
+            }
+
+            // Get default station
+            $defaultStation = KitchenStation::where('outlet_id', $outlet->id)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->first();
+
+            // Create kitchen_order_items for new items
+            foreach ($newItems as $item) {
+                KitchenOrderItem::create([
+                    'kitchen_order_id' => $kitchenOrder->id,
+                    'transaction_item_id' => $item->id,
+                    'station_id' => $defaultStation?->id,
+                    'item_name' => $item->item_name,
+                    'quantity' => $item->quantity,
+                    'modifiers' => $item->modifiers,
+                    'notes' => $item->item_notes,
+                    'status' => KitchenOrderItem::STATUS_PENDING,
+                ]);
+            }
+
+            // Reset kitchen order status to preparing so kitchen sees it
+            $kitchenOrder->update([
+                'status' => KitchenOrder::STATUS_PREPARING,
+                'completed_at' => null,
+                'served_at' => null,
+            ]);
+
+            $transaction->refresh()->load(['items', 'table', 'kitchenOrder']);
+
             return response()->json([
-                'message' => 'Order already sent to kitchen',
-            ], 422);
+                'data' => $this->formatOrder($transaction),
+                'message' => 'Item tambahan dikirim ke dapur',
+            ]);
         }
 
-        // Create kitchen order
+        // Create kitchen order (first time)
         $kitchenOrder = $this->kitchenOrderService->createFromTransaction($transaction);
 
         if (! $kitchenOrder) {
@@ -694,9 +767,9 @@ class WaiterController extends Controller
                 'id' => $item->id,
                 'product_id' => $item->product_id,
                 'product_name' => $item->item_name,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'subtotal' => $item->subtotal,
+                'quantity' => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'subtotal' => (float) $item->subtotal,
                 'notes' => $item->notes,
                 'modifiers' => $item->modifiers,
             ]),
@@ -720,8 +793,16 @@ class WaiterController extends Controller
             'order_number' => $transaction->transaction_number,
             'order_type' => $transaction->order_type,
             'table_number' => $transaction->table?->number,
+            'table_name' => $transaction->table?->name,
             'customer_name' => $transaction->customer_name ?? $transaction->customer?->name,
             'items_count' => $transaction->items->sum('quantity'),
+            'items' => $transaction->items->map(fn ($item) => [
+                'id' => $item->id,
+                'product_name' => $item->product?->name ?? $item->product_name ?? '-',
+                'quantity' => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'subtotal' => (float) $item->subtotal,
+            ])->values()->toArray(),
             'total' => $transaction->grand_total,
             'status' => $transaction->status,
             'kitchen_status' => $transaction->kitchenOrder?->status,

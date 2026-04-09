@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\QrOrder;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Xendit\Configuration;
@@ -97,6 +99,58 @@ class XenditService
     }
 
     /**
+     * Create a Xendit invoice for QR order payment (QRIS only).
+     *
+     * @return array{xendit_invoice_id: string, xendit_invoice_url: string, xendit_response: array, xendit_expired_at: Carbon}
+     */
+    public function createQrOrderInvoice(QrOrder $qrOrder): array
+    {
+        $qrOrder->load(['outlet', 'items']);
+
+        $itemsForInvoice = $qrOrder->items->map(fn ($item) => [
+            'name' => $item->item_name,
+            'quantity' => $item->quantity,
+            'price' => (float) $item->unit_price,
+        ])->toArray();
+
+        $createInvoiceRequest = new CreateInvoiceRequest([
+            'external_id' => $qrOrder->order_number,
+            'amount' => (float) $qrOrder->grand_total,
+            'description' => "QR Order {$qrOrder->order_number} - Table {$qrOrder->table?->display_name}",
+            'invoice_duration' => config('xendit.invoice.invoice_duration', 86400),
+            'currency' => config('xendit.invoice.currency', 'IDR'),
+            'payment_methods' => ['QRIS'],
+            'success_redirect_url' => url("/qr/order/{$qrOrder->id}/status"),
+            'failure_redirect_url' => url("/qr/order/{$qrOrder->id}/status"),
+            'items' => $itemsForInvoice,
+            'metadata' => [
+                'type' => 'qr_order',
+                'qr_order_id' => $qrOrder->id,
+                'tenant_id' => $qrOrder->tenant_id,
+                'outlet_id' => $qrOrder->outlet_id,
+            ],
+        ]);
+
+        try {
+            $invoice = $this->invoiceApi->createInvoice($createInvoiceRequest);
+
+            return [
+                'xendit_invoice_id' => $invoice->getId(),
+                'xendit_invoice_url' => $invoice->getInvoiceUrl(),
+                'xendit_response' => json_decode(json_encode($invoice), true),
+                'xendit_expired_at' => now()->addSeconds(config('xendit.invoice.invoice_duration', 86400)),
+            ];
+        } catch (Exception $e) {
+            Log::error('Xendit create QR order invoice error', [
+                'qr_order_id' => $qrOrder->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
      * Get invoice details from Xendit.
      */
     public function getInvoice(string $invoiceId): array
@@ -137,10 +191,12 @@ class XenditService
     /**
      * Handle payment callback from Xendit.
      */
-    public function handlePaymentCallback(array $payload): ?SubscriptionInvoice
+    public function handlePaymentCallback(array $payload): SubscriptionInvoice|QrOrder|null
     {
         $invoiceId = $payload['id'] ?? null;
         $status = $payload['status'] ?? null;
+        $metadata = $payload['metadata'] ?? [];
+        $externalId = $payload['external_id'] ?? null;
 
         if (! $invoiceId) {
             Log::warning('Xendit callback: missing invoice id', $payload);
@@ -148,10 +204,31 @@ class XenditService
             return null;
         }
 
+        // Check if this is a QR order payment
+        // 1. Via metadata (if Xendit returns it)
+        // 2. Via external_id prefix (QR-) as fallback
+        // 3. Via xendit_invoice_id match in qr_orders table
+        if (($metadata['type'] ?? null) === 'qr_order') {
+            return $this->handleQrOrderCallback($payload, $status, $metadata);
+        }
+
+        if ($externalId && str_starts_with($externalId, 'QR-')) {
+            return $this->handleQrOrderCallbackByExternalId($payload, $status, $externalId);
+        }
+
+        $qrOrder = QrOrder::where('xendit_invoice_id', $invoiceId)->first();
+        if ($qrOrder) {
+            return $this->handleQrOrderCallbackByModel($payload, $status, $qrOrder);
+        }
+
+        // Default: subscription payment
         $invoice = SubscriptionInvoice::where('xendit_invoice_id', $invoiceId)->first();
 
         if (! $invoice) {
-            Log::warning('Xendit callback: invoice not found', ['xendit_invoice_id' => $invoiceId]);
+            Log::warning('Xendit callback: invoice not found', [
+                'xendit_invoice_id' => $invoiceId,
+                'external_id' => $externalId,
+            ]);
 
             return null;
         }
@@ -172,6 +249,87 @@ class XenditService
         }
 
         return $invoice;
+    }
+
+    /**
+     * Handle QR order payment callback.
+     */
+    protected function handleQrOrderCallback(array $payload, ?string $status, array $metadata): ?QrOrder
+    {
+        $qrOrderId = $metadata['qr_order_id'] ?? null;
+
+        if (! $qrOrderId) {
+            Log::warning('Xendit QR callback: missing qr_order_id', $payload);
+
+            return null;
+        }
+
+        $qrOrder = QrOrder::find($qrOrderId);
+
+        if (! $qrOrder) {
+            Log::warning('Xendit QR callback: QR order not found', ['qr_order_id' => $qrOrderId]);
+
+            return null;
+        }
+
+        switch ($status) {
+            case 'PAID':
+            case 'SETTLED':
+                $qrOrderService = app(QrOrderService::class);
+                $qrOrderService->handlePaymentSuccess($qrOrder, $payload);
+                break;
+
+            case 'EXPIRED':
+                $qrOrder->markAsExpired();
+                break;
+
+            case 'FAILED':
+                $qrOrder->markAsCancelled();
+                break;
+        }
+
+        return $qrOrder;
+    }
+
+    /**
+     * Handle QR order callback by external_id (order_number).
+     * Fallback when Xendit doesn't return metadata in webhook.
+     */
+    protected function handleQrOrderCallbackByExternalId(array $payload, ?string $status, string $externalId): ?QrOrder
+    {
+        $qrOrder = QrOrder::where('order_number', $externalId)->first();
+
+        if (! $qrOrder) {
+            Log::warning('Xendit QR callback: QR order not found by external_id', ['external_id' => $externalId]);
+
+            return null;
+        }
+
+        return $this->handleQrOrderCallbackByModel($payload, $status, $qrOrder);
+    }
+
+    /**
+     * Process QR order callback with a resolved QrOrder model.
+     */
+    protected function handleQrOrderCallbackByModel(array $payload, ?string $status, QrOrder $qrOrder): QrOrder
+    {
+        switch ($status) {
+            case 'PAID':
+            case 'SETTLED':
+                $qrOrderService = app(QrOrderService::class);
+                $qrOrderService->handlePaymentSuccess($qrOrder, $payload);
+                break;
+
+            case 'EXPIRED':
+                $qrOrder->markAsExpired();
+                break;
+
+            case 'FAILED':
+                $qrOrder->markAsCancelled();
+                break;
+        }
+
+        return $qrOrder;
     }
 
     /**

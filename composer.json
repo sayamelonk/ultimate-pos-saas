@@ -12,10 +12,12 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.10.1",
         "resend/resend-laravel": "^1.1",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "xendit/xendit-php": "^7.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "knuckleswtf/scribe": "^5.8",
         "laravel/boost": "^1.8",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
@@ -42,8 +44,12 @@
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
             "@php artisan migrate --force",
+            "@php artisan l5-swagger:generate",
             "npm install",
             "npm run build"
+        ],
+        "swagger": [
+            "@php artisan l5-swagger:generate"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

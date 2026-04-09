@@ -41,6 +41,8 @@ class Table extends Model
         'shape',
         'status',
         'is_active',
+        'qr_token',
+        'qr_generated_at',
     ];
 
     protected function casts(): array
@@ -52,6 +54,7 @@ class Table extends Model
             'width' => 'integer',
             'height' => 'integer',
             'is_active' => 'boolean',
+            'qr_generated_at' => 'datetime',
         ];
     }
 
@@ -85,6 +88,44 @@ class Table extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function qrOrders(): HasMany
+    {
+        return $this->hasMany(QrOrder::class);
+    }
+
+    public function generateQrToken(): string
+    {
+        $token = bin2hex(random_bytes(32));
+        $this->update([
+            'qr_token' => $token,
+            'qr_generated_at' => now(),
+        ]);
+
+        return $token;
+    }
+
+    public function revokeQrToken(): void
+    {
+        $this->update([
+            'qr_token' => null,
+            'qr_generated_at' => null,
+        ]);
+    }
+
+    public function hasQrCode(): bool
+    {
+        return ! empty($this->qr_token);
+    }
+
+    public function getQrMenuUrl(): ?string
+    {
+        if (! $this->qr_token) {
+            return null;
+        }
+
+        return url("/qr/{$this->qr_token}");
     }
 
     public function getDisplayNameAttribute(): string

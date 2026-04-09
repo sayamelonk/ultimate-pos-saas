@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\PosSession;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,10 +98,9 @@ class SessionController extends Controller
         $session = DB::transaction(function () use ($outletId, $validated) {
             // Generate session number
             $sessionNumber = $this->generateSessionNumber($outletId);
-            $tenantId = $this->tenantId();
 
             return PosSession::create([
-                'tenant_id' => $tenantId,
+                'tenant_id' => $this->tenantId(),
                 'outlet_id' => $outletId,
                 'user_id' => $this->user()->id,
                 'session_number' => $sessionNumber,
@@ -159,13 +159,15 @@ class SessionController extends Controller
         $validated = $request->validate([
             'closing_cash' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
+            'closed_at' => 'nullable|date',
         ]);
 
         DB::transaction(function () use ($session, $validated) {
             $session->close(
                 closingCash: $validated['closing_cash'],
                 closedBy: $this->user()->id,
-                notes: $validated['notes'] ?? null
+                notes: $validated['notes'] ?? null,
+                closedAt: isset($validated['closed_at']) ? Carbon::parse($validated['closed_at']) : null,
             );
         });
 

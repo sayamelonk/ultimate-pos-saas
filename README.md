@@ -24,7 +24,7 @@ Sistem Point of Sale (POS) berbasis SaaS dengan arsitektur multi-tenant untuk re
 | **Mobile App** | Flutter | 3.x |
 | **API Auth** | Laravel Sanctum | 4.x |
 | **API Docs** | L5-Swagger (OpenAPI 3.0) | 10.x |
-| **Payment** | Xendit | - |
+| **Payment Gateway** | Xendit | - |
 
 ---
 
@@ -34,7 +34,7 @@ Sistem Point of Sale (POS) berbasis SaaS dengan arsitektur multi-tenant untuk re
 |----------|------------|-------------|
 | **Web Admin** | Laravel + Blade | Dashboard, master data, reporting, settings |
 | **POS Web** | Laravel + Alpine.js | Browser-based POS for cashier |
-| **POS Mobile** | Flutter | Native mobile POS app |
+| **POS Mobile** | Flutter | Native mobile POS app (offline-first) |
 | **Waiter App** | Flutter | Order taking, table management |
 | **KDS** | Web (PWA) | Kitchen Display System |
 | **QR Order** | Web (PWA) | Customer self-order |
@@ -44,99 +44,263 @@ Sistem Point of Sale (POS) berbasis SaaS dengan arsitektur multi-tenant untuk re
 ## Daftar Fitur
 
 ### 1. Multi-Tenancy & Outlet Management
-- Arsitektur multi-tenant (mendukung banyak brand/franchise)
-- Manajemen tenant (brand, logo, kontak, subscription plan)
+- Arsitektur multi-tenant (mendukung banyak brand/franchise, white-label ready)
+- Manajemen tenant (brand, logo, kontak, currency, timezone)
 - Manajemen outlet per tenant (alamat, jam operasional, koordinat GPS)
-- Pengaturan pajak & service charge per outlet
+- Pengaturan pajak & service charge per outlet (override dari tenant)
 - **Tax Mode**: Inclusive (harga sudah termasuk pajak) & Exclusive (pajak ditambahkan)
-- Kustomisasi receipt (header, footer, logo)
+- Kustomisasi receipt (header, footer, logo toggle)
+- Switch outlet aktif
 
-### 2. User & Access Control
+### 2. Subscription & Billing
+- 4 tier subscription: Starter, Growth, Professional, Enterprise
+- Billing cycle: Monthly & Yearly
+- Trial 14 hari (full akses Professional, tanpa kartu kredit)
+- Grace period 1 hari setelah expire sebelum freeze
+- Freeze mode (read-only, bisa lihat data, tidak bisa transaksi)
+- Upgrade dengan proration (bayar selisih pro-rata)
+- Downgrade: cancel dulu, freeze, subscribe tier baru
+- Payment gateway Xendit (invoice webhook)
+- Invoice management & history
+- Automated lifecycle: trial expiry, grace period, freeze, data deletion warning
+- Email notifications: trial reminder (7d, 3d, 1d), trial expired, subscription expiry, data deletion warning
+
+### 3. Feature Gating (Per Subscription Tier)
+- POS Core, Product Management, Basic Reports - semua tier
+- Product Variant, Combo, Modifiers - Growth+
+- Discount & Promo - Growth+
+- Inventory Basic - Growth+
+- Table Management - Growth+
+- Inventory Advanced, Recipe/BOM, Stock Transfer - Professional+
+- Waiter App, QR Order - Professional+
+- Manager Authorization - Professional+
+- Export Excel/PDF - Professional+
+- KDS, API Access, Custom Branding, Loyalty Points - Enterprise
+- Dedicated Support, SLA Uptime - Enterprise
+- Middleware enforcement: `CheckSubscriptionFeature`, `BlockFrozenWrite`, `CheckSubscriptionStatus`
+
+### 4. User & Access Control (RBAC)
 - Multi-role: Super Admin, Tenant Owner, Outlet Manager, Cashier, Waiter, Kitchen Staff
 - Custom roles per tenant
 - Fine-grained permissions per modul
-- PIN login untuk akses cepat POS
-- User-outlet assignment
+- PIN login untuk akses cepat POS/KDS/Waiter
+- User-outlet assignment (pivot table)
+- Email verification wajib (link valid 24 jam)
+- Multi-language support (locale switcher)
 
-### 3. Inventory & Stock Management
-- Manajemen unit (kg, g, L, pcs, pack, dll)
-- Manajemen supplier & pricing
-- Kategori inventory (bahan baku, semi-finished, packaging)
-- Tracking stock level (min, max, reorder point)
-- Expiry tracking
-- Recipe/BOM (Bill of Materials) - auto stock deduction
+### 5. Onboarding Wizard
+- Multi-step onboarding untuk tenant baru:
+  - Update business profile
+  - Tambah produk pertama
+  - Setup payment methods
+  - Invite staff
+  - Complete / Skip
 
-### 4. Product & Menu Management
+### 6. Product & Menu Management
 - Produk single, variant, dan combo/bundle
-- Kategori hierarki dengan icon & color
-- Variant groups (Size, Ice Level, Temperature)
-- Modifier/add-on (Extra cheese, toppings, dll)
+- Kategori hierarki dengan icon & color (reorder drag-drop)
+- Variant groups (Size, Ice Level, Temperature) dengan price modifier
+- Modifier/add-on groups (Extra cheese, toppings, dll)
 - Harga berbeda per outlet (Product-Outlet Assignment)
-- Kitchen station assignment
+- Bulk update harga & copy harga antar outlet
+- Kitchen station assignment per produk
+- Barcode support & product search
+- Duplicate product
+- Auto-generate product variants
+- Link/unlink inventory recipe (BOM)
+- Product flags: `show_in_pos`, `show_in_menu`, `is_featured`, `track_stock`, `allow_notes`
+- Product metadata: tags, allergens, nutritional info, prep time
 
-### 5. POS Core - Order & Transaction
-- Shift management (open/close, cash in/out)
-- Order types: dine-in, takeaway, delivery, QR order
+### 7. POS Core - Order & Transaction
+- Shift/session management (open/close dengan cash balance)
+- Order types: dine-in, takeaway, delivery
 - Multi-item order dengan variant & modifier
-- Discount per order/item (persentase/nominal)
-- Promo code support
+- Discount per order/item (persentase, nominal, buy X get Y)
+- Promo code validation & auto-apply discounts
 - **Tax Calculation**: Support inclusive & exclusive mode
 - **Service Charge**: Configurable per outlet
-- Order status tracking real-time
-- Void/cancel dengan reason
-- Held orders dengan auto-expiry
-
-### 6. Payment Management
-- Multi-payment method (Cash, Card, E-Wallet, QRIS, Transfer)
-- Split payment
-- Payment gateway integration (Xendit)
+- Real-time cart calculation (preview sebelum checkout)
+- Void/cancel dengan reason & manager authorization
 - Refund management
-- Digital receipt (print, WhatsApp)
+- Held orders (simpan & recall)
+- Transaction number format: `{OUTLET_CODE}-{YYYYMMDD}-{SEQ}`
+- Receipt view (print-ready)
 
-### 7. Table Management & Floor Plan
-- Multi-floor support
-- Drag-drop floor plan editor
-- Table status (available, occupied, reserved, billing, cleaning)
-- Table merge & transfer
-- Reservasi meja
+### 8. Payment Management
+- Multi-payment method (Cash, Card, E-Wallet, QRIS, Transfer)
+- Split payment (multiple payment methods per transaksi)
+- Payment gateway integration (Xendit)
+- Charge/surcharge per payment method
+- Refund management
+- Digital receipt
+
+### 9. Cash Drawer Management
+- Cash drawer status tracking
+- Cash In / Cash Out operations
+- Cash balance monitoring
+- Cash drawer logs & report
+- Open cash drawer command
+
+### 10. Manager Authorization (PIN Security)
+- Configurable actions yang memerlukan manager PIN (void, refund, discount override, dll)
+- PIN verification untuk sensitive operations
+- List available managers untuk PIN entry
+- Authorization log (audit trail)
+- Lockout protection (failed PIN attempts)
+- Admin panel untuk konfigurasi authorization settings
+
+### 11. Table Management & Floor Plan
+- Multi-floor support dengan sort order
+- Drag-drop floor plan editor (update table positions)
+- Table status: available, occupied, reserved, cleaning
+- Open table (start session dengan guest count)
+- Close table (end session)
+- Move table (physical relocation)
+- Table sessions history
 - QR code unik per meja
 
-### 8. Kitchen Display System (KDS)
-- Multi kitchen station (Bar, Food, Dessert)
-- Real-time order queue
-- Color coding berdasarkan waktu tunggu
-- Bump system (mark as ready)
-- Priority/rush order flag
-- Sound alert untuk new order
-- Thermal printer support (ESC/POS)
+### 12. Kitchen Display System (KDS)
+- PIN-based login (tanpa email/password)
+- Multi kitchen station (Grill, Fry, Cold, Bar, dll) dengan color coding
+- Real-time order queue (filter by status & station)
+- Order status flow: pending -> preparing -> ready -> served / cancelled
+- Priority system: normal, rush, VIP (VIP sorted first)
+- Bump system (mark as ready, next status)
+- Per-item status tracking (start & ready individual items)
+- Recall served orders
+- Cancel dengan reason
+- Auto-create kitchen order saat POS checkout
+- KDS Statistics: pending/preparing/ready counts, served today, avg prep time, orders by hour
+- Kitchen station CRUD (code, color, sort order, active/inactive)
 
-### 9. QR Order (Self-Order Customer)
-- Scan QR untuk auto detect outlet & meja
-- Browsing menu dengan gambar & deskripsi
-- Pilih variant & modifier
-- Cart management
-- Order tracking real-time
-- Call waiter / request bill
+### 13. Waiter App (Mobile API)
+- PIN-based login & outlet selection
+- List floors & tables (filter by status, floor)
+- Get table detail dengan current order
+- Open/close table (session management)
+- Update table status
+- Browse menu (filter by category, search)
+- Create new order (dine-in, takeaway) dengan items, variants, modifiers
+- Add items to existing order
+- Send order to kitchen (creates KitchenOrder)
+- Mark order as picked up (served)
+- List orders (filter by status, kitchen status, scope: my orders / outlet-wide)
 
-### 10. Waiter App (Mobile)
-- PIN-based login
-- Visual table status dengan timer
-- Order taking langsung dari meja
-- Kirim order ke kitchen
-- Split bill (equal, by item, custom)
-- Real-time notification (order ready, customer call)
-- Offline mode dengan auto-sync
+### 14. Customer Management & Loyalty
+- Full CRUD customer (code, name, email, phone, address, birth date, gender)
+- Membership levels: regular, silver, gold, platinum
+- Loyalty points tracking (total points, total spent, total visits)
+- Points earn saat checkout (otomatis)
+- Points redemption di POS
+- Manual add points
+- Membership expiry date
+- Transaction history per customer
+- Customer search di POS
 
-### 11. Reporting & Analytics
-- Sales summary (daily/weekly/monthly)
+### 15. Discount & Promo Management
+- Tipe diskon: percentage, fixed amount, buy X get Y
+- Scope: order level & item level
+- Discount code / promo code
+- Auto-apply discounts
+- Minimum purchase & minimum quantity
+- Maximum discount cap
+- Usage limit (total & per customer)
+- Member-only discounts (by membership level)
+- Outlet-specific discounts
+- Item-specific discounts
+- Date validity (valid from & valid until)
+- Validate discount code via API
+
+### 16. Inventory & Stock Management
+- **Units**: Full CRUD untuk measurement units (kg, g, L, pcs, pack, dll)
+- **Suppliers**: Full CRUD, supplier items catalog (SKU & harga per supplier)
+- **Inventory Categories**: Full CRUD dengan category codes
+- **Inventory Items**: Full CRUD, linked ke products untuk stock tracking
+- **Stock Levels**: Current quantities, min/max/reorder point
+- **Stock Movements**: Full movement log & history
+- **Low Stock Alerts**: Otomatis detect items di bawah reorder point
+- **Expiry Tracking**: Expiring items view & alerts
+
+### 17. Purchase Orders
+- Full CRUD purchase orders
+- Status workflow: draft -> approved -> sent -> received -> cancelled
+- Approve, send to supplier, cancel PO
+- Purchase order items dengan quantity & pricing
+
+### 18. Goods Receive
+- Full CRUD goods receive (dari purchase order)
+- Complete goods receive (auto update stock)
+- Cancel goods receive
+
+### 19. Stock Adjustments & Stock Take
+- Full CRUD stock adjustments
+- Approve / Reject adjustments
+- Stock take (physical count)
+- Per-outlet stock query
+
+### 20. Stock Transfers (Multi-Outlet)
+- Full CRUD stock transfers antar outlet
+- Status workflow: draft -> approved -> shipped -> received -> cancelled
+- Approve, ship, receive, cancel transfer
+
+### 21. Recipe / Bill of Materials (BOM)
+- Full CRUD recipes
+- Duplicate recipe
+- Recipe items (ingredients dengan quantity)
+- Recalculate cost
+- Cost analysis report
+- Link recipe ke products (auto stock deduction saat checkout)
+
+### 22. Stock Batches
+- Batch receiving & management
+- Batch settings (FIFO/FEFO/LIFO)
+- Expiry report per batch
+- Batch detail, adjust, mark expired, dispose
+
+### 23. Waste Logs
+- Create waste log entries
+- List, view, delete waste logs
+- Waste report
+
+### 24. Inventory Reports
+- Stock valuation report
+- Stock movement report
+- COGS (Cost of Goods Sold) report
+- Food cost report
+
+### 25. Reporting & Analytics
+- Sales summary (daily/weekly/monthly): total sales, transactions, average order value, discount total, refund total
 - Sales by category & product
 - Sales by payment method
 - Sales by hour (peak hour analysis)
-- Sales by staff
+- Daily sales breakdown
 - Shift report & cash reconciliation
-- Discount & void report
-- Table turnover analysis
+- Session report
 - Export ke Excel/PDF
+
+### 26. Offline-First Mobile Sync
+- Master sync: full data dump (categories, products, variants, modifiers, payment methods, discounts, floors, tables, outlet settings, subscription features)
+- Delta sync: incremental changes since last sync timestamp
+- Bulk upload offline transactions
+- Sync POS session state
+- Customer search offline-first
+
+### 27. Super Admin Panel
+- Dashboard overview
+- Tenant management (CRUD, switch/impersonate tenants)
+- User management (CRUD, outlet assignment)
+- Role & permission management
+- Subscription plans management (create/edit plans with feature flags JSON)
+- Subscriptions management (view all, update status)
+- Invoice management (view all, update payment status)
+- User PIN management (set/edit/delete PIN)
+- Authorization settings & logs
+
+### 28. Public Pages
+- Landing page
+- Pricing page (live plans dari database)
+- Terms of service
+- Privacy policy
 
 ---
 
@@ -144,7 +308,7 @@ Sistem Point of Sale (POS) berbasis SaaS dengan arsitektur multi-tenant untuk re
 
 | Feature | Starter | Growth | Professional | Enterprise |
 |---------|:-------:|:------:|:------------:|:----------:|
-| **Price** | Rp 99K | Rp 299K | Rp 599K | Rp 1.499K |
+| **Harga** | Rp 99K | Rp 299K | Rp 599K | Rp 1.499K |
 | POS Core | ✅ | ✅ | ✅ | ✅ |
 | Outlets | 1 | 3 | 10 | Unlimited |
 | Users | 3 | 10 | 25 | Unlimited |
@@ -152,13 +316,22 @@ Sistem Point of Sale (POS) berbasis SaaS dengan arsitektur multi-tenant untuk re
 | Product Variants | ❌ | ✅ | ✅ | ✅ |
 | Modifiers | ❌ | ✅ | ✅ | ✅ |
 | Product Combos | ❌ | ✅ | ✅ | ✅ |
+| Discount & Promo | ❌ | ✅ | ✅ | ✅ |
 | Inventory Basic | ❌ | ✅ | ✅ | ✅ |
+| Table Management | ❌ | ✅ | ✅ | ✅ |
 | Inventory Advanced | ❌ | ❌ | ✅ | ✅ |
 | Recipe/BOM | ❌ | ❌ | ✅ | ✅ |
+| Stock Transfer | ❌ | ❌ | ✅ | ✅ |
+| Manager Authorization | ❌ | ❌ | ✅ | ✅ |
+| Export Excel/PDF | ❌ | ❌ | ✅ | ✅ |
 | Waiter App | ❌ | ❌ | ✅ | ✅ |
 | QR Order | ❌ | ❌ | ✅ | ✅ |
 | KDS | ❌ | ❌ | ❌ | ✅ |
 | API Access | ❌ | ❌ | ❌ | ✅ |
+| Loyalty Points | ❌ | ❌ | ❌ | ✅ |
+| Custom Branding | ❌ | ❌ | ❌ | ✅ |
+| Dedicated Support | ❌ | ❌ | ❌ | ✅ |
+| SLA Uptime | ❌ | ❌ | ❌ | ✅ |
 
 **Trial:** 14 hari full akses Professional tier, tanpa kartu kredit.
 
@@ -170,7 +343,7 @@ Sistem Point of Sale (POS) berbasis SaaS dengan arsitektur multi-tenant untuk re
 
 Interactive API documentation tersedia di:
 
-**🔗 https://saas.jagofullstack.com/api/documentation**
+https://saas.jagofullstack.com/api/documentation
 
 ### Authentication
 
@@ -185,14 +358,14 @@ X-Outlet-Id: {outlet_uuid}
 
 | Version | Base URL | Status |
 |---------|----------|--------|
-| **v2** | `/api/v2/` | ✅ Active (Recommended) |
-| v1 | `/api/v1/` | ⚠️ Deprecated |
+| **v2** | `/api/v2/` | Active (Recommended) |
+| v1 | `/api/v1/` | Deprecated |
 
 ---
 
 ## Mobile App API Reference
 
-API endpoints untuk pengembangan POS Mobile App dan Waiter App.
+API endpoints untuk pengembangan POS Mobile App, Waiter App, dan KDS.
 
 ### Authentication
 
@@ -207,7 +380,7 @@ API endpoints untuk pengembangan POS Mobile App dan Waiter App.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/v2/sync/master` | Sync all master data (products, categories, modifiers, payment methods) |
+| `GET` | `/api/v2/sync/master` | Sync all master data (products, categories, modifiers, payment methods, floors, tables) |
 | `GET` | `/api/v2/sync/delta?since={timestamp}` | Get changes since last sync |
 
 **Response Structure `/api/v2/sync/master`:**
@@ -273,36 +446,16 @@ API endpoints untuk pengembangan POS Mobile App dan Waiter App.
 | `GET` | `/api/v2/settings/outlet` | Get outlet settings |
 | `GET` | `/api/v2/settings/pos` | Get POS operational settings |
 | `GET` | `/api/v2/settings/features` | Get feature flags based on subscription |
-
-**Response Structure `/api/v2/settings/outlet`:**
-```json
-{
-  "data": {
-    "outlet_id": "uuid",
-    "outlet_name": "Main Store",
-    "outlet_code": "MAIN",
-    "address": "Jl. Sudirman No. 123",
-    "city": "Jakarta",
-    "phone": "021-1234567",
-    "email": "main@store.com",
-    "tax_enabled": true,
-    "tax_mode": "exclusive",
-    "tax_percentage": 10.0,
-    "service_charge_enabled": true,
-    "service_charge_percentage": 5.0,
-    "opening_time": "08:00",
-    "closing_time": "22:00",
-    "currency": "IDR",
-    "timezone": "Asia/Jakarta"
-  }
-}
-```
+| `GET` | `/api/v2/settings/authorization` | Get authorization settings (which actions need manager PIN) |
+| `GET` | `/api/v2/settings/receipt` | Get receipt settings (header, footer, logo) |
+| `GET` | `/api/v2/settings/printer` | Get printer settings |
+| `GET` | `/api/v2/settings/subscription` | Get subscription info |
 
 **Tax Mode Explanation:**
 | Mode | Description | Calculation |
 |------|-------------|-------------|
-| `exclusive` | Tax added on top of price | `total = subtotal + (subtotal × tax%)` |
-| `inclusive` | Price already includes tax | `subtotal = total / (1 + tax%)` |
+| `exclusive` | Tax added on top of price | `total = subtotal + (subtotal x tax%)` |
+| `inclusive` | Price already includes tax | `tax = amount x (rate / (100 + rate))` |
 
 ### POS Sessions
 
@@ -313,14 +466,6 @@ API endpoints untuk pengembangan POS Mobile App dan Waiter App.
 | `POST` | `/api/v2/sessions/close` | Close current session |
 | `GET` | `/api/v2/sessions/history` | Get session history |
 | `GET` | `/api/v2/sessions/{id}/report` | Get session report |
-
-**Open Session Request:**
-```json
-{
-  "opening_cash": 500000,
-  "notes": "Opening shift pagi"
-}
-```
 
 ### Orders
 
@@ -333,73 +478,6 @@ API endpoints untuk pengembangan POS Mobile App dan Waiter App.
 | `POST` | `/api/v2/orders/{id}/void` | Void order |
 | `POST` | `/api/v2/orders/{id}/refund` | Refund order |
 | `GET` | `/api/v2/orders/{id}/receipt` | Get receipt data |
-
-**Calculate Cart Request:**
-```json
-{
-  "items": [
-    {
-      "product_id": "uuid",
-      "variant_id": null,
-      "quantity": 2,
-      "modifiers": [
-        {
-          "id": "uuid",
-          "name": "Extra Cheese",
-          "price": 5000,
-          "quantity": 1
-        }
-      ],
-      "discount_amount": 0,
-      "notes": "Pedas level 2"
-    }
-  ],
-  "discount_type": "percentage",
-  "discount_value": 10
-}
-```
-
-**Calculate Cart Response:**
-```json
-{
-  "data": {
-    "items": [...],
-    "items_count": 2,
-    "subtotal": 90000,
-    "discount_amount": 9000,
-    "after_discount": 81000,
-    "tax_enabled": true,
-    "tax_mode": "exclusive",
-    "tax_percentage": 10.0,
-    "tax_amount": 8100,
-    "service_charge_enabled": true,
-    "service_charge_percentage": 5.0,
-    "service_charge_amount": 4050,
-    "rounding": -50,
-    "grand_total": 93100
-  }
-}
-```
-
-**Checkout Request:**
-```json
-{
-  "items": [...],
-  "order_type": "dine_in",
-  "table_id": "uuid",
-  "customer_id": "uuid",
-  "discount_type": "percentage",
-  "discount_value": 10,
-  "payments": [
-    {
-      "payment_method_id": "uuid",
-      "amount": 100000,
-      "reference_number": null
-    }
-  ],
-  "notes": "Customer request"
-}
-```
 
 ### Cash Drawer
 
@@ -422,6 +500,46 @@ API endpoints untuk pengembangan POS Mobile App dan Waiter App.
 | `POST` | `/api/v2/held-orders/{id}/recall` | Recall held order |
 | `DELETE` | `/api/v2/held-orders/{id}` | Delete held order |
 
+### KDS (Kitchen Display System)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v2/kds/auth/login` | KDS PIN login |
+| `GET` | `/api/v2/kds/orders` | List kitchen orders (filter by status, station) |
+| `GET` | `/api/v2/kds/orders/{id}` | Get kitchen order detail |
+| `POST` | `/api/v2/kds/orders/{id}/start` | Start preparing |
+| `POST` | `/api/v2/kds/orders/{id}/ready` | Mark order ready |
+| `POST` | `/api/v2/kds/orders/{id}/served` | Mark order served |
+| `POST` | `/api/v2/kds/orders/{id}/cancel` | Cancel order with reason |
+| `POST` | `/api/v2/kds/orders/{id}/recall` | Recall served order |
+| `POST` | `/api/v2/kds/orders/{id}/bump` | Bump to next status |
+| `POST` | `/api/v2/kds/orders/{id}/priority` | Set priority (normal/rush/vip) |
+| `POST` | `/api/v2/kds/orders/{id}/items/{item}/start` | Start individual item |
+| `POST` | `/api/v2/kds/orders/{id}/items/{item}/ready` | Mark individual item ready |
+| `GET` | `/api/v2/kds/stations` | List kitchen stations |
+| `GET` | `/api/v2/kds/stats` | KDS statistics |
+
+### Waiter App
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v2/waiter/auth/login` | Waiter PIN login |
+| `POST` | `/api/v2/waiter/auth/logout` | Waiter logout |
+| `GET` | `/api/v2/waiter/floors` | List floors |
+| `GET` | `/api/v2/waiter/tables` | List tables (filter by status, floor) |
+| `GET` | `/api/v2/waiter/tables/{id}` | Get table detail with current order |
+| `POST` | `/api/v2/waiter/tables/{id}/open` | Open table (start session) |
+| `POST` | `/api/v2/waiter/tables/{id}/close` | Close table (end session) |
+| `PUT` | `/api/v2/waiter/tables/{id}/status` | Update table status |
+| `GET` | `/api/v2/waiter/menu` | List menu (filter by category, search) |
+| `GET` | `/api/v2/waiter/categories` | List categories |
+| `GET` | `/api/v2/waiter/orders` | List orders (filter by status, kitchen status) |
+| `GET` | `/api/v2/waiter/orders/{id}` | Get order detail |
+| `POST` | `/api/v2/waiter/orders` | Create new order |
+| `POST` | `/api/v2/waiter/orders/{id}/items` | Add items to existing order |
+| `POST` | `/api/v2/waiter/orders/{id}/send` | Send order to kitchen |
+| `POST` | `/api/v2/waiter/orders/{id}/pickup` | Mark order as picked up |
+
 ### Reports
 
 | Method | Endpoint | Description |
@@ -439,11 +557,41 @@ API endpoints untuk pengembangan POS Mobile App dan Waiter App.
 |--------|----------|-------------|
 | `GET` | `/api/v2/inventory/items` | List inventory items |
 | `GET` | `/api/v2/inventory/items/{id}` | Get item detail |
+| `GET` | `/api/v2/inventory/items/{id}/movements` | Get item movement history |
 | `GET` | `/api/v2/inventory/stock-levels` | Get stock levels |
 | `GET` | `/api/v2/inventory/products/{id}/stock` | Get product stock |
 | `POST` | `/api/v2/inventory/adjustments` | Create stock adjustment |
 | `GET` | `/api/v2/inventory/low-stock` | Get low stock alerts |
 | `GET` | `/api/v2/inventory/history` | Get stock history |
+
+### Subscription
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v2/subscription` | Get current subscription |
+| `POST` | `/api/v2/subscription/trial` | Start trial |
+| `POST` | `/api/v2/subscription/subscribe` | Subscribe to plan |
+| `POST` | `/api/v2/subscription/upgrade` | Upgrade plan |
+| `POST` | `/api/v2/subscription/cancel` | Cancel subscription |
+| `POST` | `/api/v2/subscription/reactivate` | Reactivate subscription |
+| `GET` | `/api/v2/subscription/upgrade-proration` | Calculate upgrade proration |
+| `GET` | `/api/v2/subscription/invoices` | List invoices |
+| `GET` | `/api/v2/subscription/features` | Check features per plan |
+
+### Floor & Table Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v2/floors` | List floors |
+| `POST` | `/api/v2/floors` | Create floor |
+| `GET` | `/api/v2/floors/{id}/tables` | Get tables per floor |
+| `GET` | `/api/v2/tables` | List all tables |
+| `POST` | `/api/v2/tables` | Create table |
+| `PUT` | `/api/v2/tables/{id}/position` | Update table position (drag-drop) |
+| `PUT` | `/api/v2/tables/{id}/status` | Update table status |
+| `POST` | `/api/v2/tables/{id}/open` | Open table (start session) |
+| `POST` | `/api/v2/tables/{id}/close` | Close table (end session) |
+| `POST` | `/api/v2/tables/{id}/move` | Move table |
 
 ---
 
@@ -596,18 +744,18 @@ Menggunakan **Heroicons** (https://heroicons.com):
 
 #### Screen Structure
 ```
-┌─────────────────────────────┐
-│  Status Bar (System)        │
-├─────────────────────────────┤
-│  App Bar / Header           │  48-56dp
-├─────────────────────────────┤
-│                             │
-│  Content Area               │
-│                             │
-│                             │
-├─────────────────────────────┤
-│  Bottom Navigation          │  56dp
-└─────────────────────────────┘
++-----------------------------+
+|  Status Bar (System)        |
++-----------------------------+
+|  App Bar / Header           |  48-56dp
++-----------------------------+
+|                             |
+|  Content Area               |
+|                             |
+|                             |
++-----------------------------+
+|  Bottom Navigation          |  56dp
++-----------------------------+
 ```
 
 #### Touch Targets
@@ -623,6 +771,88 @@ Menggunakan **Heroicons** (https://heroicons.com):
 - Show inline errors for form validation
 - Show toast/snackbar for API errors
 - Show full-screen error for critical failures
+
+---
+
+## Database Structure
+
+### Core (5 tables)
+- `tenants` - Data tenant/brand
+- `outlets` - Data outlet per tenant
+- `users` - Data user dengan role
+- `roles` & `permissions` - RBAC system
+
+### Auth & PIN (2 tables)
+- `user_pins` - PIN untuk akses cepat
+- `pin_attempts` - Failed PIN attempt tracking
+
+### Products (11 tables)
+- `product_categories` - Kategori produk
+- `products` - Data produk
+- `product_variants` - Variant produk
+- `variant_groups` & `variant_options` - Variant group management
+- `product_outlets` - Product-outlet assignment & pricing
+- `modifier_groups` & `modifiers` - Add-on produk
+- `combos` & `combo_items` - Combo/bundle products
+- `prices` - Price management
+
+### Transactions (7 tables)
+- `transactions` - Data transaksi
+- `transaction_items` - Item dalam transaksi
+- `transaction_payments` - Data pembayaran (split payment)
+- `transaction_discounts` - Applied discounts
+- `pos_sessions` - Shift kasir
+- `cash_drawer_logs` - Cash in/out logs
+- `held_orders` - Held/pending orders
+
+### Kitchen (3 tables)
+- `kitchen_orders` - Kitchen order queue
+- `kitchen_order_items` - Items per kitchen order
+- `kitchen_stations` - Station dapur (Grill, Fry, Cold, dll)
+
+### Operations (3 tables)
+- `floors` - Lantai/area restoran
+- `tables` - Meja per lantai
+- `table_sessions` - Session per meja (tracking occupancy)
+
+### Customer & Loyalty (2 tables)
+- `customers` - Data pelanggan & membership
+- `customer_points` - Point transactions
+
+### Pricing & Discounts (2 tables)
+- `payment_methods` - Metode pembayaran
+- `discounts` - Diskon & promo
+
+### Inventory (9 tables)
+- `inventory_categories` - Kategori inventory
+- `inventory_items` - Item inventory
+- `inventory_stocks` - Current stock levels
+- `stock_movements` - Stock movement log
+- `stock_batches` & `stock_batch_movements` - Batch tracking
+- `units` - Measurement units
+- `suppliers` & `supplier_items` - Supplier management
+
+### Purchasing (4 tables)
+- `purchase_orders` & `purchase_order_items` - Purchase orders
+- `goods_receives` & `goods_receive_items` - Goods receive
+
+### Stock Operations (5 tables)
+- `stock_adjustments` & `stock_adjustment_items` - Stock adjustments
+- `stock_transfers` & `stock_transfer_items` - Inter-outlet transfers
+- `waste_logs` - Waste tracking
+
+### Recipe (2 tables)
+- `recipes` & `recipe_items` - Bill of Materials
+
+### Subscription (3 tables)
+- `subscription_plans` - Available plans
+- `subscriptions` - Active subscriptions
+- `subscription_invoices` - Payment invoices
+
+### Authorization (3 tables)
+- `authorization_settings` - Configurable actions
+- `authorization_logs` - Audit trail
+- `batch_settings` - Batch configuration
 
 ---
 
@@ -721,38 +951,14 @@ php artisan l5-swagger:generate     # Generate Swagger docs
 
 # Logs
 php artisan pail                    # Real-time log viewer
+
+# Subscription Management
+php artisan subscriptions:process-statuses       # Process trial/subscription lifecycle
+php artisan subscriptions:send-trial-reminders   # Send trial expiry reminders
+php artisan subscription:send-expiry-reminders   # Send subscription expiry reminders
+php artisan subscription:process-frozen          # Process frozen accounts
+php artisan pos:reset-floor                      # Reset floor/kitchen state (demo)
 ```
-
----
-
-## Database Structure
-
-### Core Entities
-- `tenants` - Data tenant/brand
-- `outlets` - Data outlet per tenant
-- `users` - Data user dengan role
-- `roles` & `permissions` - RBAC system
-
-### Products
-- `product_categories` - Kategori produk
-- `products` - Data produk
-- `product_variants` - Variant produk
-- `product_outlets` - Product-outlet assignment & pricing
-- `modifier_groups` & `modifiers` - Add-on produk
-- `combos` & `combo_items` - Combo/bundle products
-
-### Transactions
-- `transactions` - Data transaksi
-- `transaction_items` - Item dalam transaksi
-- `transaction_payments` - Data pembayaran
-- `pos_sessions` - Shift kasir
-- `cash_drawer_logs` - Cash in/out logs
-- `held_orders` - Held/pending orders
-
-### Operations
-- `floors` & `tables` - Manajemen meja
-- `kitchen_stations` - Station dapur
-- `reservations` - Reservasi meja
 
 ---
 
@@ -762,7 +968,7 @@ php artisan pail                    # Real-time log viewer
 |-----------|-------|-------------|
 | 400 | Bad Request | Invalid request parameters |
 | 401 | Unauthenticated | Missing or invalid token |
-| 403 | Forbidden | Insufficient permissions |
+| 403 | Forbidden | Insufficient permissions or frozen account |
 | 404 | Not Found | Resource not found |
 | 422 | Validation Error | Request validation failed |
 | 429 | Too Many Requests | Rate limit exceeded |

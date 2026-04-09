@@ -77,6 +77,41 @@
                     </div>
                 </div>
 
+                <!-- PIN -->
+                <div>
+                    <label class="block text-sm font-medium text-text mb-1.5">
+                        PIN
+                    </label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <input type="password"
+                                   name="pin"
+                                   inputmode="numeric"
+                                   pattern="[0-9]*"
+                                   maxlength="{{ $pinLength }}"
+                                   class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
+                                          focus:ring-2 focus:ring-accent/20 focus:border-accent
+                                          placeholder:text-muted transition-colors"
+                                   placeholder="Masukkan {{ $pinLength }} digit PIN">
+                            @error('pin')
+                                <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <input type="password"
+                                   name="pin_confirmation"
+                                   inputmode="numeric"
+                                   pattern="[0-9]*"
+                                   maxlength="{{ $pinLength }}"
+                                   class="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-text
+                                          focus:ring-2 focus:ring-accent/20 focus:border-accent
+                                          placeholder:text-muted transition-colors"
+                                   placeholder="Konfirmasi PIN">
+                        </div>
+                    </div>
+                    <p class="mt-1.5 text-sm text-muted">PIN untuk login Kitchen & Waiter app ({{ $pinLength }} digit). Kosongkan jika tidak perlu.</p>
+                </div>
+
                 <!-- Roles -->
                 <div>
                     <label class="block text-sm font-medium text-text mb-2">

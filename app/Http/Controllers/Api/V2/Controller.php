@@ -7,6 +7,7 @@ use App\Models\Outlet;
 use App\Models\PosSession;
 use App\Models\User;
 use App\Traits\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 abstract class Controller extends BaseController
@@ -123,16 +124,16 @@ abstract class Controller extends BaseController
     /**
      * Parse date range from request
      *
-     * @return array{from: \Carbon\Carbon, to: \Carbon\Carbon}
+     * @return array{from: Carbon, to: Carbon}
      */
     protected function parseDateRange(Request $request): array
     {
         $from = $request->input('from')
-            ? \Carbon\Carbon::parse($request->input('from'))->startOfDay()
+            ? Carbon::parse($request->input('from'))->startOfDay()
             : now()->startOfDay();
 
         $to = $request->input('to')
-            ? \Carbon\Carbon::parse($request->input('to'))->endOfDay()
+            ? Carbon::parse($request->input('to'))->endOfDay()
             : now()->endOfDay();
 
         return compact('from', 'to');

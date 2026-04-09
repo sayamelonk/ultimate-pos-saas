@@ -53,7 +53,7 @@ return [
     // Verify Email
     'verify_email' => 'Verify Email',
     'verify_email_title' => 'Verify Your Email Address',
-    'verify_email_subtitle' => "Thanks for signing up! Before getting started, please verify your email address by clicking the link we sent you.",
+    'verify_email_subtitle' => 'Thanks for signing up! Before getting started, please verify your email address by clicking the link we sent you.',
     'verify_email_sent' => 'A new verification link has been sent to the email address you provided during registration.',
     'resend_verification' => 'Resend Verification Email',
     'check_email' => 'Check Your Email',

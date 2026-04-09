@@ -7,6 +7,7 @@ use App\Models\AuthorizationSetting;
 use App\Models\PinAttempt;
 use App\Models\User;
 use App\Models\UserPin;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class AuthorizationService
@@ -188,7 +189,7 @@ class AuthorizationService
     /**
      * Get users who can authorize (have PIN set)
      */
-    public function getAuthorizers(string $tenantId): \Illuminate\Database\Eloquent\Collection
+    public function getAuthorizers(string $tenantId): Collection
     {
         return User::where('tenant_id', $tenantId)
             ->where('is_active', true)

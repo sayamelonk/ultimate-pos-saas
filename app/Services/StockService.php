@@ -7,6 +7,7 @@ use App\Models\InventoryItem;
 use App\Models\InventoryStock;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StockService
@@ -310,7 +311,7 @@ class StockService
     /**
      * Get low stock items for an outlet
      */
-    public function getLowStockItems(string $outletId): \Illuminate\Database\Eloquent\Collection
+    public function getLowStockItems(string $outletId): Collection
     {
         return InventoryStock::where('outlet_id', $outletId)
             ->with('inventoryItem')
@@ -321,7 +322,7 @@ class StockService
     /**
      * Get expiring batches for an outlet
      */
-    public function getExpiringBatches(string $outletId, int $days = 7): \Illuminate\Database\Eloquent\Collection
+    public function getExpiringBatches(string $outletId, int $days = 7): Collection
     {
         return StockBatch::where('outlet_id', $outletId)
             ->where('status', 'available')

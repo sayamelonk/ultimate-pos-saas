@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasUuid;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -126,7 +127,7 @@ class PosSession extends Model
             ->sum(fn ($transaction) => $transaction->payments->sum('amount'));
     }
 
-    public function close(float $closingCash, string $closedBy, ?string $notes = null): void
+    public function close(float $closingCash, string $closedBy, ?string $notes = null, ?Carbon $closedAt = null): void
     {
         $expectedCash = $this->getExpectedCash();
 
@@ -135,7 +136,7 @@ class PosSession extends Model
             'expected_cash' => $expectedCash,
             'cash_difference' => $closingCash - $expectedCash,
             'closing_notes' => $notes,
-            'closed_at' => now(),
+            'closed_at' => $closedAt ?? now(),
             'closed_by' => $closedBy,
             'status' => self::STATUS_CLOSED,
         ]);

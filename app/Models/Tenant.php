@@ -201,7 +201,7 @@ class Tenant extends Model
         // Check latest subscription status (not activeSubscription since frozen isn't 'active')
         $latestSubscription = $this->subscriptions()->latest()->first();
 
-        return $latestSubscription?->status === \App\Models\Subscription::STATUS_FROZEN;
+        return $latestSubscription?->status === Subscription::STATUS_FROZEN;
     }
 
     public function canCreateTransactions(): bool

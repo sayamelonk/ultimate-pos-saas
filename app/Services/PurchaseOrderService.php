@@ -6,6 +6,7 @@ use App\Models\GoodsReceive;
 use App\Models\GoodsReceiveItem;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderService
@@ -312,7 +313,7 @@ class PurchaseOrderService
     /**
      * Get pending POs for an outlet
      */
-    public function getPendingPurchaseOrders(string $outletId): \Illuminate\Database\Eloquent\Collection
+    public function getPendingPurchaseOrders(string $outletId): Collection
     {
         return PurchaseOrder::where('outlet_id', $outletId)
             ->whereIn('status', [
@@ -327,7 +328,7 @@ class PurchaseOrderService
     /**
      * Get overdue POs
      */
-    public function getOverduePurchaseOrders(string $tenantId): \Illuminate\Database\Eloquent\Collection
+    public function getOverduePurchaseOrders(string $tenantId): Collection
     {
         return PurchaseOrder::where('tenant_id', $tenantId)
             ->whereIn('status', [

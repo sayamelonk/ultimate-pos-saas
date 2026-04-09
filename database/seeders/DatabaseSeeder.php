@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
             VariantGroupSeeder::class,
             ModifierGroupSeeder::class,
             ProductSeeder::class,
+            ProductOutletSeeder::class,
             ComboSeeder::class,
 
             // Phase 5 - Link Products to Recipes
@@ -66,6 +67,9 @@ class DatabaseSeeder extends Seeder
 
             // Phase 10 - Waiter App
             WaiterStaffSeeder::class,
+
+            // Phase 11 - Full Demo Data (Transactions, Sessions, Kitchen Orders, etc.)
+            DemoFullSeeder::class,
         ]);
     }
 }
